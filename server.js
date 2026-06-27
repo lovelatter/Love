@@ -33,17 +33,17 @@ categories.forEach(cat => {
     };
 });
 
-// 🛠️ ১০০% পারফেক্ট মেইনটেন্যান্স ও ব্যান ফিল্টার (অ্যাডমিন বাইপাস এবং কমপ্লিট ব্লক লজিক)
+// 🛠️ মেইনটেন্যান্স ও ব্যান ফিল্টার (অ্যাডমিন বাইপাস এবং কমপ্লিট ব্লক লজিক)
 bot.use((ctx, next) => {
     const userId = ctx.chat ? ctx.chat.id : (ctx.from ? ctx.from.id : null);
     if (!userId) return next();
     
-    // 👑 অ্যাডমিন হলে কোনো ফিল্টার ছাড়া সরাসরি যেকোনো কম্যান্ড বা বাটন কাজ করবে
+    // 👑 অ্যাডমিন হলে কোনো ফিল্টার ছাড়াই সরাসরি পরের স্টেপে চলে যাবে
     if (String(userId) === String(ADMIN_CHAT_ID)) {
         return next();
     }
     
-    // মেইনটেন্যান্স মোড অন থাকলে সাধারণ ইউজার কোনো কম্যান্ড বা বাটনে অ্যাক্সেস পাবে না
+    // মেইনটেন্যান্স মোড অন থাকলে সাধারণ ইউজারদের কোনো কম্যান্ড বা বাটন কাজ করবে না
     if (isMaintenanceMode) {
         return ctx.reply("🚧 **Bot is under maintenance!**\n\nPlease try again later. Thank you for your patience.");
     }
@@ -73,11 +73,11 @@ function sendMainMenu(ctx, isEdit = false) {
     }
 }
 
-// 👑 সম্পূর্ণ ইংলিশে রূপান্তরিত অ্যাডমিন ড্যাশবোর্ড ফাংশন
+// 👑 অ্যাডমিন ড্যাশবোর্ড ফাংশন
 function sendAdminDashboard(ctx, isEdit = false) {
     const text = `👑 **Welcome Boss! Your Complete Admin Dashboard:**\n\nUse the buttons below to control the bot's activities instantly.`;
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback('📊 Bot Live Stats', 'adm_stats'), Markup.button.callback('📋 All Links List', 'adm_alllinks')],
+        [Markup.button.callback('📊 Bot Live Stats', 'adm_stats'), Markup.button.callback('📋 All Links List', 'adm_alllinks_main')],
         [Markup.button.callback('⚙️ Maintenance (On/Off)', 'adm_toggle_maint'), Markup.button.callback('📢 Broadcast Message', 'adm_prompt_broadcast')],
         [Markup.button.callback('🧼 Clean Inactive Links', 'adm_clean'), Markup.button.callback('💾 Database Backup', 'adm_backup')],
         [Markup.button.callback('🔥 Delete All Links (NUKE)', 'adm_prompt_nuke')]
@@ -108,7 +108,205 @@ bot.action('go_to_admin_dashboard', (ctx) => {
     sendAdminDashboard(ctx, true);
 });
 
-// 🎯 Make Link সাব-মেনু
+// 👑 ==================== COMPLETE ADMIN MODULE ==================== 👑
+
+// ১. /adm কম্যান্ড
+bot.command('adm', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
+    sendAdminDashboard(ctx, false);
+});
+
+// ২. বটের লাইভ স্ট্যাটাস বাটন + এক্সট্রা অপশনস
+bot.action('adm_stats', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    
+    const totalUsers = registeredUsers.size;
+    let totalLinks = 0;
+    Object.keys(linkDatabase).forEach(id => { if(!id.startsWith('demo_')) totalLinks++; });
+    
+    const text = `📊 **Bot Live Statistics Summary:**\n\n👥 Total Active Users: \`${totalUsers}\`\n🔗 Total Links Generated: \`${totalLinks}\`\n🚫 Total Banned Users: \`${bannedUsers.size}\`\n⚙️ Maintenance Mode: \`${isMaintenanceMode ? "ON 🚧" : "OFF 🟢"}\`\n\n💡 Choose any deeper option below to view full logs or manage users.`;
+    
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback('👥 User List', 'adm_sub_userlist'), Markup.button.callback('📋 All Links List', 'adm_alllinks_stats')],
+        [Markup.button.callback('🚫 Banned Users List', 'adm_sub_banlist')],
+        [Markup.button.callback('🔙 Back to Dashboard', 'go_to_admin_dashboard')]
+    ]);
+
+    ctx.editMessageText(text, keyboard);
+});
+
+// ৩. সাব অপশন: User List প্রদর্শন + Ban User বাটন লজিক
+bot.action('adm_sub_userlist', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+
+    let userArr = Array.from(registeredUsers);
+    let text = `👥 **Registered Users List (${userArr.length}):**\n\n`;
+    
+    if (userArr.length === 0) {
+        text += "💡 No users have registered yet.";
+    } else {
+        userArr.slice(0, 50).forEach((uId, idx) => {
+            const isBanned = bannedUsers.has(uId) || bannedUsers.has(Number(uId));
+            text += `${idx + 1}. User ID: \`${uId}\` ${isBanned ? '🔴 (Banned)' : '🟢 (Active)'}\n`;
+        });
+        if (userArr.length > 50) text += `\n...and ${userArr.length - 50} more users.`;
+    }
+
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback('🚫 Ban User', 'adm_prompt_input_ban')],
+        [Markup.button.callback('🔙 Back to Stats', 'adm_stats')]
+    ]);
+
+    ctx.editMessageText(text, keyboard);
+});
+
+// ৪. সাব... অপশন: Ban User ইনপুট প্রম্পট
+bot.action('adm_prompt_input_ban', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+
+    userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_ID_INPUT' };
+    ctx.reply("🚫 Please write or paste the **User ID** you want to ban from this bot:");
+});
+
+// ৫. সাব অপশন: Banned Users List প্রদর্শন + Unban বাটন লজিক
+bot.action('adm_sub_banlist', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+
+    let banArr = Array.from(bannedUsers).filter(item => typeof item === 'number' || !isNaN(item));
+    let uniqueBans = [...new Set(banArr.map(Number))];
+
+    let text = `🚫 **Banned Users List (${uniqueBans.length}):**\n\n`;
+    
+    if (uniqueBans.length === 0) {
+        text += "💡 No users are currently banned.";
+    } else {
+        uniqueBans.forEach((uId, idx) => {
+            text += `${idx + 1}. User ID: \`${uId}\` 🚫\n`;
+        });
+    }
+
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback('🔓 Unban User', 'adm_prompt_input_unban')],
+        [Markup.button.callback('🔙 Back to Stats', 'adm_stats')]
+    ]);
+
+    ctx.editMessageText(text, keyboard);
+});
+
+// ৬. সাব অপশন: Unban করার জন্য আইডি ইনপুট প্রম্পট
+bot.action('adm_prompt_input_unban', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+
+    userSessions[ctx.chat.id] = { step: 'AWAITING_UNBAN_ID_INPUT' };
+    ctx.reply("🔓 Please write or paste the **User ID** you want to UNBAN:");
+});
+
+// ৭. সব লিঙ্কের লিস্ট দেখার বাটন (কমন ফাংশন রাউটার)
+const renderAllLinksList = (ctx) => {
+    let list = [];
+    Object.keys(linkDatabase).forEach(id => {
+        if (!id.startsWith('demo_')) {
+            const status = linkDatabase[id].isActive !== false ? "🟢" : "🔴";
+            list.push(`${status} ID: \`${id}\` | \`${linkDatabase[id].type.toUpperCase()}\` | Maker: ${linkDatabase[id].name}`);
+        }
+    });
+    
+    if (list.length === 0) {
+        return ctx.editMessageText("💡 No links generated in database yet.", Markup.inlineKeyboard([[Markup.button.callback('🔙 Back', 'adm_stats')]]));
+    }
+    
+    const text = `📋 **All Generated Links List:**\n\n${list.slice(0, 30).join('\n')}\n\n💡 To ban a link: /banlink [ID]\n🔍 To view details: /linkdetails [ID]`;
+    return text;
+};
+
+bot.action('adm_alllinks_main', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    ctx.editMessageText(renderAllLinksList(ctx), Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Dashboard', 'go_to_admin_dashboard')]]));
+});
+
+bot.action('adm_alllinks_stats', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    ctx.editMessageText(renderAllLinksList(ctx), Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Stats', 'adm_stats')]]));
+});
+
+// ৮. মেইনটেন্যান্স অন/অফ টগল বাটন
+bot.action('adm_toggle_maint', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    
+    isMaintenanceMode = !isMaintenanceMode;
+    ctx.reply(`⚙️ Maintenance Mode has been successfully turned **${isMaintenanceMode ? "ON 🚧 (Users Blocked)" : "OFF 🟢 (Users Allowed)"}**!`);
+    sendAdminDashboard(ctx, false);
+});
+
+// ৯. নিষ্ক্রিয় লিঙ্ক ক্লিন বাটন
+bot.action('adm_clean', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    
+    let count = 0;
+    Object.keys(linkDatabase).forEach(id => {
+        if (!id.startsWith('demo_') && linkDatabase[id].isActive === false) { delete linkDatabase[id]; count++; }
+    });
+    
+    ctx.reply(`🧼 Database cleared! Total \`${count}\` inactive/deactivated links have been permanently deleted.`);
+});
+
+// ১০. ডাটাবেজ ব্যাকআপ বাটন
+bot.action('adm_backup', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    
+    try {
+        const backupData = JSON.stringify(linkDatabase, null, 2);
+        fs.writeFileSync('backup.txt', backupData);
+        ctx.replyWithDocument({ source: fs.createReadStream('backup.txt'), filename: 'database_backup.txt' }, { caption: "💾 Current database backup file." });
+    } catch(e) { ctx.reply("❌ Error generating backup file."); }
+});
+
+// ১১. ব্রডকাস্ট মেসেজ প্রম্পট বাটন
+bot.action('adm_prompt_broadcast', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    
+    const userId = ctx.chat.id;
+    userSessions[userId] = { step: 'AWAITING_BROADCAST' };
+    ctx.reply("📢 Type and send your notification message that you want to broadcast to all users:");
+});
+
+// ১২. নিউক প্রম্পট বাটন
+bot.action('adm_prompt_nuke', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    
+    ctx.editMessageText("⚠️ **WARNING BOSS!** Are you sure you want to completely destroy all users' links from the database? This action cannot be undone.", 
+        Markup.inlineKeyboard([
+            [Markup.button.callback('💥 Yes, Delete Everything!', 'adm_confirm_nuke')],
+            [Markup.button.callback('❌ No, Cancel', 'go_to_admin_dashboard')]
+        ])
+    );
+});
+
+// ১৩. নিউক কনফার্মেশন বাটন
+bot.action('adm_confirm_nuke', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    
+    let count = 0;
+    for (let key in linkDatabase) {
+        if (!key.startsWith('demo_')) { delete linkDatabase[key]; count++; }
+    }
+    ctx.editMessageText(`🔥 **Operation Successful Boss!**\n\nTotal \`${count}\` user links have been successfully completely wiped from the database!`, Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Dashboard', 'go_to_admin_dashboard')]]));
+});
+
+// 🎯 ইউজার সাইড বাটন অপশনসমূহ
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText("✨ **Which category link do you want to create? Select below:**", 
@@ -123,7 +321,6 @@ bot.action('menu_makelink', (ctx) => {
     );
 });
 
-// 🎯 Demo সাব-মেনু
 bot.action('menu_demo', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText("👀 **Which demo page do you want to see? Select below:**", 
@@ -138,7 +335,6 @@ bot.action('menu_demo', (ctx) => {
     );
 });
 
-// 🎯 Help পেজ
 bot.action('menu_help', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText(`❓ **How to use?**\n\n1. First, click on the 🚀 **Make Link** button.\n2. Select your preferred category.\n3. Send the animation texts line by line and then send the final letter text as instructed.\n4. Copy the generated link and send it to your special person. You will get instant notifications when they open it!\n\n❌ Type /cancel to cancel any running session.`,
@@ -153,7 +349,6 @@ bot.action('menu_feedback', (ctx) => {
     ctx.reply("📝 Please send your feedback or suggestions here as a message.");
 });
 
-// 🎯 Stats পেজ
 bot.action('menu_stats', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id; 
@@ -177,7 +372,6 @@ bot.action('menu_stats', (ctx) => {
     ).catch(e => {});
 });
 
-// 🎯 Off লিঙ্ক সাব-মেনু
 bot.action('menu_off', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
@@ -225,120 +419,6 @@ bot.action(/^deactivate_/, (ctx) => {
     }
 });
 
-// 👑 ==================== ENGLISH ADMIN ACTIONS ==================== 👑
-
-// ১. /adm কম্যান্ড
-bot.command('adm', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
-    sendAdminDashboard(ctx, false);
-});
-
-// ২. বটের লাইভ স্ট্যাটাস বাটন
-bot.action('adm_stats', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    const totalUsers = registeredUsers.size;
-    let totalLinks = 0;
-    Object.keys(linkDatabase).forEach(id => { if(!id.startsWith('demo_')) totalLinks++; });
-    
-    const text = `📊 **Bot Live Statistics:**\n\n👥 Total Active Users: \`${totalUsers}\`\n🔗 Total Links Generated: \`${totalLinks}\`\n🚫 Total Banned Users: \`${bannedUsers.size}\`\n⚙️ Maintenance Mode: \`${isMaintenanceMode ? "ON 🚧" : "OFF 🟢"}\`\n\n💡 To check specific user info, type: /userinfo [User_ID]`;
-    
-    ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback('🔙 Back', 'go_to_admin_dashboard')]]));
-});
-
-// ৩. সব লিঙ্কের লিস্ট দেখার বাটন
-bot.action('adm_alllinks', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    let list = [];
-    Object.keys(linkDatabase).forEach(id => {
-        if (!id.startsWith('demo_')) {
-            const status = linkDatabase[id].isActive !== false ? "🟢" : "🔴";
-            list.push(`${status} ID: \`${id}\` | \`${linkDatabase[id].type.toUpperCase()}\` | Maker: ${linkDatabase[id].name}`);
-        }
-    });
-    
-    if (list.length === 0) {
-        return ctx.editMessageText("💡 No links generated in database yet.", Markup.inlineKeyboard([[Markup.button.callback('🔙 Back', 'go_to_admin_dashboard')]]));
-    }
-    
-    const text = `📋 **All Generated Links List:**\n\n${list.slice(0, 30).join('\n')}\n\n💡 To ban a link: /banlink [ID]\n🔍 To view details: /linkdetails [ID]`;
-    ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback('🔙 Back', 'go_to_admin_dashboard')]]));
-});
-
-// ৪. মেইনটেন্যান্স অন/অফ টগল বাটন (স্বয়ংক্রিয় স্ট্যাটাস সহ)
-bot.action('adm_toggle_maint', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    isMaintenanceMode = !isMaintenanceMode;
-    ctx.reply(`⚙️ Maintenance Mode has been successfully turned **${isMaintenanceMode ? "ON 🚧 (Users Blocked)" : "OFF 🟢 (Users Allowed)"}**!`);
-    sendAdminDashboard(ctx, false);
-});
-
-// ৫. নিষ্ক্রিয় লিঙ্ক ক্লিন বাটন
-bot.action('adm_clean', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    let count = 0;
-    Object.keys(linkDatabase).forEach(id => {
-        if (!id.startsWith('demo_') && linkDatabase[id].isActive === false) { delete linkDatabase[id]; count++; }
-    });
-    
-    ctx.reply(`🧼 Database cleared! Total \`${count}\` inactive/deactivated links have been permanently deleted.`);
-});
-
-// ৬. ডাটাবেজ ব্যাকআপ বাটন
-bot.action('adm_backup', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    try {
-        const backupData = JSON.stringify(linkDatabase, null, 2);
-        fs.writeFileSync('backup.txt', backupData);
-        ctx.replyWithDocument({ source: fs.createReadStream('backup.txt'), filename: 'database_backup.txt' }, { caption: "💾 Current database backup file." });
-    } catch(e) { ctx.reply("❌ Error generating backup file."); }
-});
-
-// ७. ব্রডকাস্ট মেসেজ প্রম্পট বাটন
-bot.action('adm_prompt_broadcast', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    const userId = ctx.chat.id;
-    userSessions[userId] = { step: 'AWAITING_BROADCAST' };
-    ctx.reply("📢 Type and send your notification message that you want to broadcast to all users:");
-});
-
-// ৮. নিউক প্রম্পট বাটন
-bot.action('adm_prompt_nuke', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    ctx.editMessageText("⚠️ **WARNING BOSS!** Are you sure you want to completely destroy all users' links from the database? This action cannot be undone.", 
-        Markup.inlineKeyboard([
-            [Markup.button.callback('💥 Yes, Delete Everything!', 'adm_confirm_nuke')],
-            [Markup.button.callback('❌ No, Cancel', 'go_to_admin_dashboard')]
-        ])
-    );
-});
-
-// ৯. নিউক কনফার্মেশন বাটন
-bot.action('adm_confirm_nuke', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    let count = 0;
-    for (let key in linkDatabase) {
-        if (!key.startsWith('demo_')) { delete linkDatabase[key]; count++; }
-    }
-    ctx.editMessageText(`🔥 **Operation Successful Boss!**\n\nTotal \`${count}\` user links have been successfully completely wiped from the database!`, Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Dashboard', 'go_to_admin_dashboard')]]));
-});
-
-// 🎯 লিঙ্ক বানানোর সেশন শুরুর হ্যান্ডলার
 bot.action(/^startmake_/, (ctx) => {
     ctx.answerCbQuery();
     const type = ctx.match.input.replace('startmake_', '');
@@ -366,7 +446,6 @@ bot.action(/^startmake_/, (ctx) => {
     ctx.reply(msgText);
 });
 
-// 🎯 ডেমো বাটন হ্যান্ডলার
 bot.action(/^demo_/, (ctx) => {
     const selectedType = ctx.match.input.replace('demo_', '');
     const demoUrl = `${SERVER_URL}/love/demo_${selectedType}`;
@@ -374,11 +453,11 @@ bot.action(/^demo_/, (ctx) => {
     ctx.reply(`✨ **Your requested demo link has been generated!**\n\n🏷️ Category: \`${selectedType.toUpperCase()}\`\n🔗 Demo Link: ${demoUrl}\n\n💖 To make one with your custom texts, use 🚀 **Make Link** from main menu!`);
 });
 
-// 🎯 টেক্সট ইনপুট প্রসেসিং
+// 🎯 টেক্সট ইনপুট প্রসেসিং (মেইন রাউটার)
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id; const session = userSessions[userId]; const text = ctx.message.text;
     
-    // অ্যাডমিন কম্যান্ড (সেশনের উর্ধ্বে যেকোনো সময় রান করবে)
+    // অ্যাডমিন ইনস্ট্যান্ট টেক্সট কম্যান্ডস (স্ল্যাশ কম্যান্ডস)
     if (String(userId) === String(ADMIN_CHAT_ID)) {
         if (text.startsWith('/userinfo')) {
             const targetUid = text.replace('/userinfo', '').trim();
@@ -416,6 +495,38 @@ bot.on('text', (ctx) => {
     }
 
     if (!session) return; 
+
+    // 🎯 বাটন ট্রিপের মাধ্যমে ইউজার ব্যান করার রিয়েল-টাইম লজিক
+    if (session.step === 'AWAITING_BAN_ID_INPUT' && String(userId) === String(ADMIN_CHAT_ID)) {
+        const targetUid = text.trim();
+        if (!targetUid || String(targetUid) === String(ADMIN_CHAT_ID)) {
+            delete userSessions[userId];
+            return ctx.reply("❌ Invalid User ID or you tried to ban yourself!");
+        }
+        
+        bannedUsers.add(Number(targetUid)); 
+        bannedUsers.add(targetUid);
+        
+        ctx.reply(`✅ **Success!** User ID \`${targetUid}\` has been successfully banned from the bot.`);
+        delete userSessions[userId];
+        return;
+    }
+
+    // 🎯 বাটন ট্রিপের মাধ্যমে ইউজার আনব্যান করার রিয়েল-টাইম লজিক
+    if (session.step === 'AWAITING_UNBAN_ID_INPUT' && String(userId) === String(ADMIN_CHAT_ID)) {
+        const targetUid = text.trim();
+        if (!targetUid) {
+            delete userSessions[userId];
+            return ctx.reply("❌ Invalid User ID!");
+        }
+        
+        bannedUsers.delete(Number(targetUid));
+        bannedUsers.delete(targetUid);
+        
+        ctx.reply(`🔓 **Success!** User ID \`${targetUid}\` has been successfully unbanned and can now use the bot.`);
+        delete userSessions[userId];
+        return;
+    }
 
     // ব্রডকাস্ট প্রসেসিং
     if (session.step === 'AWAITING_BROADCAST' && String(userId) === String(ADMIN_CHAT_ID)) {
@@ -505,7 +616,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server live on port ${PORT}`);
     bot.launch()
-        .then(() => console.log("Telegram Bot successfully started with English Admin Dashboard & Strict Maintenance Mode! 🚀"))
+        .then(() => console.log("Telegram Bot successfully started with Full Admin Suite! 🚀"))
         .catch(e => console.error("Bot launch error:", e));
 });
 
