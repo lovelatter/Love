@@ -54,6 +54,12 @@ app.post('/api/respond', (req, res) => {
 // Render সার্ভারকে পোর্ট দেওয়া
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
+// সার্ভারকে ২৪ ঘণ্টা জাগিয়ে রাখার জন্য সেলফ-পিং কোড
+setInterval(() => {
+    axios.get(`${SERVER_URL}/love/ping_test`)
+        .then(() => console.log("Server pinged to keep alive!"))
+        .catch((e) => console.log("Ping failed, but server is awake."));
+}, 280000); // প্রতি ৪.৬ মিনিটে একবার পিং করবে
 
 // প্রোসেস বন্ধ হলে বট সেফলি বন্ধ করার কোড
 process.once('SIGINT', () => bot.stop('SIGINT'));
