@@ -110,9 +110,11 @@ bot.action('go_to_admin_dashboard', (ctx) => {
 
 // 👑 ==================== COMPLETE ADMIN MODULE ==================== 👑
 
-// ১. /adm কম্যান্ড
+// ১. /adm কম্যান্ড (ইউজার রেস্ট্রিকশনসহ)
 bot.command('adm', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) {
+        return ctx.reply("⚠️ **Access Denied!** This command is strictly reserved for the **Bot Admin** only.");
+    }
     sendAdminDashboard(ctx, false);
 });
 
@@ -217,7 +219,7 @@ const renderAllLinksList = (ctx) => {
     });
     
     if (list.length === 0) {
-        return ctx.editMessageText("💡 No links generated in database yet.", Markup.inlineKeyboard([[Markup.button.callback('🔙 Back', 'adm_stats')]]));
+        return "💡 No links generated in database yet.";
     }
     
     const text = `📋 **All Generated Links List:**\n\n${list.slice(0, 30).join('\n')}\n\n💡 To ban a link: /banlink [ID]\n🔍 To view details: /linkdetails [ID]`;
@@ -491,6 +493,18 @@ bot.on('text', (ctx) => {
             if (!targetUid) return ctx.reply("❌ Invalid User ID!");
             bannedUsers.delete(Number(targetUid)); bannedUsers.delete(targetUid);
             return ctx.reply(`🔓 User \`${targetUid}\` has been unbanned.`);
+        }
+    }
+
+    // ❌ ভুল বা অজানা কম্যান্ড চেক হ্যান্ডলার (যদি কোনো সেশন রানিং না থাকে এবং ইউজার '/' দিয়ে কিছু লেখে)
+    if (!session && text.startsWith('/')) {
+        if (text !== '/start' && text !== '/cancel') {
+            const wrongCommand = text.split(' ')[0];
+            const helpKeyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('❓ Open Help Menu', 'menu_help')],
+                [Markup.button.callback('🔙 Back to Main Menu', 'go_to_main_menu')]
+            ]);
+            return ctx.reply(`❌ **Invalid Command:** \`${wrongCommand}\` is not recognized by this bot!\n\nPlease use the buttons below or standard commands to proceed.`, helpKeyboard);
         }
     }
 
