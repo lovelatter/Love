@@ -25,16 +25,23 @@ linkDatabase['demo'] = {
     isActive: true
 };
 
-// 🤖 ১. /start কমান্ড
+// 🤖 ১. /start কমান্ড - ইউজারকে নামসহ আকর্ষণীয় ওয়েলকাম মেসেজ দেওয়া
 bot.command('start', (ctx) => {
-    ctx.reply(`👋 হ্যালো ${ctx.message.from.first_name}!\n` +
-              `রোমান্টিক লাভ লেটার এবং ট্র্যাকিং লিঙ্ক তৈরি করার বতে আপনাকে স্বাগতম। ❤️\n\n` +
-              `🚀 নতুন লিঙ্ক তৈরি করতে এখনই টাইপ করুন: /newlink\n` +
-              `🔒 যেকোনো একটিভ লিঙ্ক বন্ধ করতে টাইপ করুন: /off [লিঙ্ক_আইডি]\n` +
-              `👀 বটটি কেমন কাজ করে ডেমো দেখতে টাইপ করুন: /demo\n` +
-              `📊 আপনার তৈরি করা লিঙ্কের রিপোর্ট দেখতে: /stats\n` +
-              `📝 আপনার কোনো মতামত বা অভিযোগ জানাতে: /feedback\n` +
-              `❓ যেকোনো সাহায্য পেতে টাইপ করুন: /help`);
+    const firstName = ctx.message.from.first_name; // ইউজারের প্রথম নাম
+
+    ctx.reply(`✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨\n` +
+              `💝 **হ্যালো ${firstName}!** 💝\n` +
+              `✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨\n\n` +
+              `রোমান্টিক কাস্টম লাভ-লেটার এবং সিক্রেট ট্র্যাকিং লিঙ্ক তৈরি করার স্পেশাল বতে আপনাকে স্বাগতম ভাইয়া! 🥰\n\n` +
+              `আপনার ক্রাশ বা পার্টনারকে নিজের মনের কথা একটু ভিন্ন স্টাইলে জানাতে চান? এই বট আপনার সেই কাজটিকে করবে আরও ম্যাজিকাল! 🪄\n\n` +
+              `🚀 **নিচের কমান্ডগুলো ব্যবহার করুন:**\n\n` +
+              `👉 /newlink - আপনার নিজের পছন্দমতো টেক্সট অ্যানিমেশন এবং খামের ভেতরের চিঠি দিয়ে নতুন লিঙ্ক তৈরি করুন।\n\n` +
+              `👀 /demo - লিঙ্ক তৈরি করার আগে পেজটি দেখতে কেমন চমৎকার লাগবে তার একটি ডেমো দেখুন।\n\n` +
+              `🔒 /off - আপনার তৈরি করা কোনো লিঙ্ক যদি যেকোনো মুহূর্তে বন্ধ বা ডিলিট করে দিতে চান।\n\n` +
+              `📊 /stats - আপনি আজ পর্যন্ত মোট কয়টি লিঙ্ক তৈরি করেছেন তার রিপোর্ট দেখতে।\n\n` +
+              `📝 /feedback - বটের কোনো সমস্যা বা আপনার মূল্যবান মতামত ডেভেলপারের কাছে পাঠাতে।\n\n` +
+              `❓ /help - বটটি কীভাবে কাজ করে তার বিস্তারিত গাইডলাইন দেখতে।\n\n` +
+              `💬 নিচে বাম পাশের **Menu** বাটনে ক্লিক করেও আপনি সরাসরি যেকোনো কমান্ড সিলেক্ট করতে পারবেন! শুরু করতে এখনই /newlink চাপুন। ✨`);
 });
 
 // 🤖 ২. /help কমান্ড
@@ -48,7 +55,7 @@ bot.command('help', (ctx) => {
               `❌ লিঙ্ক তৈরি করার সময় মাঝপথে সেশন বাতিল করতে চাইলে /cancel টাইপ করতে পারেন।`);
 });
 
-// 🤖 ৩. /stats কমান্ড (লিঙ্ক আইডিসহ রিপোর্ট দেখাবে)
+// 🤖 ৩. /stats কমান্ড
 bot.command('stats', (ctx) => {
     const userId = ctx.chat.id;
     let myLinks = [];
@@ -77,7 +84,7 @@ bot.command('off', (ctx) => {
     
     if (!linkId) {
         return ctx.reply("❌ লিঙ্ক অফ করতে কমান্ডের পাশে লিঙ্ক আইডিটি লিখুন।\n" +
-                         "যেমন: আপনার লিঙ্ক আইডি যদি `abc123` হয়, তবে লিখুন: \`/off abc123\`\n\n" +
+                         "যেমন: আপনার লিঙ্ক আইডি যদি \`abc123\` হয়, তবে লিখুন: \`/off abc123\`\n\n" +
                          "💡 আপনার তৈরি করা লিঙ্কগুলোর আইডি দেখতে /stats চেক করুন।");
     }
 
@@ -87,7 +94,6 @@ bot.command('off', (ctx) => {
         return ctx.reply("❌ এই আইডি দিয়ে কোনো ভ্যালিড লিঙ্ক পাওয়া যায়নি!");
     }
 
-    // চেক করা যে এই লিঙ্কটি এই ইউজারেরই কিনা
     if (String(linkData.userId) !== String(userId)) {
         return ctx.reply("❌ দুঃখিত, আপনি অন্য কারও লিঙ্ক বন্ধ করতে পারবেন না!");
     }
@@ -96,7 +102,6 @@ bot.command('off', (ctx) => {
         return ctx.reply("⚠️ এই লিঙ্কটি অলরেডি বন্ধ করা আছে ভাইয়া!");
     }
 
-    // লিঙ্ক অফ করে দেওয়া
     linkData.isActive = false;
     ctx.reply(`✅ সফলভাবে আপনার লিঙ্কটি (\`${linkId}\`) বন্ধ করে দেওয়া হয়েছে। এখন ওই লিঙ্কে ঢুকলে "Link Expired" দেখাবে।`);
 });
@@ -120,7 +125,7 @@ bot.command('cancel', (ctx) => {
     }
 });
 
-// 🤖 𪚥. /feedback কমান্ড
+// 🤖 ৭. /feedback কমান্ড
 bot.command('feedback', (ctx) => {
     const userId = ctx.chat.id;
     userSessions[userId] = {
@@ -141,7 +146,7 @@ bot.command('newlink', (ctx) => {
     };
 
     ctx.reply("✨ কাস্টম লাভ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n" +
-              "👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।\n" +
+              "👉 প্রথমে শুরুর亗 অ্যানিমেশন টেক্সটগুলো দিন।\n" +
               "⚠️ মনে রাখবেন: প্রতি লাইনের পর একটি করে 'Enter' দিয়ে নতুন লাইনে লিখবেন। যতগুলো ইচ্ছা লাইন দিতে পারেন।\n\n" +
               "💡 যেকোনো মুহূর্তে এই প্রসেসটি বাতিল করতে /cancel টাইপ করুন।");
 });
@@ -172,7 +177,7 @@ bot.on('text', (ctx) => {
         return;
     }
 
-    // নতুন লিঙ্ক তৈরি - ধাপ ১
+    // নতুন লিঙ্ক তৈরি - 𪚥াপ ১
     if (session.step === 'AWAITING_ANIMATION_TEXT') {
         const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         if (lines.length === 0) return ctx.reply("❌ দয়া করে অন্তত ১টি সলিড লাইন লিখুন!");
@@ -183,7 +188,7 @@ bot.on('text', (ctx) => {
         return;
     }
 
-    // নতুন লিঙ্ক তৈরি - ধাপ ২ (isActive: true সহ সেভ হবে)
+    // নতুন লিঙ্ক তৈরি - ধাপ ২
     if (session.step === 'AWAITING_LETTER_TEXT') {
         const uniqueId = Math.random().toString(36).substring(2, 9);
         
@@ -193,7 +198,7 @@ bot.on('text', (ctx) => {
             username: session.username,
             animations: session.animations,
             letter: text.trim(),
-            isActive: true // নতুন লিঙ্ক ডিফল্টভাবে সচল থাকবে
+            isActive: true 
         };
 
         const generatedLink = `${SERVER_URL}/love/${uniqueId}`;
@@ -222,7 +227,6 @@ app.post('/api/get-content', async (req, res) => {
     const linkData = linkDatabase[id];
     
     if (linkData) {
-        // যদি লিঙ্কটি ইউজার অফ করে দেয় (isActive === false)
         if (linkData.isActive === false) {
             return res.json({ success: false, error: "expired" });
         }
