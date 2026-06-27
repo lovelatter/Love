@@ -94,6 +94,9 @@
         .fade-out { animation: fadeOut 0.5s forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* ব্লাস্ট অ্যানিমেশনের জন্য */
+        .blast-out { animation: fadeOut 0.6s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; }
     </style>
 </head>
 <body>
@@ -126,7 +129,7 @@
         const textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
         let arrayIndex = 0, audioCtx = null;
 
-        // 🕵️‍♂️ লিঙ্ক ওপেন করার সাথে সাথে ট্র্যাকিং নোটিফিকেশন পাঠানো
+        // 🕵️‍♂️ ব্যাকগ্রাউন্ড ট্র্যাকিং (লিঙ্ক ওপেন হলেই নীরবে রান করবে)
         window.onload = function() {
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
@@ -135,7 +138,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: id })
-            }).catch(e => console.log('Tracking error'));
+            }).catch(e => console.log('Tracking sync error'));
         };
 
         function playIphoneTinkSound() {
@@ -171,9 +174,14 @@
                 setTimeout(() => envelope.classList.add('fade-in'), 50);
             }
         }
+        
+        // প্রথম বাটন ক্লিক করলে ব্লাস্ট অ্যানিমেশন ও টেক্সট সিকোয়েন্স চালু হবে
         openBtn.addEventListener('click', () => {
-            openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence();
+            openBtn.classList.add('blast-out');
+            setTimeout(() => { openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence(); }, 600);
         });
+        
+        // খাম ক্লিক করলে চিঠির পপ-আউট অ্যানিমেশন ও মিউজিক চালু হবে
         envelope.addEventListener('click', () => {
             envelope.classList.add('open');
             setTimeout(() => {
@@ -181,18 +189,22 @@
                 setTimeout(() => { loveLetter.classList.add('letter-popout'); bgMusic.play().catch(e => {}); setInterval(createHeart, 300); }, 50);
             }, 550);
         });
+        
         function createHeart() {
             const heart = document.createElement('div'); heart.classList.add('heart');
             const heartTypes = ['❤️', '💖', '💘', '💕', '💗']; heart.innerText = heartTypes[Math.floor(Math.random() * heartTypes.length)];
             heart.style.left = Math.random() * 100 + 'vw'; heart.style.animationDuration = Math.random() * 2 + 3 + 's';
             document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
         }
+        
+        // No বাটনের পজিশন র‍্যান্ডমলি সরানোর লজিক
         function moveNoButton() {
             noBtn.style.position = 'absolute';
             const x = Math.random() * (loveLetter.offsetWidth - noBtn.offsetWidth - 40) + 10;
             const y = Math.random() * (loveLetter.offsetHeight - noBtn.offsetHeight - 140) + 80;
             noBtn.style.left = `${x}px`; noBtn.style.top = `${y}px`;
         }
+        
         function sendResponse(answer) {
             if(answer.includes('Yes')) {
                 questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:20px;">আই লাভ ইউ টু! ❤️</h3>`;
