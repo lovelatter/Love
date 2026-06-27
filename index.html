@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Love Letter...</title>
+    <title>Special Wish For You...</title>
     <style>
-        /* সমস্ত CSS স্টাইল এখানে হুবহু অপরিবর্তিত রাখা হয়েছে */
         * { margin:0; padding:0; box-sizing:border-box; }
         body, html { width:100%; height:100%; overflow:hidden; background-color:#000; font-family:'Arial',sans-serif; display:flex; justify-content:center; align-items:center; color:#fff; user-select:none; flex-direction:column; }
+        
         #openBtn { font-size:2rem; color:#fff; background:linear-gradient(45deg, #ff4d6d, #ff758f); border:none; padding:16px 40px; border-radius:50px; cursor:pointer; z-index:20; position:relative; transition:transform 0.2s ease; }
         #openBtn::before { content:''; position:absolute; top:-4px; left:-4px; right:-4px; bottom:-4px; border-radius:50px; background:linear-gradient(45deg, #ff4d6d, #ff758f, #ff85a2, #ff4d6d); background-size:400%; z-index:-1; filter:blur(15px); animation:streamingLight 3s linear infinite; }
         @keyframes streamingLight { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+        
         .blast-out { animation:blastAway 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards !important; pointer-events:none; }
         @keyframes blastAway { 0% { transform:scale(1); opacity:1; filter:blur(0px); } 100% { transform:scale(3); opacity:0; filter:blur(10px); } }
+        
         .text-container { position:absolute; text-align:center; font-size:2.5rem; font-weight:bold; width:90%; max-width:600px; opacity:0; transform:scale(0.95); transition:opacity 0.5s ease, transform 0.5s ease; }
         .text-container::after { content:'|'; animation:blinkCursor 0.6s infinite; color:#ff4d6d; }
         @keyframes blinkCursor { 0%, 100% { opacity:0; } 50% { opacity:1; } }
+        
         .envelope-container { display:none; position:relative; width:320px; height:220px; background-color:#d93654; border-radius:0 0 10px 10px; box-shadow:0 30px 50px rgba(0,0,0,0.6); cursor:pointer; z-index:10; opacity:0; transform:scale(0.8); transition:all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); perspective:1000px; }
         .envelope-flap { position:absolute; top:0; left:0; width:0; height:0; border-left:160px solid transparent; border-right:160px solid transparent; border-top:120px solid #ff4d6d; transform-origin:top; transition:transform 0.6s ease-in-out; z-index:5; filter:drop-shadow(0 4px 5px rgba(0,0,0,0.2)); }
         .envelope-pockets { position:absolute; bottom:0; left:0; width:100%; height:100%; z-index:4; overflow:hidden; border-radius:0 0 10px 10px; }
@@ -25,6 +28,7 @@
         .envelope-label { position:absolute; top:130px; left:50%; transform:translateX(-50%); background:#fff; color:#ff4d6d; padding:8px 20px; font-size:1.1rem; font-weight:bold; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:6; white-space:nowrap; transition:all 0.4s ease; }
         .envelope-heart { position:absolute; top:75px; left:50%; transform:translate(-50%, -50%); font-size:2.2rem; z-index:6; transition:all 0.4s ease; animation:pulseHeart 1.5s infinite; }
         @keyframes pulseHeart { 0%, 100% { transform:translate(-50%, -50%) scale(1); } 50% { transform:translate(-50%, -50%) scale(1.15); } }
+        
         .envelope-container.open .envelope-flap { transform:rotateX(180deg); z-index:1; border-top-color:#ff5c7a; }
         .envelope-container.open .envelope-heart, .envelope-container.open .envelope-label { opacity:0; transform:translate(-50%, -50%) scale(0) !important; }
         
@@ -36,38 +40,43 @@
         .question-box { border-top:1px dashed #ff758f; padding-top:15px; margin-top:10px; }
         .question-box h3 { font-size:1.3rem; color:#ff4d6d; margin-bottom:12px; }
         
-        .btn-group { display:flex; justify-content:center; align-items:center; gap:25px; min-height: 60px; position: relative; margin-top: 10px; }
-        .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height: 42px; }
-        .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index: 5; }
+        .btn-group { display:flex; justify-content:center; align-items:center; gap:25px; min-height:60px; position:relative; margin-top:10px; }
+        .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height:42px; }
+        .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index:5; }
         .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
-        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
+        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index:5; }
         
-        .heart { position:absolute; color:#ff4d6d; font-size:20px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; }
-        @keyframes floatUp { 0% { transform:translateY(100vh) scale(0); opacity:0; } 10% { opacity:0.8; } 90% { opacity:0.8; } 100% { transform:translateY(-10vh) scale(1.5); opacity:0; } }
+        .floating-emoji { position:absolute; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index:100; font-size:25px; }
+        @keyframes floatUp { 
+            0% { transform:translateY(100vh) scale(0) rotate(0deg); opacity:0; } 
+            10% { opacity:0.8; } 
+            90% { opacity:0.8; } 
+            100% { transform:translateY(-10vh) scale(1.5) rotate(360deg); opacity:0; } 
+        }
         .fade-in { opacity:1 !important; transform:scale(1) !important; transition:all 0.8s ease; }
     </style>
 </head>
 <body>
     <audio id="bgMusic" src="https://cdn.jsdelivr.net/gh/lovelatter/Love@main/music.mp3" loop preload="auto"></audio>
-    
     <button id="openBtn">Open ❤️</button>
     <div id="textDisplay" class="text-container"></div>
+    
     <div id="envelope" class="envelope-container">
         <div class="envelope-flap"></div>
         <div class="envelope-pockets"></div>
         <div class="envelope-bottom"></div>
-        <div class="envelope-heart">💝</div>
+        <div class="envelope-heart" id="envelopeEmoji">💝</div>
         <div class="envelope-label">খাম খুলুন</div>
     </div>
     
     <div id="loveLetter" class="love-letter">
-        <h2 id="letterTitle">আমার হৃদয়ের কথা...</h2>
+        <h2 id="letterTitle">আপনার জন্য বার্তা...</h2>
         <p id="letterContent">লোডিং...</p>
         
         <div class="question-box" id="questionBox">
-            <h3>Do you love me? 🥺</h3>
+            <h3 id="questionText">Do you love me? 🥺</h3>
             <div class="btn-group">
-                <button class="ask-btn btn-yes" onclick="sendResponse('Yes! I Love You Too ❤️')">Yes</button>
+                <button class="ask-btn btn-yes" onclick="sendResponse('Yes! ❤️')">Yes</button>
                 <button class="ask-btn btn-no" id="noBtn" onmouseover="moveNoButton()" onclick="sendResponse('No 💔')">No</button>
             </div>
         </div>
@@ -76,8 +85,9 @@
     <script>
         const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), noBtn = document.getElementById('noBtn'), questionBox = document.getElementById('questionBox');
         
-        let textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
+        let textArray = [];
         let arrayIndex = 0, audioCtx = null;
+        let currentEmoji = '❤️'; 
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
@@ -92,8 +102,47 @@
                 const data = await response.json();
                 
                 if(data.success) {
-                    if(data.animations && data.animations.length > 0) textArray = data.animations;
-                    if(data.letter) document.getElementById('letterContent').innerText = data.letter;
+                    textArray = data.animations;
+                    document.getElementById('letterContent').innerText = data.letter;
+                    
+                    // 🎯 অল-ইন-ওয়ান ক্যাটাগরি ও অটো ইমোজি অ্যানিমেশন কন্ডিশনাল ম্যাপিং
+                    if (data.type === 'birthday') {
+                        currentEmoji = '🎈'; document.getElementById('letterTitle').innerText = "Happy Birthday! 🎂";
+                        document.getElementById('questionText').innerText = "Are you happy? 🎂";
+                        document.getElementById('envelopeEmoji').innerText = "🎂"; openBtn.innerText = "Open 🎂";
+                    } else if (data.type === 'anniversary') {
+                        currentEmoji = '💍'; document.getElementById('letterTitle').innerText = "Happy Anniversary! 💍";
+                        document.getElementById('questionText').innerText = "Are you happy with me? 💍";
+                        document.getElementById('envelopeEmoji').innerText = "💍"; openBtn.innerText = "Open 💍";
+                    } else if (data.type === 'crush') {
+                        currentEmoji = '💖'; document.getElementById('letterTitle').innerText = "Crush Confession... 💖";
+                        document.getElementById('questionText').innerText = "Do you love me? 🥺";
+                        document.getElementById('envelopeEmoji').innerText = "💖"; openBtn.innerText = "Open 💖";
+                    } else if (data.type === 'newyear') {
+                        currentEmoji = '🎉'; document.getElementById('letterTitle').innerText = "Happy New Year! ✨";
+                        document.getElementById('questionText').innerText = "Are you excited for this year? 🤩";
+                        document.getElementById('envelopeEmoji').innerText = "🎉"; openBtn.innerText = "Open 🎉";
+                    } else if (data.type === 'boishakh') {
+                        currentEmoji = '🌾'; document.getElementById('letterTitle').innerText = "এসো হে বৈশাখ! 🥁";
+                        document.getElementById('questionText').innerText = "শুভ নববর্ষ! উৎসবটি কেমন কাটছে? 🥁";
+                        document.getElementById('envelopeEmoji').innerText = "🌾"; openBtn.innerText = "Open 🌾";
+                    } else if (data.type === 'friend') {
+                        currentEmoji = '🫂'; document.getElementById('letterTitle').innerText = "To My Best Friend! 🫂";
+                        document.getElementById('questionText').innerText = "Am I your best friend? 🤝";
+                        document.getElementById('envelopeEmoji').innerText = "🤝"; openBtn.innerText = "Open 🫂";
+                    } else if (data.type === 'eid') {
+                        currentEmoji = '🌙'; document.getElementById('letterTitle').innerText = "ঈদ মোবারক! 🌙";
+                        document.getElementById('questionText').innerText = "ঈদ মোবারক! সেমাই খাওয়াচ্ছো কবে? 😋";
+                        document.getElementById('envelopeEmoji').innerText = "🌙"; openBtn.innerText = "Open 🌙";
+                    } else if (data.type === 'sorry') {
+                        currentEmoji = '🥺'; document.getElementById('letterTitle').innerText = "I am Sorry... 🥺";
+                        document.getElementById('questionText').innerText = "Will you forgive me? 🙏";
+                        document.getElementById('envelopeEmoji').innerText = "💧"; openBtn.innerText = "Open 🥺";
+                    } else {
+                        currentEmoji = '❤️'; document.getElementById('letterTitle').innerText = "আমার হৃদয়ের কথা... ❤️";
+                        document.getElementById('questionText').innerText = "Do you love me? 🥺";
+                        document.getElementById('envelopeEmoji').innerText = "💝"; openBtn.innerText = "Open ❤️";
+                    }
                 } else {
                     document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
@@ -104,8 +153,7 @@
             try {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') audioCtx.resume();
-                const now = audioCtx.currentTime, osc1 = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator(), gainNode = audioCtx.createGain(), filter = document.getElementById('noBtn') ? audioCtx.createBiquadFilter() : null;
-                if(!filter) return;
+                const now = audioCtx.currentTime, osc1 = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator(), gainNode = audioCtx.createGain(), filter = audioCtx.createBiquadFilter();
                 osc1.type = 'sine'; osc1.frequency.setValueAtTime(1800, now); osc1.frequency.exponentialRampToValueAtTime(1200, now + 0.01);
                 osc2.type = 'triangle'; osc2.frequency.setValueAtTime(300, now); osc2.frequency.exponentialRampToValueAtTime(80, now + 0.015);
                 filter.type = 'lowpass'; filter.frequency.setValueAtTime(2500, now);
@@ -137,61 +185,37 @@
             }
         }
         
-        // ১. মেইন বাটনে ক্লিকের সাথে সাথে অডিও চ্যানেল আনলক করে মিউট অবস্থায় ব্যাকগ্রাউন্ডে প্লে করা হলো
         openBtn.addEventListener('click', () => {
-            openBtn.classList.add('blast-out');
-            
-            // ব্রাউজার সিকিউরিটি আনলক ট্রিক
-            bgMusic.volume = 0;
-            bgMusic.muted = true;
-            bgMusic.play().then(() => {
-                bgMusic.muted = false;
-                bgMusic.volume = 0.001; // একদম জিরোর কাছাকাছি সাউন্ড, যা শোনা যাবে না
-            }).catch(e => console.log("Audio unlock retry"));
-
+            openBtn.classList.add('blast-out'); bgMusic.volume = 0; bgMusic.muted = true;
+            bgMusic.play().then(() => { bgMusic.muted = false; bgMusic.volume = 0.001; }).catch(e => console.log("Audio unlock retry"));
             setTimeout(() => { openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence(); }, 800);
         });
         
-        // ২. খাম খোলার পর গান রিস্টার্ট হয়ে ফুল ভলিউমে বাজবে 🎵
         envelope.addEventListener('click', () => {
-            envelope.classList.add('open');
-            
-            // ইউজার যখনই খাম খুলবে, মিউজিক শুরু থেকে ফুল সাউন্ডে রানিং হবে
-            bgMusic.currentTime = 0;
-            bgMusic.volume = 1.0;
-            bgMusic.play().catch(e => console.log("Final play blocked"));
-
+            envelope.classList.add('open'); bgMusic.currentTime = 0; bgMusic.volume = 1.0; bgMusic.play().catch(e => console.log("Final play blocked"));
             setTimeout(() => {
                 loveLetter.style.display = 'block';
-                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(createHeart, 300); }, 50);
+                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(createFloatingAnimation, 300); }, 50);
             }, 550);
         });
         
-        function createHeart() {
-            const heart = document.createElement('div'); heart.classList.add('heart');
-            const heartTypes = ['❤️', '💖', '💘', '💕', '💗']; heart.innerText = heartTypes[Math.floor(Math.random() * heartTypes.length)];
-            heart.style.left = Math.random() * 100 + 'vw'; heart.style.animationDuration = Math.random() * 2 + 3 + 's';
-            document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
+        function createFloatingAnimation() {
+            const element = document.createElement('div'); element.classList.add('floating-emoji');
+            element.innerText = currentEmoji; element.style.left = Math.random() * 100 + 'vw'; 
+            element.style.animationDuration = Math.random() * 2 + 3 + 's';
+            document.body.appendChild(element); setTimeout(() => { element.remove(); }, 5000);
         }
 
         function moveNoButton() {
             noBtn.style.position = 'absolute';
             const x = Math.random() * (loveLetter.offsetWidth - noBtn.offsetWidth - 40) + 10;
             const y = Math.random() * (loveLetter.offsetHeight - noBtn.offsetHeight - 180) + 120;
-            noBtn.style.left = `${x}px`;
-            noBtn.style.top = `${y}px`;
+            noBtn.style.left = `${x}px`; noBtn.style.top = `${y}px`;
         }
 
         function sendResponse(answer) {
-            if(answer.includes('Yes')) {
-                questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">আই লাভ ইউ টু! ❤️</h3>`;
-            } else {
-                questionBox.innerHTML = `<h3 style="color:#e74c3c; font-size:1.3rem; margin-top:10px;">ওহ আচ্ছা... 💔</h3>`;
-            }
-
-            const pathParts = window.location.pathname.split('/');
-            const id = pathParts[pathParts.length - 1];
-
+            questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">রেসপন্স সফলভাবে পাঠানো হয়েছে! ✨</h3>`;
+            const pathParts = window.location.pathname.split('/'); const id = pathParts[pathParts.length - 1];
             fetch('/api/respond', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
