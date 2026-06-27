@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Love Letter...</title>
     <style>
+        /* আপনার আগের সমস্ত CSS স্টাইল এখানে হুবহু থাকবে */
         * { margin:0; padding:0; box-sizing:border-box; }
         body, html { width:100%; height:100%; overflow:hidden; background-color:#000; font-family:'Arial',sans-serif; display:flex; justify-content:center; align-items:center; color:#fff; user-select:none; flex-direction:column; }
         #openBtn { font-size:2rem; color:#fff; background:linear-gradient(45deg, #ff4d6d, #ff758f); border:none; padding:16px 40px; border-radius:50px; cursor:pointer; z-index:20; position:relative; transition:transform 0.2s ease; }
@@ -74,11 +75,10 @@
     <script>
         const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), noBtn = document.getElementById('noBtn'), questionBox = document.getElementById('questionBox');
         
-        // ডিফল্ট টেক্সট (যদি কোনো কারণে ব্যাকএন্ড থেকে না আসে)
         let textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
         let arrayIndex = 0, audioCtx = null;
 
-        // 🕵️‍♂️ লিঙ্ক ওপেন হওয়ার সাথে সাথেই ব্যাকএন্ড থেকে ডেটা নিয়ে আসবে এবং ট্র্যাকিং নোটিফিকেশন পাঠাবে
+        // 🕵️‍♂️ লিঙ্ক অ্যাক্টিভ আছে কিনা তা রিকোয়েস্ট করে চেক করা
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
@@ -90,9 +90,13 @@
                     body: JSON.stringify({ id: id })
                 });
                 const data = await response.json();
+                
                 if(data.success) {
                     if(data.animations && data.animations.length > 0) textArray = data.animations;
                     if(data.letter) document.getElementById('letterContent').innerText = data.letter;
+                } else {
+                    // লিঙ্কটি অফ বা ইনভ্যালিড হলে স্ক্রিন লক হয়ে যাবে 🔒
+                    document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
             } catch(e) { console.log('Content fetch error'); }
         });
