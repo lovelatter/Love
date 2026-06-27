@@ -45,52 +45,74 @@ bot.use((ctx, next) => {
     return next();
 });
 
-// ১. 🎯 স্টার্ট কম্যান্ডের মূল বাটন মেনু
+// 🔄 মূল মেনু মেসেজ জেনারেট করার ফাংশন (যাতে কোড ডুপ্লিকেট না হয়)
+function sendMainMenu(ctx, isEdit = false) {
+    const firstName = ctx.from.first_name;
+    const text = `💝 **হ্যালো ${firstName}!** 💝\n\n` +
+                 `All-in-One Wishing & Confession বটের মূল মেনুতে আপনাকে স্বাগতম। নিচে আপনার প্রয়োজনীয় অপশনটি বেছে নিন:`;
+    
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback('🚀 Make Link', 'menu_makelink'), Markup.button.callback('👀 Demo', 'menu_demo')],
+        [Markup.button.callback('📊 Stats', 'menu_stats'), Markup.button.callback('🔒 Off Link', 'menu_off')],
+        [Markup.button.callback('📝 Feedback', 'menu_feedback'), Markup.button.callback('❓ Help', 'menu_help')]
+    ]);
+
+    if (isEdit) {
+        return ctx.editMessageText(text, keyboard);
+    } else {
+        return ctx.reply(text, keyboard);
+    }
+}
+
+// 🎯 স্টার্ট কম্যান্ডের মূল বাটন মেনু
 bot.command('start', (ctx) => {
-    const firstName = ctx.message.from.first_name;
     const userId = ctx.chat.id;
     registeredUsers.add(userId);
-
-    ctx.reply(`💝 **হ্যালো ${firstName}!** 💝\n\n` +
-              `All-in-One Wishing & Confession বটের মূল মেনুতে আপনাকে স্বাগতম। নিচে আপনার প্রয়োজনীয় অপশনটি বেছে নিন:`, 
-        Markup.inlineKeyboard([
-            [Markup.button.callback('🚀 Make Link', 'menu_makelink'), Markup.button.callback('👀 Demo', 'menu_demo')],
-            [Markup.button.callback('📊 Stats', 'menu_stats'), Markup.button.callback('🔒 Off Link', 'menu_off')],
-            [Markup.button.callback('📝 Feedback', 'menu_feedback'), Markup.button.callback('❓ Help', 'menu_help')]
-        ])
-    );
+    sendMainMenu(ctx, false);
 });
 
-// ২. 🎯 মূল মেনুর বাটন অ্যাকশন হ্যান্ডলারসমূহ
+// 🔙 ব্যাক বাটনের অ্যাকশন হ্যান্ডলার (সরাসরি আগের মেসেজটি মডিফাই করে মেইন মেনু বানিয়ে দেবে)
+bot.action('go_to_main_menu', (ctx) => {
+    ctx.answerCbQuery();
+    sendMainMenu(ctx, true);
+});
+
+// 🎯 Make Link সাব-মেনু (🔙 Back বাটন সহ)
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply("✨ **কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান? নিচের বাটন থেকে নির্বাচন করুন:**", 
+    ctx.editMessageText("✨ **কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান? নিচের বাটন থেকে নির্বাচন করুন:**", 
         Markup.inlineKeyboard([
             [Markup.button.callback('❤️ Love Letter', 'startmake_love'), Markup.button.callback('💖 Crush Confession', 'startmake_crush')],
             [Markup.button.callback('🎂 Birthday Wish', 'startmake_birthday'), Markup.button.callback('💍 Anniversary Wish', 'startmake_anniversary')],
             [Markup.button.callback('🎉 New Year Wish', 'startmake_newyear'), Markup.button.callback('🌾 Pohela Boishakh', 'startmake_boishakh')],
             [Markup.button.callback('🫂 Best Friend', 'startmake_friend'), Markup.button.callback('🌙 Eid Wish', 'startmake_eid')],
-            [Markup.button.callback('🥺 Sorry Letter', 'startmake_sorry')]
+            [Markup.button.callback('🥺 Sorry Letter', 'startmake_sorry')],
+            [Markup.button.callback('🔙 Back to Main Menu', 'go_to_main_menu')] // ব্যাক বাটন
         ])
     );
 });
 
+// 🎯 Demo সাব-মেনু (🔙 Back বাটন সহ)
 bot.action('menu_demo', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply("👀 **আপনি কোন বিষয়ের ডেমো পেজটি দেখতে চান? নিচের বাটন থেকে নির্বাচন করুন:**", 
+    ctx.editMessageText("👀 **আপনি কোন বিষয়ের ডেমো পেজটি দেখতে চান? নিচের বাটন থেকে নির্বাচন করুন:**", 
         Markup.inlineKeyboard([
             [Markup.button.callback('❤️ Love Letter', 'demo_love'), Markup.button.callback('💖 Crush Confession', 'demo_crush')],
             [Markup.button.callback('🎂 Birthday Wish', 'demo_birthday'), Markup.button.callback('💍 Anniversary Wish', 'demo_anniversary')],
             [Markup.button.callback('🎉 New Year Wish', 'demo_newyear'), Markup.button.callback('🌾 Pohela Boishakh', 'demo_boishakh')],
             [Markup.button.callback('🫂 Best Friend', 'demo_friend'), Markup.button.callback('🌙 Eid Wish', 'demo_eid')],
-            [Markup.button.callback('🥺 Sorry Letter', 'demo_sorry')]
+            [Markup.button.callback('🥺 Sorry Letter', 'demo_sorry')],
+            [Markup.button.callback('🔙 Back to Main Menu', 'go_to_main_menu')] // ব্যাক বাটন
         ])
     );
 });
 
+// 🎯 Help পেজ (🔙 Back বাটন সহ)
 bot.action('menu_help', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply(`❓ **কীভাবে ব্যবহার করবেন?**\n\n1. প্রথমে 🚀 **Make Link** বাটনে ক্লিক করুন।\n2. আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3. বটের নির্দেশ মতো অ্যানিমেশন টেক্সট (লাইন বাই লাইন) ও ফাইনাল মেসেজটি লিখে পাঠান।\n4. তৈরি হওয়া লিঙ্কটি কপি করে প্রিয় মানুষকে পাঠান। সে পেজটি ওপেন করলেই আপনি ইনস্ট্যান্ট নোটিফিকেশন পাবেন!\n\n❌ চলমান কোনো সেশন বাতিল করতে টাইপ করুন: /cancel`);
+    ctx.editMessageText(`❓ **কীভাবে ব্যবহার করবেন?**\n\n1. প্রথমে 🚀 **Make Link** বাটনে ক্লিক করুন।\n2. আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3. বটের নির্দেশ মতো অ্যানিমেশন টেক্সট (লাইন বাই লাইন) ও ফাইনাল মেসেজটি লিখে পাঠান।\n4. তৈরি হওয়া লিঙ্কটি কপি করে প্রিয় মানুষকে পাঠান। সে পেজটি ওপেন করলেই আপনি ইনস্ট্যান্ট নোটিফিকেশন পাবেন!\n\n❌ চলমান কোনো সেশন বাতিল করতে টাইপ করুন: /cancel`,
+        Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Main Menu', 'go_to_main_menu')]])
+    );
 });
 
 bot.action('menu_feedback', (ctx) => {
@@ -100,6 +122,7 @@ bot.action('menu_feedback', (ctx) => {
     ctx.reply("📝 এই বটের ব্যাপারে আপনার যেকোনো মতামত বা পরামর্শ এখানে লিখে মেসেজ আকারে পাঠান।");
 });
 
+// 🎯 Stats পেজ (🔙 Back বাটন সহ)
 bot.action('menu_stats', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id; 
@@ -115,10 +138,15 @@ bot.action('menu_stats', (ctx) => {
         ? "❌ আপনি এখনও কোনো লিঙ্ক তৈরি করেননি।" 
         : `📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n👤 নাম: ${ctx.from.first_name}\n🎫 আপনার লিঙ্কসমূহ:\n${myLinks.join('\n')}`;
     
-    ctx.reply(responseText, Markup.inlineKeyboard([[Markup.button.callback('🔒 লিঙ্ক বন্ধ করতে চান?', 'menu_off')]]));
+    ctx.editMessageText(responseText, 
+        Markup.inlineKeyboard([
+            [Markup.button.callback('🔒 লিঙ্ক বন্ধ করতে চান?', 'menu_off')],
+            [Markup.button.callback('🔙 Back to Main Menu', 'go_to_main_menu')] // ব্যাক বাটন
+        ])
+    );
 });
 
-// ৩. 🎯 ইন্টারঅ্যাক্টিভ অফ লিঙ্ক মেকানিজম
+// 🎯 Off লিঙ্ক সাব-মেনু (🔙 Back বাটন সহ)
 bot.action('menu_off', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
@@ -131,15 +159,18 @@ bot.action('menu_off', (ctx) => {
     });
     
     if (buttons.length === 0) {
-        return ctx.reply("💡 আপনার বর্তমানে কোনো একটিভ লিঙ্ক চালু নেই।");
+        return ctx.editMessageText("💡 আপনার বর্তমানে কোনো একটিভ লিঙ্ক चालू নেই।", 
+            Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Main Menu', 'go_to_main_menu')]])
+        );
     }
     
-    // সব নিচে "Off All Links" বাটন যোগ করা হলো
     buttons.push([Markup.button.callback('❌ Off All Links', 'deactivate_all')]);
-    ctx.reply("🔒 **আপনি কোন লিঙ্কটি বন্ধ করতে চান? নিচের বাটনে ক্লিক করুন:**", Markup.inlineKeyboard(buttons));
+    buttons.push([Markup.button.callback('🔙 Back to Main Menu', 'go_to_main_menu')]); // ব্যাক বাটন
+    
+    ctx.editMessageText("🔒 **আপনি কোন লিঙ্কটি বন্ধ করতে চান? নিচের বাটনে ক্লিক করুন:**", Markup.inlineKeyboard(buttons));
 });
 
-// নির্দিষ্ট সিঙ্গেল লিঙ্ক অফ করার অ্যাকশন
+// লিঙ্ক নিষ্ক্রিয় করার অ্যাকশন
 bot.action(/^deactivate_/, (ctx) => {
     ctx.answerCbQuery();
     const target = ctx.match.input.replace('deactivate_', '');
@@ -164,7 +195,7 @@ bot.action(/^deactivate_/, (ctx) => {
     }
 });
 
-// ৪. 🎯 লিঙ্ক বানানোর সেশন শুরুর হ্যান্ডলার (সাব-মেনু বাটন ক্লিক)
+// 🎯 লিঙ্ক বানানোর সেশন শুরুর হ্যান্ডলার
 bot.action(/^startmake_/, (ctx) => {
     ctx.answerCbQuery();
     const type = ctx.match.input.replace('startmake_', '');
@@ -200,12 +231,9 @@ bot.action(/^demo_/, (ctx) => {
     ctx.reply(`✨ **আপনার কাঙ্ক্ষিত ডেমো লিঙ্কটি তৈরি করা হয়েছে!**\n\n🏷️ ক্যাটাগরি: \`${selectedType.toUpperCase()}\`\n🔗 ডেমো লিঙ্ক: ${demoUrl}\n\n💖 আপনার নিজের পছন্দের টেক্সট দিয়ে এমন লিঙ্ক বানাতে মূল মেনু থেকে 🚀 **Make Link** ব্যবহার করুন!`);
 });
 
-// 🎯 টেক্সট ইনপুট প্রসেসিং (সেশন এবং ফিডব্যাক)
+// 🎯 টেক্সট ইনপুট প্রসেসিং
 bot.on('text', (ctx) => {
-    const userId = ctx.chat.id; 
-    const session = userSessions[userId]; 
-    const text = ctx.message.text;
-    
+    const userId = ctx.chat.id; const session = userSessions[userId]; const text = ctx.message.text;
     if (!session) return; 
 
     if (session.step === 'AWAITING_FEEDBACK') {
@@ -231,7 +259,6 @@ bot.on('text', (ctx) => {
         };
         const generatedLink = `${SERVER_URL}/love/${uniqueId}`;
         
-        // ৫. 🎯 লিঙ্ক বানানোর পর ফিডব্যাক বাটন শো করা
         ctx.reply(`💝 অভিনন্দন! আপনার কাস্টমাইজড লিঙ্কটি সম্পূর্ণ রেডি:\n\n${generatedLink}\n\nএটি কপি করে পাঠিয়ে দিন। সে ওপেন করলেই নোটিফিকেশন পাবেন!`,
             Markup.inlineKeyboard([[Markup.button.callback('📝 আমাদের বট কেমন লাগলো? ফিডব্যাক দিন', 'menu_feedback')]])
         );
@@ -244,22 +271,10 @@ bot.on('text', (ctx) => {
     }
 });
 
-// 🎯 অ্যাডমিন কম্যান্ডসমূহ
+// 👑 অ্যাডমিন কম্যান্ডসমূহ
 bot.command('adm', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
-    ctx.reply(`👑 **স্বাগতম বস! আপনার কমপ্লিট অ্যাডমিন ড্যাশবোর্ড:**\n\n` +
-              `📊 /admin - বটের পরিসংখ্যান দেখতে।\n` +
-              `📋 /alllinks - সব তৈরি হওয়া লিঙ্কের লিস্ট দেখতে।\n` +
-              `🚫 /banlink [আইডি] - নির্দিষ্ট কোনো লিঙ্ক ব্লক করতে।\n` +
-              `🔍 /linkdetails [আইডি] - লিঙ্কের মেকার ও লেটার দেখতে।\n` +
-              `🧼 /cleanlinks - অফ করা লিঙ্কগুলো ডাটাবেজ থেকে মুছে ফেলতে।\n` +
-              `💥 /nukelinks - এক ক্লিকে সব ইউজারের সব লিঙ্ক ডিলিট করতে! 🔥\n\n` +
-              `👤 /userinfo [User_ID] - নির্দিষ্ট ইউজারের তথ্য দেখতে。\n` +
-              `⛔ /blockuser [User_ID] - ইউজারকে বট থেকে ব্যান করতে।\n` +
-              `🔓 /unblockuser [User_ID] - ইউজারকে আনব্যান করতে।\n\n` +
-              `⚙️ /maintenance [on/off] - মেইনটেন্যান্স মোড অন/অফ করতে।\n` +
-              `💾 /backup - ডাটাবেজের টেক্সট ব্যাকআপ ফাইল নিতে।\n` +
-              `📢 /broadcast [মেসেজ] - সব ইউজারকে নোটিফিকেশন পাঠাতে।`, { parse_mode: 'Markdown' });
+    ctx.reply(`👑 **স্বাগতম বস! আপনার কমপ্লিট অ্যাডমিন ড্যাশবোর্ড:**\n\n📊 /admin - বটের পরিসংখ্যান দেখতে।\n📋 /alllinks - সব তৈরি হওয়া লিঙ্কের লিস্ট দেখতে।\n🚫 /banlink [আইডি] - নির্দিষ্ট কোনো লিঙ্ক ব্লক করতে।\n🔍 /linkdetails [আইডি] - লিঙ্কের মেকার ও লেটার দেখতে।\n🧼 /cleanlinks - অফ করা লিঙ্কগুলো ডাটাবেজ থেকে মুছে ফেলতে।\n💥 /nukelinks - এক ক্লিকে সব ইউজারের সব লিঙ্ক ডিলিট করতে! 🔥\n\n👤 /userinfo [User_ID] - নির্দিষ্ট ইউজারের তথ্য দেখতে。\n⛔ /blockuser [User_ID] - ইউজারকে বট থেকে ব্যান করতে।\n🔓 /unblockuser [User_ID] - ইউজারকে আনব্যান করতে。\n\n⚙️ /maintenance [on/off] - মেইনটেন্যান্স মোড অন/অফ করতে।\n💾 /backup - ডাটাবেজের টেক্সট ব্যাকআপ ফাইল নিতে।\n📢 /broadcast [মেসেজ] - সব ইউজারকে নোটিফিকেশন পাঠাতে।`, { parse_mode: 'Markdown' });
 });
 
 bot.command('nukelinks', (ctx) => {
@@ -377,7 +392,6 @@ bot.command('cancel', (ctx) => {
     else ctx.reply("💡 আপনার কোনো অ্যাক্টিভ সেশন চালু নেই।");
 });
 
-
 // 🎯 এক্সপ্রেস ফ্রন্টএন্ড এবং এপিআই রাউটিং মেকানিজম
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
@@ -398,8 +412,7 @@ app.post('/api/respond', (req, res) => {
     const { response, id } = req.body; const linkData = linkDatabase[id]; 
     if (linkData && linkData.isActive !== false) {
         if (!id.startsWith('demo_')) {
-            // ৬. 🎯 লাইভ ইয়েস/নো রেসপন্স আসার ঠিক শেষে আবারও ফিডব্যাক বাটন অফার করা
-            bot.telegram.sendMessage(linkData.userId, `💌 আপনার \`${linkData.type.toUpperCase()}\` লিঙ্কে নতুন রেসপন্স এসেছে!\n\nउत्तर: ${response}`,
+            bot.telegram.sendMessage(linkData.userId, `💌 আপনার \`${linkData.type.toUpperCase()}\` লিঙ্কে নতুন রেসপন্স এসেছে!\n\nউত্তর: ${response}`,
                 Markup.inlineKeyboard([[Markup.button.callback('📝 সার্ভিসটি কেমন লাগলো? ফিডব্যাক দিন', 'menu_feedback')]])
             );
         }
@@ -414,7 +427,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server live on port ${PORT}`);
     bot.launch()
-        .then(() => console.log("Telegram Bot successfully started with interactive buttons! 🚀"))
+        .then(() => console.log("Telegram Bot successfully started with interactive back buttons! 🚀"))
         .catch(e => console.error("Bot launch error:", e));
 });
 
