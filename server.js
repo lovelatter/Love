@@ -50,13 +50,20 @@ bot.command('start', (ctx) => {
     registeredUsers.add(userId);
 
     ctx.reply(`💝 **হ্যালো ${firstName}!** 💝\n\n` +
-              `স্পেশাল লাভ-লেটার এবং বার্থডে উইশ লিঙ্ক তৈরি করার বট-এ আপনাকে স্বাগত! 🥰\n\n` +
+              `মাল্টি-ক্যাটাগরি কাস্টম উইশ এবং কনফেশন লিঙ্ক তৈরি করার বট-এ আপনাকে স্বাগতম! 🥰\n\n` +
               `🚀 **নিচের কমান্ডগুলো ব্যবহার করুন:**\n\n` +
-              `👉 /loveletter - নতুন লাভ লিঙ্ক তৈরি করুন। ❤️\n` +
-              `👉 /birthdaywish - নতুন বার্থডে উইশ লিঙ্ক তৈরি করুন। 🎂\n` +
+              `👉 /loveletter - লাভ লিঙ্ক তৈরি করুন। ❤️\n` +
+              `👉 /crush - ক্রাশ কনফেশন লিঙ্ক। 💖\n` +
+              `👉 /birthdaywish - বার্থডে উইশ লিঙ্ক। 🎂\n` +
+              `👉 /anniversarywish - অ্যানিভার্সারি উইশ লিঙ্ক। 💍\n` +
+              `👉 /newyear - হ্যাপি নিউ ইয়ার উইশ। 🎉\n` +
+              `👉 /boishakh - পহেলা বৈশাখ উইশ। 🌾\n` +
+              `👉 /bestfriend - বেস্ট ফ্রেন্ড উইশ। 🫂\n` +
+              `👉 /eidwish - ঈদ উইশ লিঙ্ক। 🌙\n` +
+              `👉 /sorry - স্যরি লেটার লিঙ্ক। 🥺\n\n` +
               `👀 /demo - পেজটি কেমন লাগবে তার ডেমো দেখুন।\n` +
               `🔒 /off - আপনার তৈরি করা কোনো লিঙ্ক বন্ধ করুন।\n` +
-              `📊 /stats - আপনার তৈরি লিঙ্কের রিপোর্ট দেখুন।\n` +
+              `📊 /stats - আপনার তৈরি লিঙ্কের রিপোর্ট দেখুন。\n` +
               `📝 /feedback - ডেভেলপারের কাছে আপনার মতামত পাঠান।\n` +
               `❓ /help - বিস্তারিত গাইডলাইন দেখতে।`);
 });
@@ -67,11 +74,11 @@ bot.command('adm', (ctx) => {
     ctx.reply(`👑 **স্বাগতম বস! আপনার কমপ্লিট অ্যাডমিন ড্যাশবোর্ড:**\n\n` +
               `📊 /admin - বটের পরিসংখ্যান দেখতে।\n` +
               `📋 /alllinks - সব তৈরি হওয়া লিঙ্কের লিস্ট দেখতে।\n` +
-              `🚫 /banlink [আইডি] - নির্দিষ্ট কোনো লিঙ্ক ব্লক করতে。\n` +
+              `🚫 /banlink [আইডি] - নির্দিষ্ট কোনো লিঙ্ক ব্লক করতে।\n` +
               `🔍 /linkdetails [আইডি] - লিঙ্কের মেকার ও লেটার দেখতে।\n` +
               `🧼 /cleanlinks - অফ করা লিঙ্কগুলো ডাটাবেজ থেকে মুছে ফেলতে।\n` +
               `💥 /nukelinks - এক ক্লিকে সব ইউজারের সব লিঙ্ক ডিলিট করতে! 🔥\n\n` +
-              `👤 /userinfo [User_ID] - নির্দিষ্ট ইউজারের তথ্য দেখতে।\n` +
+              `👤 /userinfo [User_ID] - নির্দিষ্ট ইউজারের তথ্য দেখতে。\n` +
               `⛔ /blockuser [User_ID] - ইউজারকে বট থেকে ব্যান করতে।\n` +
               `🔓 /unblockuser [User_ID] - ইউজারকে আনব্যান করতে।\n\n` +
               `⚙️ /maintenance [on/off] - মেইনটেন্যান্স মোড অন/অফ করতে।\n` +
@@ -83,13 +90,9 @@ bot.command('nukelinks', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
 
     const count = Object.keys(linkDatabase).length - 1; 
-    
     for (let key in linkDatabase) {
-        if (key !== 'demo') {
-            delete linkDatabase[key];
-        }
+        if (key !== 'demo') delete linkDatabase[key];
     }
-
     ctx.reply(`🔥 **অপারেশন সাকসেসফুল বস!**\n\nডাটাবেজে থাকা সমস্ত ইউজারের তৈরি করা মোট \`${count}\`টি লিঙ্ক সফলভাবে বন্ধ এবং ডিলিট করে দেওয়া হয়েছে!`, { parse_mode: 'Markdown' });
 });
 
@@ -106,8 +109,7 @@ bot.command('alllinks', (ctx) => {
     Object.keys(linkDatabase).forEach(id => {
         if (id !== 'demo') {
             const status = linkDatabase[id].isActive !== false ? "🟢 চালু" : "🔴 ব্লকড";
-            const typeEmoji = linkDatabase[id].type === 'birthday' ? "🎂" : "💝";
-            list.push(`${typeEmoji} ID: \`${id}\` | মেকার: ${linkDatabase[id].name} [${status}]`);
+            list.push(`🎫 ID: \`${id}\` | টাইপ: \`${linkDatabase[id].type.toUpperCase()}\` | মেকার: ${linkDatabase[id].name} [${status}]`);
         }
     });
     if (list.length === 0) return ctx.reply("💡 ডাটাবেজে এখনও কোনো লিঙ্ক তৈরি হয়নি।");
@@ -130,7 +132,7 @@ bot.command('linkdetails', (ctx) => {
     if (!targetId || !linkDatabase[targetId]) return ctx.reply("❌ সঠিক লিঙ্ক আইডি দিন!");
 
     const data = linkDatabase[targetId];
-    ctx.reply(`🔍 **লিঙ্ক আইডি: ${targetId} এর ডিটেইলস:**\n\n👤 মেকার: ${data.name} (${data.username})\n🏷 টাইপ: \`${data.type || 'love'}\`\n🎬 অ্যানিমেশন: \`${JSON.stringify(data.animations)}\`\n💌 চিঠি:\n"${data.letter}"`, { parse_mode: 'Markdown' });
+    ctx.reply(`🔍 **লিঙ্ক আইডি: ${targetId} এর ডিটেইলস:**\n\n👤 মেকার: ${data.name} (${data.username})\n🏷 টাইপ: \`${data.type}\`\n🎬 অ্যানিমেশন: \`${JSON.stringify(data.animations)}\`\n💌 চিঠি:\n"${data.letter}"`, { parse_mode: 'Markdown' });
 });
 
 bot.command('cleanlinks', (ctx) => {
@@ -164,8 +166,7 @@ bot.command('blockuser', (ctx) => {
     const targetUid = ctx.message.text.replace('/blockuser', '').trim();
     if (!targetUid || String(targetUid) === String(ADMIN_CHAT_ID)) return ctx.reply("❌ সঠিক ইউজার আইডি দিন!");
 
-    bannedUsers.add(Number(targetUid));
-    bannedUsers.add(targetUid);
+    bannedUsers.add(Number(targetUid)); bannedUsers.add(targetUid);
     ctx.reply(`🚫 ইউজার \`${targetUid}\`-কে সফলভাবে বট থেকে ব্যান করা হয়েছে!`, { parse_mode: 'Markdown' });
 });
 
@@ -174,22 +175,15 @@ bot.command('unblockuser', (ctx) => {
     const targetUid = ctx.message.text.replace('/unblockuser', '').trim();
     if (!targetUid) return ctx.reply("❌ সঠিক ইউজার আইডি দিন!");
 
-    bannedUsers.delete(Number(targetUid));
-    bannedUsers.delete(targetUid);
+    bannedUsers.delete(Number(targetUid)); bannedUsers.delete(targetUid);
     ctx.reply(`🔓 ইউজার \`${targetUid}\`-কে আনব্যান করা হয়েছে।`, { parse_mode: 'Markdown' });
 });
 
 bot.command('maintenance', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
     const mode = ctx.message.text.replace('/maintenance', '').trim().toLowerCase();
-    
-    if (mode === 'on') {
-        isMaintenanceMode = true;
-        ctx.reply("🚧 মেইনটেন্যান্স মোড **চালু (ON)** করা হয়েছে।");
-    } else if (mode === 'off') {
-        isMaintenanceMode = false;
-        ctx.reply("🟢 মেইনটেন্যান্স মোড **বন্ধ (OFF)** করা হয়েছে।");
-    }
+    if (mode === 'on') { isMaintenanceMode = true; ctx.reply("🚧 মেইনটেন্যান্স মোড **চালু** করা হয়েছে।"); }
+    else if (mode === 'off') { isMaintenanceMode = false; ctx.reply("🟢 মেইনটেন্যান্স মোড **বন্ধ** করা হয়েছে।"); }
 });
 
 bot.command('backup', (ctx) => {
@@ -197,7 +191,7 @@ bot.command('backup', (ctx) => {
     try {
         const backupData = JSON.stringify(linkDatabase, null, 2);
         fs.writeFileSync('backup.txt', backupData);
-        ctx.replyWithDocument({ source: fs.createReadStream('backup.txt'), filename: 'database_backup.txt' }, { caption: "💾 বটের বর্তমান ডাটাবেজ ব্যাকআপ ফাইল।" });
+        ctx.replyWithDocument({ source: fs.createReadStream('backup.txt'), filename: 'database_backup.txt' }, { caption: "💾 বটের ডাটাবেজ ব্যাকআপ ফাইল।" });
     } catch(e) { ctx.reply("❌ ব্যাকআপ নিতে সমস্যা হয়েছে।"); }
 });
 
@@ -208,115 +202,90 @@ bot.command('broadcast', (ctx) => {
 
     let successCount = 0;
     registeredUsers.forEach(uId => {
-        bot.telegram.sendMessage(uId, `📢 **অফিসিয়াল নোটিফিকেশন:**\n\n${msg}`).then(() => {
-            successCount++;
-        }).catch(e => {});
+        bot.telegram.sendMessage(uId, `📢 **অফিসিয়াল নোটিফিকেশন:**\n\n${msg}`).then(() => { successCount++; }).catch(e => {});
     });
     ctx.reply(`📢 ব্রডকাস্ট সম্পন্ন! সফলভাবে \`${successCount}\` জন ইউজারের কাছে মেসেজ পাঠানো হয়েছে।`, { parse_mode: 'Markdown' });
 });
 
 bot.command('help', (ctx) => {
-    ctx.reply(`❓ **কীভাবে এই বটটি ব্যবহার করবেন?**\n\n১. লাভ লেটার লিঙ্ক তৈরি করতে /loveletter কমান্ড দিন।\n২. বার্থডে উইশ লিঙ্ক তৈরি করতে /birthdaywish কমান্ড দিন।\n\n🔒 **লিঙ্ক বন্ধ করার নিয়ম:**\nআপনার তৈরি করা কোনো লিঙ্ক বন্ধ করতে টাইপ করুন: \n\`/off লিঙ্ক_আইডি\`\n\n❌ মাঝপথে বাতিল করতে /cancel টাইপ করতে পারেন।`);
+    ctx.reply(`❓ **কীভাবে ব্যবহার করবেন?**\n\nকমান্ড দিয়ে সেশন শুরু করুন (যেমন /loveletter বা /crush)। তারপর বটের নির্দেশ মতো অ্যানিমেশন টেক্সট ও ফাইনাল মেসেজ পাঠান।\n\n🔒 **লিঙ্ক অফ করার নিয়ম:** \`/off লিঙ্ক_আইডি\`\n❌ বাতিল করতে টাইপ করুন: /cancel`);
 });
 
 bot.command('stats', (ctx) => {
-    const userId = ctx.chat.id;
-    let myLinks = [];
+    const userId = ctx.chat.id; let myLinks = [];
     Object.keys(linkDatabase).forEach(id => {
         if (linkDatabase[id].userId === userId && id !== 'demo') {
             const status = linkDatabase[id].isActive !== false ? "🟢 চালু" : "🔴 বন্ধ";
-            const typeText = linkDatabase[id].type === 'birthday' ? "Birthday" : "Love";
-            myLinks.push(`🎫 আইডি: \`${id}\` (${typeText}) [${status}]`);
+            myLinks.push(`🎫 আইডি: \`${id}\` (${linkDatabase[id].type}) [${status}]`);
         }
     });
-    if (myLinks.length === 0) {
-        ctx.reply("❌ আপনি এখনও কোনো লিঙ্ক তৈরি করেননি। নতুন লিঙ্ক তৈরি করতে /loveletter বা /birthdaywish ব্যবহার করুন।");
-    } else {
-        ctx.reply(`📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n👤 নাম: ${ctx.message.from.first_name}\n🎫 আপনার তৈরি করা লিঙ্কগুলো:\n${myLinks.join('\n')}`);
-    }
+    if (myLinks.length === 0) ctx.reply("❌ আপনি এখনও কোনো লিঙ্ক তৈরি করেননি।");
+    else ctx.reply(`📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n👤 নাম: ${ctx.message.from.first_name}\n🎫 আপনার লিঙ্কসমূহ:\n${myLinks.join('\n')}`);
 });
 
 bot.command('off', (ctx) => {
-    const userId = ctx.chat.id;
-    const linkId = ctx.message.text.replace('/off', '').trim();
-    if (!linkId) return ctx.reply("❌ লিঙ্ক অফ করতে কমান্ডের পাশে লিঙ্ক আইডিটি লিখুন। যেমন: \`/off abc123\`");
+    const userId = ctx.chat.id; const linkId = ctx.message.text.replace('/off', '').trim();
+    if (!linkId) return ctx.reply("❌ কমান্ডের পাশে লিঙ্ক আইডিটি লিখুন।");
     const linkData = linkDatabase[linkId];
-    if (!linkData || linkId === 'demo') return ctx.reply("❌ এই আইডি দিয়ে কোনো ভ্যালিড লিঙ্ক পাওয়া যায়নি!");
-    if (String(linkData.userId) !== String(userId)) return ctx.reply("❌ দুঃখিত, আপনি অন্য কারও লিঙ্ক বন্ধ করতে পারবেন না!");
-    if (linkData.isActive === false) return ctx.reply("⚠️ এই লিঙ্কটি অলরেডি বন্ধ করা আছে!");
-    linkData.isActive = false;
-    ctx.reply(`✅ সফলভাবে আপনার লিঙ্কটি (\`${linkId}\`) বন্ধ করে দেওয়া হয়েছে।`);
+    if (!linkData || linkId === 'demo') return ctx.reply("❌ এই আইডি ভ্যালিড নয়!");
+    if (String(linkData.userId) !== String(userId)) return ctx.reply("❌ আপনি অন্য কারও লিঙ্ক বন্ধ করতে পারবেন না!");
+    linkData.isActive = false; ctx.reply(`✅ সফলভাবে আপনার লিঙ্কটি (\`${linkId}\`) বন্ধ করে দেওয়া হয়েছে।`);
 });
 
 bot.command('demo', (ctx) => {
-    ctx.reply(`👀 **লাভ লেটার পেজের ডেমো:**\n\n${SERVER_URL}/love/demo\n\n💖 আপনার নিজের পছন্দের টেক্সট দিয়ে লিঙ্ক তৈরি করতে এখনই /loveletter বা /birthdaywish ব্যবহার করুন।`);
+    ctx.reply(`👀 **লাভ লেটার পেজের ডেমো:**\n\n${SERVER_URL}/love/demo\n\n💖 আপনার নিজের পছন্দের টেক্সট দিয়ে লিঙ্ক তৈরি করতে /start চেক করুন।`);
 });
 
 bot.command('cancel', (ctx) => {
     const userId = ctx.chat.id;
-    if (userSessions[userId]) {
-        delete userSessions[userId];
-        ctx.reply("❌ আপনার চলতি সেশনটি সফলভাবে বাতিল করা হয়েছে।");
-    } else {
-        ctx.reply("💡 আপনার কোনো অ্যাক্টিভ সেশন চালু নেই।");
-    }
+    if (userSessions[userId]) { delete userSessions[userId]; ctx.reply("❌ আপনার চলতি সেশনটি বাতিল করা হয়েছে।"); }
+    else ctx.reply("💡 আপনার কোনো অ্যাক্টিভ সেশন চালু নেই।");
 });
 
 bot.command('feedback', (ctx) => {
     const userId = ctx.chat.id;
-    userSessions[userId] = {
-        step: 'AWAITING_FEEDBACK',
-        name: `${ctx.message.from.first_name} ${ctx.message.from.last_name || ''}`,
-        username: ctx.message.from.username ? '@' + ctx.message.from.username : 'নেই'
-    };
+    userSessions[userId] = { step: 'AWAITING_FEEDBACK', name: ctx.message.from.first_name };
     ctx.reply("📝 এই বটের ব্যাপারে আপনার যেকোনো মতামত এখানে লিখে পাঠান।");
 });
 
-// 🟢 লাভ লেটার তৈরির নতুন কমান্ড
-bot.command('loveletter', (ctx) => {
+// 🛠️ ডাইনামিক সেশন জেনারেটর ফাংশন (কোড সংক্ষিপ্ত করার জন্য)
+function initSession(ctx, type, msgText) {
     const userId = ctx.chat.id;
     userSessions[userId] = {
         step: 'AWAITING_ANIMATION_TEXT',
-        type: 'love', // টাইপ সেট করা হলো
+        type: type,
         name: `${ctx.message.from.first_name} ${ctx.message.from.last_name || ''}`,
         username: ctx.message.from.username ? '@' + ctx.message.from.username : 'নেই'
     };
-    ctx.reply("✨ কাস্টম লাভ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন। প্রতি লাইনের পর একটি করে 'Enter' দিয়ে নতুন লাইনে লিখবেন।");
-});
+    ctx.reply(msgText);
+}
 
-// 🟢 বার্থডে উইশ তৈরির নতুন কমান্ড
-bot.command('birthdaywish', (ctx) => {
-    const userId = ctx.chat.id;
-    userSessions[userId] = {
-        step: 'AWAITING_ANIMATION_TEXT',
-        type: 'birthday', // টাইপ সেট করা হলো
-        name: `${ctx.message.from.first_name} ${ctx.message.from.last_name || ''}`,
-        username: ctx.message.from.username ? '@' + ctx.message.from.username : 'নেই'
-    };
-    ctx.reply("🎂 কাস্টম বার্থডে উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে বার্থডে শুরুর অ্যানিমেশন টেক্সটগুলো দিন। প্রতি লাইনের পর একটি করে 'Enter' দিয়ে নতুন লাইনে লিখবেন।");
-});
+// 🟢 ক্যাটাগরি কম্যান্ড হ্যান্ডলারস 
+bot.command('loveletter', (ctx) => initSession(ctx, 'love', "✨ কাস্টম লাভ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('crush', (ctx) => initSession(ctx, 'crush', "💖 ক্রাশ কনফেশন লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('birthdaywish', (ctx) => initSession(ctx, 'birthday', "🎂 কাস্টম বার্থডে উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('anniversarywish', (ctx) => initSession(ctx, 'anniversary', "💍 কাস্টম অ্যানিভার্সারি উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('newyear', (ctx) => initSession(ctx, 'newyear', "🎉 হ্যাপি নিউ ইয়ার উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('boishakh', (ctx) => initSession(ctx, 'boishakh', "🌾 পহেলা বৈশাখ উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('bestfriend', (ctx) => initSession(ctx, 'friend', "🫂 বেস্ট ফ্রেন্ড উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('eidwish', (ctx) => initSession(ctx, 'eid', "🌙 ঈদ উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('sorry', (ctx) => initSession(ctx, 'sorry', "🥺 স্যরি লেটার লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
 
 bot.on('text', (ctx) => {
-    const userId = ctx.chat.id;
-    const session = userSessions[userId];
-    const text = ctx.message.text;
+    const userId = ctx.chat.id; const session = userSessions[userId]; const text = ctx.message.text;
     if (!session) return; 
 
     if (session.step === 'AWAITING_FEEDBACK') {
-        const feedbackText = text.trim();
-        if (feedbackText.length < 5) return ctx.reply("❌ দয়া করে আপনার মতামতটি একটু বিস্তারিত লিখুন।");
-        const feedbackAlert = `📝 **New User Feedback Received!**\n\n👤 **From:** ${session.name}\n💬 **Message:** ${feedbackText}`;
-        bot.telegram.sendMessage(ADMIN_CHAT_ID, feedbackAlert, { parse_mode: 'Markdown' }).catch(e => {});
+        if (text.trim().length < 5) return ctx.reply("❌ দয়া করে আপনার মতামতটি একটু বিস্তারিত লিখুন।");
+        bot.telegram.sendMessage(ADMIN_CHAT_ID, `💬 **Feedback From ${session.name}:** ${text}`).catch(e => {});
         ctx.reply("✅ আপনার মূল্যবান মতামতটি সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!");
-        delete userSessions[userId];
-        return;
+        delete userSessions[userId]; return;
     }
 
     if (session.step === 'AWAITING_ANIMATION_TEXT') {
         const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         if (lines.length === 0) return ctx.reply("❌ দয়া করে অন্তত ১টি সলিড লাইন লিখুন!");
-        session.animations = lines;
-        session.step = 'AWAITING_LETTER_TEXT'; 
+        session.animations = lines; session.step = 'AWAITING_LETTER_TEXT'; 
         ctx.reply(`✅ চমৎকার! আপনি ${lines.length}টি অ্যানিমেশন লাইন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা মেসেজটি লিখে পাঠান:`);
         return;
     }
@@ -324,38 +293,24 @@ bot.on('text', (ctx) => {
     if (session.step === 'AWAITING_LETTER_TEXT') {
         const uniqueId = Math.random().toString(36).substring(2, 9);
         linkDatabase[uniqueId] = {
-            userId: userId,
-            name: session.name,
-            username: session.username,
-            type: session.type, // সেশন থেকে টাইপ সেভ হচ্ছে
-            animations: session.animations,
-            letter: text.trim(),
-            isActive: true 
+            userId: userId, name: session.name, username: session.username,
+            type: session.type, animations: session.animations, letter: text.trim(), isActive: true 
         };
         const generatedLink = `${SERVER_URL}/love/${uniqueId}`;
-        const typeLabel = session.type === 'birthday' ? "বার্থডে উইশ" : "লাভ";
-        
-        ctx.reply(`💝 অভিনন্দন! আপনার কাস্টমাইজড ${typeLabel} লিঙ্কটি সম্পূর্ণ রেডি:\n\n${generatedLink}\n\nএটি কপি করে পাঠিয়ে দিন। সে ওপেন করলেই আপনি নোটিফিকেশন পেয়ে যাবেন!`);
+        ctx.reply(`💝 অভিনন্দন! আপনার কাস্টমাইজড লিঙ্কটি সম্পূর্ণ রেডি:\n\n${generatedLink}\n\nএটি কপি করে পাঠিয়ে দিন। সে ওপেন করলেই নোটিফিকেশন পাবেন!`);
         
         const currentTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
-        const adminLog = `🚨 **New Link Created!** 🚨\n\n👤 **Creator:** ${session.name}\n🏷 **Type:** ${session.type.toUpperCase()}\n🎫 **Link ID:** ${uniqueId}\n⏰ **Time:** ${currentTime}`;
         if (String(userId) !== String(ADMIN_CHAT_ID)) {
-            bot.telegram.sendMessage(ADMIN_CHAT_ID, adminLog, { parse_mode: 'Markdown' }).catch(e => {});
+            bot.telegram.sendMessage(ADMIN_CHAT_ID, `🚨 **New Link!**\n👤 **Creator:** ${session.name}\n🏷 **Type:** ${session.type.toUpperCase()}\n🎫 **ID:** ${uniqueId}\n⏰ **Time:** ${currentTime}`).catch(e => {});
         }
-        delete userSessions[userId];
-        return;
+        delete userSessions[userId]; return;
     }
 });
 
-bot.launch().then(() => console.log("Telegram Bot started.")).catch(err => console.error(err));
-
-app.get('/love/:id', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.post('/api/get-content', async (req, res) => {
-    const { id } = req.body;
-    const linkData = linkDatabase[id];
+    const { id } = req.body; const linkData = linkDatabase[id];
     if (linkData) {
         if (linkData.isActive === false) return res.json({ success: false, error: "expired" });
         if (id === 'demo') return res.json({ success: true, type: linkData.type, animations: linkData.animations, letter: linkData.letter });
@@ -363,40 +318,19 @@ app.post('/api/get-content', async (req, res) => {
         let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
         if (ip.includes(',')) ip = ip.split(',')[0].trim();
         const openTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
-        let locationInfo = "Location details unavailable";
-        try {
-            if(ip && !ip.includes('127.0.0.1')) {
-                const geo = await axios.get(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city,isp`);
-                if(geo.data && geo.data.status === 'success') {
-                    locationInfo = `🌍 **Location:** ${geo.data.city}, ${geo.data.regionName}, ${geo.data.country}\n🏢 **ISP:** ${geo.data.isp}`;
-                }
-            }
-        } catch(e) {}
-
-        const typeLabel = linkData.type === 'birthday' ? "🎂 বার্থডে উইশ" : "👀 লাভ";
-        bot.telegram.sendMessage(linkData.userId, `👀 **Notification:** কেউ একজন এইমাত্র আপনার কাস্টম ${typeLabel} লিঙ্কটি ওপেন করেছে!\n⏰ **সময়:** ${openTime}`);
         
-        const adminAlert = `👁‍🗨 **Custom Link Opened Alert!** 👁‍🗨\n\n👤 **Creator User:** ${linkData.name}\n🏷 **Type:** ${linkData.type ? linkData.type.toUpperCase() : 'LOVE'}\n🎫 **Link ID:** ${id}\n⏰ **Time:** ${openTime}\n\n🌐 **IP:** \`${ip}\`\n${locationInfo}`;
-        if (String(linkData.userId) !== String(ADMIN_CHAT_ID)) {
-            bot.telegram.sendMessage(ADMIN_CHAT_ID, adminAlert, { parse_mode: 'Markdown' }).catch(e => {});
-        }
-        // ফ্রন্টএন্ডে type পাঠানো হচ্ছে (love অথবা birthday)
-        return res.json({ success: true, type: linkData.type || 'love', animations: linkData.animations, letter: linkData.letter });
+        bot.telegram.sendMessage(linkData.userId, `👀 **Notification:** কেউ একজন এইমাত্র আপনার কাস্টম \`${linkData.type.toUpperCase()}\` লিঙ্কটি ওপেন করেছে!\n⏰ **সময়:** ${openTime}`);
+        return res.json({ success: true, type: linkData.type, animations: linkData.animations, letter: linkData.letter });
     }
     res.json({ success: false, error: "invalid" });
 });
 
 app.post('/api/respond', (req, res) => {
-    const { response, id } = req.body;
-    const linkData = linkDatabase[id]; 
+    const { response, id } = req.body; const linkData = linkDatabase[id]; 
     if (linkData && linkData.isActive !== false) {
-        if (id === 'demo') return res.json({ success: true });
-        const typeLabel = linkData.type === 'birthday' ? "বার্থডে" : "কাস্টম";
-        bot.telegram.sendMessage(linkData.userId, `💌 আপনার ${typeLabel} লিঙ্কে একটি নতুন রেসপন্স এসেছে!\n\nউত্তর: ${response}`);
+        if (id !== 'demo') bot.telegram.sendMessage(linkData.userId, `💌 আপনার \`${linkData.type.toUpperCase()}\` লিঙ্কে নতুন রেসপন্স এসেছে!\n\nউত্তর: ${response}`);
         res.json({ success: true });
-    } else {
-        res.json({ success: false });
-    }
+    } else res.json({ success: false });
 });
 
 app.get('/ping_test', (req, res) => res.send("Awake!"));
