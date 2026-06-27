@@ -341,5 +341,15 @@ app.post('/api/respond', (req, res) => {
 app.get('/ping_test', (req, res) => res.send("Awake!"));
 setInterval(() => { axios.get(`${SERVER_URL}/ping_test`).catch(e=>''); }, 270000);
 
+// 🚀 সার্ভার লিসেন এবং সাথে টেলিগ্রাম বট স্টার্ট করার পারফেক্ট ফিক্সড লজিক
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server live on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server live on port ${PORT}`);
+    
+    bot.launch()
+        .then(() => console.log("Telegram Bot successfully started! 🚀"))
+        .catch(e => console.error("Bot launch error:", e));
+});
+
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('TERM', () => bot.stop('SIGTERM'));
