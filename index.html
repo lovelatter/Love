@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Love Letter...</title>
     <style>
-        /* আপনার আগের সমস্ত CSS স্টাইল এখানে হুবহু থাকবে */
+        /* সমস্ত CSS স্টাইল এখানে হুবহু অপরিবর্তিত রাখা হয়েছে */
         * { margin:0; padding:0; box-sizing:border-box; }
         body, html { width:100%; height:100%; overflow:hidden; background-color:#000; font-family:'Arial',sans-serif; display:flex; justify-content:center; align-items:center; color:#fff; user-select:none; flex-direction:column; }
         #openBtn { font-size:2rem; color:#fff; background:linear-gradient(45deg, #ff4d6d, #ff758f); border:none; padding:16px 40px; border-radius:50px; cursor:pointer; z-index:20; position:relative; transition:transform 0.2s ease; }
@@ -48,7 +48,8 @@
     </style>
 </head>
 <body>
-    <audio id="bgMusic" src="https://github.com/lovelatter/repo/raw/main/music.mp3" loop></audio>
+    <audio id="bgMusic" src="https://cdn.jsdelivr.net/gh/lovelatter/Love@main/music.mp3" loop preload="auto"></audio>
+    
     <button id="openBtn">Open ❤️</button>
     <div id="textDisplay" class="text-container"></div>
     <div id="envelope" class="envelope-container">
@@ -78,7 +79,6 @@
         let textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
         let arrayIndex = 0, audioCtx = null;
 
-        // 🕵️‍♂️ লিঙ্ক অ্যাক্টিভ আছে কিনা তা রিকোয়েস্ট করে চেক করা
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
@@ -95,7 +95,6 @@
                     if(data.animations && data.animations.length > 0) textArray = data.animations;
                     if(data.letter) document.getElementById('letterContent').innerText = data.letter;
                 } else {
-                    // লিঙ্কটি অফ বা ইনভ্যালিড হলে স্ক্রিন লক হয়ে যাবে 🔒
                     document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
             } catch(e) { console.log('Content fetch error'); }
@@ -138,16 +137,33 @@
             }
         }
         
+        // ১. মেইন বাটনে ক্লিকের সাথে সাথে অডিও চ্যানেল আনলক করে মিউট অবস্থায় ব্যাকগ্রাউন্ডে প্লে করা হলো
         openBtn.addEventListener('click', () => {
             openBtn.classList.add('blast-out');
+            
+            // ব্রাউজার সিকিউরিটি আনলক ট্রিক
+            bgMusic.volume = 0;
+            bgMusic.muted = true;
+            bgMusic.play().then(() => {
+                bgMusic.muted = false;
+                bgMusic.volume = 0.001; // একদম জিরোর কাছাকাছি সাউন্ড, যা শোনা যাবে না
+            }).catch(e => console.log("Audio unlock retry"));
+
             setTimeout(() => { openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence(); }, 800);
         });
         
+        // ২. খাম খোলার পর গান রিস্টার্ট হয়ে ফুল ভলিউমে বাজবে 🎵
         envelope.addEventListener('click', () => {
             envelope.classList.add('open');
+            
+            // ইউজার যখনই খাম খুলবে, মিউজিক শুরু থেকে ফুল সাউন্ডে রানিং হবে
+            bgMusic.currentTime = 0;
+            bgMusic.volume = 1.0;
+            bgMusic.play().catch(e => console.log("Final play blocked"));
+
             setTimeout(() => {
                 loveLetter.style.display = 'block';
-                setTimeout(() => { loveLetter.classList.add('letter-popout'); bgMusic.play().catch(e => {}); setInterval(createHeart, 300); }, 50);
+                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(createHeart, 300); }, 50);
             }, 550);
         });
         
