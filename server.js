@@ -12,15 +12,54 @@ const ADMIN_CHAT_ID = "6719885052";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
-// ডাটাবেজ সেশন অবজেক্ট
 const linkDatabase = {}; 
 const userSessions = {}; 
 
-// 🤖 ১. /newlink কমান্ড দিলে প্রথম ধাপ শুরু হবে
+// 🤖 ১. /start কমান্ড - নতুন ইউজারদের স্বাগতম জানানোর জন্য
+bot.command('start', (ctx) => {
+    ctx.reply(`👋 হ্যালো ${ctx.message.from.first_name}!\n` +
+              `রোমান্টিক লাভ লেটার এবং ট্র্যাকিং লিঙ্ক তৈরি করার বতে আপনাকে স্বাগতম। ❤️\n\n` +
+              `🚀 আপনার নিজের পছন্দের লেখা দিয়ে একটি সুন্দর লাভ লিঙ্ক তৈরি করতে এখনই টাইপ করুন: /newlink\n\n` +
+              `📊 আপনার তৈরি করা লিঙ্কের স্ট্যাটাস দেখতে টাইপ করুন: /stats\n` +
+              `❓ বটটি কীভাবে কাজ করে তা বিস্তারিত জানতে টাইপ করুন: /help`);
+});
+
+// 🤖 ২. /help কমান্ড - ইউজারদের গাইড করার জন্য
+bot.command('help', (ctx) => {
+    ctx.reply(`❓ **কীভাবে এই বটটি ব্যবহার করবেন?**\n\n` +
+              `১. প্রথমে /newlink কমান্ডটি দিন।\n` +
+              `২. বট আপনার কাছে অ্যানিমেশন টেক্সট চাইলে, প্রতি লাইনের পর ফোনে 'Enter' চেপে নতুন লাইনে লিখুন। (যেমন: ৩/৪ লাইনের একটি সুন্দর মেসেজ)।\n` +
+              `৩. এরপর ডিজিটাল খামের ভেতরের মূল চিঠি বা প্রপোজাল মেসেজটি লিখে পাঠান।\n` +
+              `৪. সাথে সাথে বট আপনাকে একটি ইউনিক লিঙ্ক তৈরি করে দেবে।\n\n` +
+              `🔔 **ম্যাজিক ট্র্যাকিং:** লিঙ্কটি কপি করে আপনার প্রিয়জনকে পাঠান। সে এটি ওপেন করলেই বা "Yes/No" উত্তর দিলেই আপনি এখানে সাথে সাথে নোটিফিকেশন পেয়ে যাবেন!`);
+});
+
+// 🤖 ৩. /stats কমান্ড - ইউজারের নিজস্ব রিপোর্ট দেখার জন্য
+bot.command('stats', (ctx) => {
+    const userId = ctx.chat.id;
+    let totalLinks = 0;
+    
+    // ডাটাবেজ চেক করে এই নির্দিষ্ট ইউজারের কয়টি লিঙ্ক আছে তা গণনা করা
+    Object.keys(linkDatabase).forEach(id => {
+        if (linkDatabase[id].userId === userId) {
+            totalLinks++;
+        }
+    });
+
+    if (totalLinks === 0) {
+        ctx.reply("❌ আপনি এখনও কোনো লাভ লিঙ্ক তৈরি করেননি ভাইয়া। নতুন লিঙ্ক তৈরি করতে /newlink কমান্ডটি ব্যবহার করুন।");
+    } else {
+        ctx.reply(`📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n` +
+                  `👤 নাম: ${ctx.message.from.first_name}\n` +
+                  `🎫 মোট তৈরি করা একটিভ লিঙ্ক: ${totalLinks} টি\n\n` +
+                  `✨ আপনার তৈরি করা লিঙ্কগুলো সচল আছে। কেউ লিঙ্কে ক্লিক করলেই এই চ্যাটে নোটিফিকেশন চলে আসবে!`);
+    }
+});
+
+// 🤖 ৪. /newlink কমান্ড - কাস্টম সেশন শুরু
 bot.command('newlink', (ctx) => {
     const userId = ctx.chat.id;
     
-    // ইউজারের সেশন স্টেট সেট করা
     userSessions[userId] = {
         step: 'AWAITING_ANIMATION_TEXT',
         name: `${ctx.message.from.first_name} ${ctx.message.from.last_name || ''}`,
@@ -36,17 +75,17 @@ bot.command('newlink', (ctx) => {
               "কি করো");
 });
 
-// 🤖 ২. ইউজারের মেসেজ হ্যান্ডল করার লজিক (স্টেট মেশিন)
+// 🤖 ৫. মেসেজ ক্যাচ করে ধাপে ধাপে কন্টেন্ট তৈরি করা
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
     const text = ctx.message.text;
 
-    if (!session) return; // কোনো অ্যাক্টিভ সেশন না থাকলে ইগনোর করবে
+    // কোনো অ্যাক্টিভ সেশন বা নতুন লিঙ্কের রিকোয়েস্ট না থাকলে এবং সেটি কোনো কমান্ড না হলে ইগনোর করবে
+    if (!session) return; 
 
-    // ধাপ ১: অ্যানিমেশন টেক্সট রিসিভ করা
+    // ধাপ ১: অ্যানিমেশন টেক্সট রিসিভ করা (Enter separated)
     if (session.step === 'AWAITING_ANIMATION_TEXT') {
-        // এন্টার (New Line) দিয়ে ভাগ করে অ্যারে তৈরি করা এবং খালি লাইন ফিল্টার করা
         const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         
         if (lines.length === 0) {
@@ -54,7 +93,7 @@ bot.on('text', (ctx) => {
         }
 
         session.animations = lines;
-        session.step = 'AWAITING_LETTER_TEXT'; // পরবর্তী ধাপে পাঠানো
+        session.step = 'AWAITING_LETTER_TEXT'; 
 
         ctx.reply(`✅ চমৎকার! আপনি ${lines.length}টি অ্যানিমেশন লাইন যোগ করেছেন।\n\n` +
                   `💌 এবার খামের ভেতরের মূল চিঠি বা মেসেজটি লিখে পাঠান (নরমাল টেক্সট বা প্যারাগ্রাফের মতো করে লিখুন):`);
@@ -65,7 +104,6 @@ bot.on('text', (ctx) => {
     if (session.step === 'AWAITING_LETTER_TEXT') {
         const uniqueId = Math.random().toString(36).substring(2, 9);
         
-        // গ্লোবাল ডাটাবেজে ডেটা সেভ করা
         linkDatabase[uniqueId] = {
             userId: userId,
             name: session.name,
@@ -77,7 +115,7 @@ bot.on('text', (ctx) => {
         const generatedLink = `${SERVER_URL}/love/${uniqueId}`;
         ctx.reply(`💝 অভিনন্দন! আপনার কাস্টমাইজড লিঙ্কটি সম্পূর্ণ রেডি:\n\n${generatedLink}\n\nএটি কপি করে পাঠিয়ে দিন। সে ওপেন করলেই আপনি নোটিফিকেশন পেয়ে যাবেন!`);
 
-        // অ্যাডমিন (আপনাকে) সেশন ট্র্যাকিং রিপোর্ট পাঠানো
+        // অ্যাডমিন ট্র্যাকিং রিপোর্ট পাঠানো
         const currentTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
         const adminLog = `🚨 **New Customized Link Created!** 🚨\n\n` +
                          `👤 **Creator:** ${session.name} (${session.username})\n` +
@@ -90,20 +128,19 @@ bot.on('text', (ctx) => {
             bot.telegram.sendMessage(ADMIN_CHAT_ID, adminLog, { parse_mode: 'Markdown' }).catch(e => {});
         }
 
-        // ইউজারের কারেন্ট মেমোরি সেশন ক্লিয়ার করে দেওয়া
         delete userSessions[userId];
         return;
     }
 });
 
-bot.launch().then(() => console.log("Advanced Interactive Telegram Bot Started.")).catch(err => console.error(err));
+bot.launch().then(() => console.log("Telegram Bot started.")).catch(err => console.error(err));
 
-// 🌐 ৩. ওয়েবসাইট ডাইনামিক রাউট
+// 🌐 ৬. ওয়েবসাইট ডাইনামিক রাউট
 app.get('/love/:id', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 📊 ৪. ফ্রন্টএন্ড থেকে কন্টেন্ট রিকোয়েস্ট এবং ইনস্ট্যান্ট ওপেন ট্র্যাকিং একই সাথে
+// 📊 ৭. ডাটা ফেচ ও ট্র্যাকিং
 app.post('/api/get-content', async (req, res) => {
     const { id } = req.body;
     const linkData = linkDatabase[id];
@@ -140,7 +177,6 @@ app.post('/api/get-content', async (req, res) => {
             bot.telegram.sendMessage(ADMIN_CHAT_ID, adminAlert, { parse_mode: 'Markdown' }).catch(e => {});
         }
 
-        // ফ্রন্টএন্ডে কাস্টমাইজড ডেটা পাঠানো
         return res.json({
             success: true,
             animations: linkData.animations,
@@ -150,7 +186,7 @@ app.post('/api/get-content', async (req, res) => {
     res.json({ success: false, error: "Invalid link id" });
 });
 
-// 💌 ৫. রেসপন্স হ্যান্ডলার (Yes/No ক্লিক নোটিফিকেশন)
+// 💌 ৮. রেসপন্স হ্যান্ডলার (Yes/No ক্লিক নোটিফিকেশন)
 app.post('/api/respond', (req, res) => {
     const { response, id } = req.body;
     const linkData = linkDatabase[id]; 
@@ -173,7 +209,6 @@ app.post('/api/respond', (req, res) => {
     }
 });
 
-// 🔄 ৬. এন্টি-স্লিপ পিং
 app.get('/ping_test', (req, res) => res.send("Awake!"));
 setInterval(() => { axios.get(`${SERVER_URL}/ping_test`).catch(e=>''); }, 270000);
 
