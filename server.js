@@ -44,6 +44,7 @@ bot.use((ctx, next) => {
     return next();
 });
 
+// 🎯 স্টার্ট কমান্ডে ইনলাইন বাটন মেনু (আপনার স্ক্রিনশটের মতো হুুবহু ডিজাইন)
 bot.command('start', (ctx) => {
     const firstName = ctx.message.from.first_name;
     const userId = ctx.chat.id;
@@ -51,21 +52,43 @@ bot.command('start', (ctx) => {
 
     ctx.reply(`💝 **হ্যালো ${firstName}!** 💝\n\n` +
               `মাল্টি-ক্যাটাগরি কাস্টম উইশ এবং কনফেশন লিঙ্ক তৈরি করার বটে আপনাকে স্বাগতম! 🥰\n\n` +
-              `🚀 **নতুন লিঙ্ক তৈরি করতে নিচের কমান্ডগুলো ব্যবহার করুন:**\n\n` +
-              `👉 /loveletter - লাভ লিঙ্ক তৈরি করুন। ❤️\n` +
-              `👉 /crush - ক্রাশ কনফেশন লিঙ্ক। 💖\n` +
-              `👉 /birthdaywish - বার্থডে উইশ লিঙ্ক। 🎂\n` +
-              `👉 /anniversarywish -  অ্যানিভার্সারি উইশ লিঙ্ক। 💍\n` +
-              `👉 /newyear - হ্যাপি নিউ ইয়ার উইশ। 🎉\n` +
-              `👉 /boishakh - পহেলা বৈশাখ উইশ। 🌾\n` +
-              `👉 /bestfriend - বেস্ট ফ্রেন্ড উইশ। 🫂\n` +
-              `👉 /eidwish - ঈদ উইশ লিঙ্ক। 🌙\n` +
-              `👉 /sorry - স্যরি লেটার লিঙ্ক। 🥺\n\n` +
-              `👀 /demo - পেজগুলো দেখতে কেমন লাগে তার ডেমো দেখুন।\n` +
-              `🔒 /off - আপনার তৈরি করা কোনো লিঙ্ক বন্ধ করুন।\n` +
-              `📊 /stats - আপনার তৈরি লিঙ্কের রিপোর্ট দেখুন。\n` +
-              `📝 /feedback - ডেভেলপারের কাছে আপনার মতামত পাঠান।\n` +
-              `❓ /help - বিস্তারিত গাইডলাইন দেখতে।`);
+              `👇 **নিচের বাটন থেকে আপনার পছন্দের ক্যাটাগরি নির্বাচন করে লিঙ্ক তৈরি শুরু করুন:**`, 
+        Markup.inlineKeyboard([
+            [Markup.button.callback('❤️ Love Letter', 'make_love'), Markup.button.callback('💖 Crush Confession', 'make_crush')],
+            [Markup.button.callback('🎂 Birthday Wish', 'make_birthday'), Markup.button.callback('💍 Anniversary Wish', 'make_anniversary')],
+            [Markup.button.callback('🎉 New Year Wish', 'make_newyear'), Markup.button.callback('🌾 Pohela Boishakh', 'make_boishakh')],
+            [Markup.button.callback('🫂 Best Friend', 'make_friend'), Markup.button.callback('🌙 Eid Wish', 'make_eid')],
+            [Markup.button.callback('🥺 Sorry Letter', 'make_sorry')]
+        ])
+    );
+});
+
+// 🎯 বাটন ক্লিকের মাধ্যমে সেশন চালু করার হ্যান্ডলার
+bot.action(/^make_/, (ctx) => {
+    const type = ctx.match.input.replace('make_', '');
+    ctx.answerCbQuery();
+    
+    let msgText = "";
+    switch(type) {
+        case 'love': msgText = "✨ কাস্টম লাভ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'crush': msgText = "💖 ক্রাশ কনফেশন লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'birthday': msgText = "🎂 কাস্টম বার্থডে উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'anniversary': msgText = "💍 কাস্টম  অ্যানিভার্সারি উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'newyear': msgText = "🎉 হ্যাপি নিউ ইয়ার উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'boishakh': msgText = "🌾 পহেলা বৈশাখ উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'friend': msgText = "🫂 বেস্ট ফ্রেন্ড উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'eid': msgText = "🌙  ঈদ উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'sorry': msgText = "🥺 স্যরি লেটার লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন。"; break;
+    }
+    
+    const userId = ctx.chat.id;
+    userSessions[userId] = {
+        step: 'AWAITING_ANIMATION_TEXT',
+        type: type,
+        name: `${ctx.from.first_name} ${ctx.from.last_name || ''}`,
+        username: ctx.from.username ? '@' + ctx.from.username : 'নেই'
+    };
+    ctx.reply(msgText);
 });
 
 bot.command('adm', (ctx) => {
@@ -219,7 +242,7 @@ bot.command('broadcast', (ctx) => {
 });
 
 bot.command('help', (ctx) => {
-    ctx.reply(`❓ **কীভাবে ব্যবহার করবেন?**\n\nকমান্ড দিয়ে সেশন শুরু করুন (যেমন /loveletter বা /crush)। তারপর বটের নির্দেশ মতো অ্যানিমেশন টেক্সট ও ফাইনাল মেসেজ পাঠান।\n\n🔒 **লিঙ্ক অফ করার নিয়ম:** \`/off লিঙ্ক_আইডি\`\n❌ বাতিল করতে টাইপ করুন: /cancel`);
+    ctx.reply(`❓ **কীভাবে ব্যবহার করবেন?**\n\n/start কমান্ড দিয়ে বাটন মেনু নিয়ে আসুন। তারপর আপনার পছন্দের ক্যাটাগরি বাটনে ক্লিক করে বটের নির্দেশ মতো অ্যানিমেশন টেক্সট ও ফাইনাল মেসেজ পাঠান।\n\n🔒 **লিঙ্ক অফ করার নিয়ম:** \`/off লিঙ্ক_আইডি\`\n❌ বাতিল করতে টাইপ করুন: /cancel`);
 });
 
 bot.command('stats', (ctx) => {
@@ -266,10 +289,11 @@ function initSession(ctx, type, msgText) {
     ctx.reply(msgText);
 }
 
+// টেক্সট কমান্ডগুলোও ব্যাকআপ হিসেবে সচল রাখা হলো
 bot.command('loveletter', (ctx) => initSession(ctx, 'love', "✨ কাস্টম লাভ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
 bot.command('crush', (ctx) => initSession(ctx, 'crush', "💖 ক্রাশ কনфেশন লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
 bot.command('birthdaywish', (ctx) => initSession(ctx, 'birthday', "🎂 কাস্টম বার্থডে উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
-bot.command('anniversarywish', (ctx) => initSession(ctx, 'anniversary', "💍 কাস্টম অ্যানিভার্সারি উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
+bot.command('anniversarywish', (ctx) => initSession(ctx, 'anniversary', "💍 কাস্টম  অ্যানিভার্সারি উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
 bot.command('newyear', (ctx) => initSession(ctx, 'newyear', "🎉 হ্যাপি নিউ ইয়ার উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
 bot.command('boishakh', (ctx) => initSession(ctx, 'boishakh', "🌾 পহেলা বৈশাখ উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
 bot.command('bestfriend', (ctx) => initSession(ctx, 'friend', "🫂 বেস্ট ফ্রেন্ড উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"));
@@ -341,7 +365,6 @@ app.post('/api/respond', (req, res) => {
 app.get('/ping_test', (req, res) => res.send("Awake!"));
 setInterval(() => { axios.get(`${SERVER_URL}/ping_test`).catch(e=>''); }, 270000);
 
-// 🚀 সার্ভার লিসেন এবং সাথে টেলিগ্রাম বট স্টার্ট করার পারফেক্ট ফিক্সড লজিক
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server live on port ${PORT}`);
