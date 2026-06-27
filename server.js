@@ -33,13 +33,17 @@ categories.forEach(cat => {
     };
 });
 
-// 🛠️ মেইনটেন্যান্স এবং ব্যান ফিল্টার
+// 🛠️ ১০০% ফিক্সড মিডলওয়্যার (অ্যাডমিন সবার আগে বাইপাস পাবে)
 bot.use((ctx, next) => {
     const userId = ctx.chat ? ctx.chat.id : (ctx.from ? ctx.from.id : null);
     if (!userId) return next();
     
-    if (String(userId) === String(ADMIN_CHAT_ID)) return next();
+    // 👑 বস! আপনি মেসেজ দিলে এই ৩টি লাইনের কারণে কোনো রেস্ট্রিকশন ছাড়াই সরাসরি পরের স্টেপে চলে যাবে
+    if (String(userId) === String(ADMIN_CHAT_ID)) {
+        return next();
+    }
     
+    // সাধারণ ইউজারদের জন্য ব্যান ও মেইনটেন্যান্স চেক
     if (bannedUsers.has(userId) || bannedUsers.has(Number(userId))) return;
     
     if (isMaintenanceMode && ctx.message && ctx.message.text !== '/start') {
@@ -161,7 +165,7 @@ bot.action('menu_stats', (ctx) => {
     });
     
     const responseText = myLinks.length === 0 
-        ? "❌ আপনি অন্তত কোনো লিঙ্ক তৈরি করেননি।" 
+        ? "❌ আপনি এখনও কোনো লিঙ্ক তৈরি করেননি।" 
         : `📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n👤 নাম: ${ctx.from.first_name}\n🎫 আপনার লিঙ্কসমূহ:\n${myLinks.join('\n')}`;
     
     ctx.editMessageText(responseText, 
@@ -223,9 +227,10 @@ bot.action(/^deactivate_/, (ctx) => {
 
 // 👑 ==================== অ্যাডমিন বাটন অ্যাকশন হ্যান্ডলারসমূহ ==================== 👑
 
-// ১. /adm কম্যান্ড দিলে বাটন ড্যাশবোর্ড আসবে
+// ১. /adm কম্যান্ড অ্যাকশন (ফিক্সড)
 bot.command('adm', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
+    const userId = ctx.chat.id;
+    if (String(userId) !== String(ADMIN_CHAT_ID)) return;
     sendAdminDashboard(ctx, false);
 });
 
@@ -299,7 +304,7 @@ bot.action('adm_backup', (ctx) => {
     } catch(e) { ctx.reply("❌ ব্যাকআপ নিতে সমস্যা হয়েছে।"); }
 });
 
-// ৭. ব্রডকাস্ট মেসেজ প্রম্পট বাটন অ্যাকশন
+// ७. ব্রডকাস্ট মেসেজ প্রম্পট বাটন অ্যাকশন
 bot.action('adm_prompt_broadcast', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
@@ -342,7 +347,7 @@ bot.action(/^startmake_/, (ctx) => {
     let msgText = "";
     switch(type) {
         case 'love': msgText = "✨ কাস্টম লাভ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
-        case 'crush': msgText = "💖 ক্রাশ কনфেশন লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
+        case 'crush': msgText = "💖 ক্রাশ কনফেশন লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
         case 'birthday': msgText = "🎂 কাস্টম বার্থডে উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
         case 'anniversary': msgText = "💍 কাস্টম  অ্যানিভার্সারি উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
         case 'newyear': msgText = "🎉 হ্যাপি নিউ ইয়ার উইশ লিঙ্ক তৈরি সেশন শুরু হয়েছে!\n\n👉 প্রথমে শুরুর অ্যানিমেশন টেক্সটগুলো দিন।"; break;
@@ -374,7 +379,7 @@ bot.action(/^demo_/, (ctx) => {
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id; const session = userSessions[userId]; const text = ctx.message.text;
     
-    // অ্যাডমিন কম্যান্ড যেগুলো টাইপ করতে হয় (সেগুলো সেশনের বাইরে রাখা হলো)
+    // অ্যাডমিন কম্যান্ড টাইপ চেক (সেশনের উর্ধ্বে)
     if (String(userId) === String(ADMIN_CHAT_ID)) {
         if (text.startsWith('/userinfo')) {
             const targetUid = text.replace('/userinfo', '').trim();
@@ -413,7 +418,7 @@ bot.on('text', (ctx) => {
 
     if (!session) return; 
 
-    // ব্রডকাস্ট প্রোসেস সম্পন্ন করা
+    // ব্রডকাস্ট প্রসেস সম্পন্ন করা
     if (session.step === 'AWAITING_BROADCAST' && String(userId) === String(ADMIN_CHAT_ID)) {
         let successCount = 0;
         registeredUsers.forEach(uId => {
@@ -501,7 +506,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server live on port ${PORT}`);
     bot.launch()
-        .then(() => console.log("Telegram Bot successfully started with Inline Admin Dashboard! 🚀"))
+        .then(() => console.log("Telegram Bot successfully started with Bypassed Admin Filter! 🚀"))
         .catch(e => console.error("Bot launch error:", e));
 });
 
