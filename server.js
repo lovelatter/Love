@@ -13,7 +13,7 @@ const ADMIN_CHAT_ID = "6719885052";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
-let linkDatabase = {}; 
+const linkDatabase = {}; 
 const userSessions = {}; 
 const registeredUsers = new Set(); 
 const bannedUsers = new Set(); 
@@ -81,7 +81,13 @@ bot.command('nukelinks', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
 
     const count = Object.keys(linkDatabase).length - 1; 
-    linkDatabase = { 'demo': linkDatabase['demo'] };
+    
+    // ✅ ফিক্সড: অবজেক্টের মেমোরি রেফারেন্স ঠিক রেখে শুধু ডাটা ডিলিট করা হচ্ছে
+    for (let key in linkDatabase) {
+        if (key !== 'demo') {
+            delete linkDatabase[key];
+        }
+    }
 
     ctx.reply(`🔥 **অপারেশন সাকসেসফুল বস!**\n\nডাটাবেজে থাকা সমস্ত ইউজারের তৈরি করা মোট \`${count}\`টি লিঙ্ক সফলভাবে বন্ধ এবং চিরতরে ডিলিট করে দেওয়া হয়েছে! এখন কোনো লিঙ্কই আর কাজ করবে না। 😎`, { parse_mode: 'Markdown' });
 });
@@ -192,7 +198,8 @@ bot.command('backup', (ctx) => {
     try {
         const backupData = JSON.stringify(linkDatabase, null, 2);
         fs.writeFileSync('backup.txt', backupData);
-        ctx.replyWithDocument({ source: 'backup.txt', filename: 'database_backup.txt' }, { caption: "💾 বটের বর্তমান ডাটাবেজ ব্যাকআপ ফাইল, বস!" });
+        // ✅ ফিক্সড: Telegraf-এর নিরাপদ ফাইল আপলোডের জন্য স্ট্রীম ব্যবহার করা হয়েছে
+        ctx.replyWithDocument({ source: fs.createReadStream('backup.txt'), filename: 'database_backup.txt' }, { caption: "💾 বটের বর্তমান ডাটাবেজ ব্যাকআপ ফাইল, বস!" });
     } catch(e) { ctx.reply("❌ ব্যাকআপ নিতে সমস্যা হয়েছে।"); }
 });
 
@@ -297,7 +304,7 @@ bot.on('text', (ctx) => {
         if (lines.length === 0) return ctx.reply("❌ দয়া করে অন্তত ১টি সলিড লাইন লিখুন!");
         session.animations = lines;
         session.step = 'AWAITING_LETTER_TEXT'; 
-        ctx.reply(`✅ চমৎকার! আপনি ${lines.length}টি অ্যানিমেশন লাইন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা মেসেজটি লিখে পাঠান:`);
+        ctx.reply(`✅ চমৎকার! আপনি ${lines.length}টি অ্যানিমেশন লাইন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা মেসেজটি লিখে পাঠান:`);
         return;
     }
 
@@ -376,3 +383,4 @@ setInterval(() => { axios.get(`${SERVER_URL}/ping_test`).catch(e=>''); }, 270000
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server live on port ${PORT}`));
+2
