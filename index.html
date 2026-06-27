@@ -30,7 +30,7 @@
         .love-letter { position:absolute; background:#fff0f5; padding:25px; border-radius:15px; text-align:center; max-width:380px; width:85%; box-shadow:0 15px 40px rgba(0,0,0,0.4); color:#333; z-index:2; transform:translateY(20px) scale(0.85); opacity:0; transition:all 1.2s cubic-bezier(0.1, 1, 0.2, 1); pointer-events:none; }
         .letter-popout { opacity:1 !important; transform:translateY(-50px) scale(1) !important; z-index:12 !important; pointer-events:auto !important; }
         .love-letter h2 { color:#ff4d6d; margin-bottom:10px; font-size:1.8rem; font-family:'Georgia', serif; }
-        .love-letter p { font-size:1.05rem; line-height:1.6; color:#444; margin-bottom:15px; }
+        .love-letter p { font-size:1.05rem; line-height:1.6; color:#444; margin-bottom:15px; white-space: pre-line; }
         
         .question-box { border-top:1px dashed #ff758f; padding-top:15px; margin-top:10px; }
         .question-box h3 { font-size:1.3rem; color:#ff4d6d; margin-bottom:12px; }
@@ -47,7 +47,7 @@
     </style>
 </head>
 <body>
-    <audio id="bgMusic" src="music.mp3" loop></audio>
+    <audio id="bgMusic" src="/music.mp3" loop></audio>
     <button id="openBtn">Open ❤️</button>
     <div id="textDisplay" class="text-container"></div>
     <div id="envelope" class="envelope-container">
@@ -59,8 +59,8 @@
     </div>
     
     <div id="loveLetter" class="love-letter">
-        <h2>আমার হৃদয়ের কথা...</h2>
-        <p>তুমি জানো না তুমি আমার জীবনে কতটা স্পেশাল। তোমার এক চিলতে হাসি আমার পুরো দিনটা ভালো করে দেয়। আমি বাকিটা জীবন এভাবেই তোমার হাতটি ধরে পাশে কাটাতে চাই। আই লাভ ইউ! 💖</p>
+        <h2 id="letterTitle">আমার হৃদয়ের কথা...</h2>
+        <p id="letterContent">লোডিং...</p>
         
         <div class="question-box" id="questionBox">
             <h3>Do you love me? 🥺</h3>
@@ -73,19 +73,28 @@
 
     <script>
         const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), noBtn = document.getElementById('noBtn'), questionBox = document.getElementById('questionBox');
-        const textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
+        
+        // ডিফল্ট টেক্সট (যদি কোনো কারণে ব্যাকএন্ড থেকে না আসে)
+        let textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
         let arrayIndex = 0, audioCtx = null;
 
-        // 🕵️‍♂️ [সুপার ইন্টেলিজেন্ট ট্র্যাকিং] পেজ ওপেন হওয়ার সাথে সাথেই নীরবে ব্যাকএন্ড এপিআই হিট করবে
-        window.addEventListener('DOMContentLoaded', () => {
+        // 🕵️‍♂️ লিঙ্ক ওপেন হওয়ার সাথে সাথেই ব্যাকএন্ড থেকে ডেটা নিয়ে আসবে এবং ট্র্যাকিং নোটিফিকেশন পাঠাবে
+        window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
             
-            fetch('/api/opened', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: id })
-            }).catch(e => console.log('Tracking sync error'));
+            try {
+                const response = await fetch('/api/get-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+                const data = await response.json();
+                if(data.success) {
+                    if(data.animations && data.animations.length > 0) textArray = data.animations;
+                    if(data.letter) document.getElementById('letterContent').innerText = data.letter;
+                }
+            } catch(e) { console.log('Content fetch error'); }
         });
 
         function playIphoneTinkSound() {
