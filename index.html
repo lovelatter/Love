@@ -10,9 +10,11 @@
         
         /* ⏳ কাউন্টডাউন লক স্ক্রিন স্টাইল */
         #lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0d0d1e; display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
-        .lock-box { background: #22223b; border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; border-radius: 20px; padding: 40px 30px; text-align: center; max-width: 400px; width: 100%; }
-        .lock-box h2 { font-size: 22px; color: #00ffcc; margin-bottom: 20px; font-weight: 600; }
-        .timer-display { font-size: 32px; font-weight: bold; color: #00ffcc; letter-spacing: 1px; line-height: 1.6; margin-top: 15px; }
+        .lock-box { background: #22223b; border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; border-radius: 20px; padding: 40px 30px; text-align: center; max-width: 450px; width: 100%; }
+        .lock-box h2 { font-size: 20px; color: #00ffcc; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; }
+        
+        /* 🕒 এক লাইনের ডিজিটাল ক্লক ডিজাইন */
+        .timer-display { font-size: 38px; font-weight: 700; color: #00ffcc; letter-spacing: 2px; font-family: 'Courier New', Courier, monospace; white-space: nowrap; margin-top: 10px; }
 
         /* 💌 মেইন কন্টেন্ট স্টাইল */
         #main-content { display: none; text-align: center; width: 100%; max-width: 600px; padding: 20px; animation: fadeIn 1s ease-in; }
@@ -31,7 +33,7 @@
         .reply-box button { background: #ff4b72; color: white; border: none; padding: 14px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.3s; }
         .reply-box button:hover { background: #e03a5f; }
         
-        /* 🎨 ডাইনামিক ৪টি প্রিমিয়াম থিম কনফিগারেশন */
+        /* 🎨 ৪টি প্রিমিয়াম থিম কনফিগারেশন */
         body.theme-classic { background: #1a0913; }
         body.theme-classic .envelope { background: #ff4b72; }
         body.theme-classic .reply-box button { background: #ff4b72; }
@@ -57,15 +59,13 @@
 </head>
 <body>
 
-    <!-- ⏳ কাউন্টডাউন লক স্ক্রিন -->
     <div id="lock-screen" style="display: none;">
         <div class="lock-box">
             <h2>⏳ Waiting for the Special Moment...</h2>
-            <div id="countdown-box" class="timer-display">00d 00h<br>00m 00s</div>
+            <div id="countdown-box" class="timer-display">00:00:00</div>
         </div>
     </div>
 
-    <!-- 💌 মূল কনটেন্ট এরিয়া -->
     <div id="main-content">
         <h1 id="anim-text" style="font-size: 26px; margin-bottom: 35px; min-height: 40px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></h1>
         <div class="envelope" id="envelope-btn" onclick="openLetter()"></div>
@@ -79,7 +79,6 @@
         </div>
     </div>
 
-    <!-- 🎵 ব্যাকগ্রাউন্ড অডিও ট্র্যাক -->
     <audio id="bg-music" loop preload="auto"></audio>
 
     <script>
@@ -87,7 +86,6 @@
         let anims = [];
         let animIndex = 0;
 
-        // ডেটা ফেচিং এবং লক স্ক্রিন হ্যান্ডলিং
         async function loadContent() {
             try {
                 const res = await fetch('/api/get-content', {
@@ -102,51 +100,44 @@
                     return;
                 }
 
-                // বডি থিম ক্লাস অ্যাড করা
                 if (data.theme) {
-                    document.body.className = ''; // রিসেট
+                    document.body.className = ''; 
                     document.body.classList.add(`theme-${data.theme}`);
                 }
 
-                // ⏳ লাইভ সার্ভার ISO টাইম চেকিং (NaN ফিক্স সহ)
                 if (data.isLocked) {
                     document.getElementById('lock-screen').style.display = 'flex';
                     startCountdown(data.targetTime);
                     return;
                 }
 
-                // সাকসেস লোড মেইন পেজ
                 document.getElementById('lock-screen').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
                 
                 anims = data.animations || [];
                 document.getElementById('letter-content').innerText = data.letter;
                 
-                // মিউজিক সেটআপ ট্র্যাকিং
                 if (data.music && data.music !== 'none') {
                     const musicPlayer = document.getElementById('bg-music');
-                    // ডেমো সোর্স হিসেবে রেন্ডম ইন্সট্রুমেন্টাল ওপেন সোর্স সঙ লিঙ্ক যুক্ত করা হলো
                     musicPlayer.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"; 
-                    document.body.addEventListener('click', () => { musicPlayer.play().catch(e => console.log("Music play blocked:", e)); }, { once: true });
+                    document.body.addEventListener('click', () => { musicPlayer.play().catch(e => console.log(e)); }, { once: true });
                 }
 
                 startAnimation();
 
             } catch (err) {
-                console.error("Critical Client Error:", err);
+                console.error("Client Error:", err);
             }
         }
 
-        // ⏱️ ফুল-প্রুফ পার্সিং কাউন্টডাউন ফাংশন (NaN প্রবলেম সমাধানকারী)
+        // ⏱️ ডিজিটাল ক্লক ফরম্যাট কাউন্টডাউন (এক লাইনে দেখাবে)
         function startCountdown(targetTimeStr) {
-            // ISO স্ট্রিংকে মিলি-সেকেন্ডে রূপান্তর করা
             const countDownDate = new Date(targetTimeStr).getTime();
 
             const x = setInterval(function() {
                 const now = new Date().getTime();
                 const distance = countDownDate - now;
 
-                // কাউন্টডাউন ফিনিশড লজিক
                 if (distance < 0) {
                     clearInterval(x);
                     window.location.reload(); 
@@ -156,16 +147,23 @@
                 const days = Math.floor(distance / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / (1000));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-                // ভিউপোর্টে ডেটা পাস করা (ডাবল ব্রেকিং স্পেস সহ)
-                document.getElementById("countdown-box").innerHTML = 
-                    days + "d " + hours + "h<br>" + minutes + "m " + seconds + "s";
+                const pad = (num) => String(num).padStart(2, '0');
+
+                // দিন থাকলে দিনসহ এক লাইনে, না থাকলে শুধু HH:MM:SS এক লাইনে দেখাবে
+                let clockText = "";
+                if (days > 0) {
+                    clockText = `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+                } else {
+                    clockText = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+                }
+
+                document.getElementById("countdown-box").innerText = clockText;
 
             }, 1000);
         }
 
-        // টেক্সট রোটেশন এনিমেশন লুপ
         function startAnimation() {
             if (anims.length === 0) return;
             const animEl = document.getElementById('anim-text');
@@ -184,7 +182,6 @@
             setTimeout(() => { letterCard.style.transform = 'translateY(0)'; }, 50);
         }
 
-        // ব্যাকএন্ডে ইউজার ফিডব্যাক বা রেসপন্স ডেটা ট্রান্সফার
         async function sendReply() {
             const replyInput = document.getElementById('reply-input');
             const replyText = replyInput.value.trim();
