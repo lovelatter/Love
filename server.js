@@ -37,8 +37,8 @@ const locale = {
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
         prompt_time_input: "⏳ অনুগ্রহ করে লিঙ্কটি খোলার সময়টি নিচের নিয়মে লিখে পাঠান:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` অথবা \`08:15 PM\`\n\n⚠️ **শর্ত:** আপনি বর্তমান সময় থেকে সর্বোচ্চ আগামী **২ ঘণ্টার মধ্যে** যেকোনো সময় সেট করতে পারবেন।",
-        invalid_time: "❌ ভুল ফরম্যাট! অনুগ্রহ করে এভাবে লিখুন: \`12:10 PM\` বা \`08:15 PM\` (AM/PM উল্লেখ করা বাধ্যতামূলক)",
-        max_time_exceeded: "⚠️ **সীমা বহির্ভূত!** আপনি বর্তমান সময় থেকে ২ ঘণ্টার বেশি দূরের সময় সেট করতে পারবেন না। অনুগ্রহ করে ২ ঘণ্টার ভেতরের কোনো সময় দিন।",
+        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে এভাবে লিখুন: \`12:10 PM\` বা \`08:05 AM\`\n\n⚠️ মিনিট ১ ডিজিটের হলে আগে ০ দিন (যেমন: \`12:8 PM\` না লিখে \`12:08 PM\` লিখুন)। AM/PM দেওয়া বাধ্যতামূলক।",
+        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি বর্তমান সময় থেকে ২ ঘণ্টার বেশি দূরের সময় সেট করতে পারবেন না। অনুগ্রহ করে আগামী ২ ঘণ্টার ভেতরের কোনো সময় দিন।",
         time_past: "❌ আপনি অতীতের কোনো সময় সেট করতে পারবেন না। বর্তমান বা ভবিষ্যৎ সময় দিন।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
@@ -65,7 +65,8 @@ const locale = {
         input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান:`,
         link_ready: (url) => `💝 অভিনন্দন! আপনার কাস্টমাইজড প্রিমিয়াম লিঙ্ক সম্পূর্ণ রেডি:\n\n${url}\n\n👉 এই লিঙ্কটি আপনার প্রিয়জনের সাথে শেয়ার করুন।`,
         someone_opened: (type, time) => `👀 **বিজ্ঞপ্তি:** কেউ একজন আপনার তৈরি করা \`${type.toUpperCase()}\` লিঙ্কটি ওপেন করেছে!\n⏰ **সময়:** ${time}`,
-        new_response: (type, res) => `💌 আপনার কাস্টম \`${type.toUpperCase()}\` লিঙ্কে একটি নতুন রেসপন্স এসেছে!\n\nউত্তর: ${res}`
+        new_response: (type, res) => `💌 আপনার কাস্টম \`${type.toUpperCase()}\` লিঙ্কে একটি নতুন রেসপন্স এসেছে!\n\nউত্তর: ${res}`,
+        general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন বা /cancel লিখে নতুন সেশন শুরু করুন।"
     },
     en: {
         welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to Wishing Bot. Create premium links with customized time locks for free.\n\nPlease select an option below:`,
@@ -75,8 +76,8 @@ const locale = {
         prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**\n\n(If set, no one can view the inner content before the specified time.)",
         btn_yes: "✅ Yes", btn_no: "❌ No",
         prompt_time_input: "⏳ Send the lock release time in this exact format:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` or \`08:15 PM\`\n\n⚠️ **Rule:** Max limit is within **2 hours** from current time.",
-        invalid_time: "❌ Invalid format! Follow: \`12:10 PM\` or \`08:15 PM\` (AM/PM is mandatory)",
-        max_time_exceeded: "⚠️ **Limit Exceeded!** You cannot set a time further than 2 hours from now.",
+        invalid_time: "❌ **Invalid Format or Time!**\n\nPlease follow: \`12:10 PM\` or \`08:05 AM\`\n\n⚠️ If minutes are single digit, add a leading zero (e.g., write \`12:08 PM\` instead of \`12:8 PM\`). AM/PM is mandatory.",
+        max_time_exceeded: "⚠️ **Limit Exceeded!**\n\nYou cannot set a time further than 2 hours from now. Please provide a time within the next 2 hours.",
         time_past: "❌ You cannot set a past time.",
         prompt_theme: "🎨 **Select a Premium Web Theme (Free):**",
         prompt_music: "🎵 **Select a Background Music (Free):**",
@@ -103,39 +104,48 @@ const locale = {
         input_anim_success: (count) => `✅ Added ${count} lines. Send main letter:`,
         link_ready: (url) => `💝 Link Ready:\n\n${url}\n\n👉 Share this link with your loved one.`,
         someone_opened: (type, time) => `👀 **Notification:** Someone opened your ${type.toUpperCase()} link!\n⏰ **Time:** ${time}`,
-        new_response: (type, res) => `💌 New response on your ${type.toUpperCase()} link!\n\nAnswer: ${res}`
+        new_response: (type, res) => `💌 New response on your ${type.toUpperCase()} link!\n\nAnswer: ${res}`,
+        general_error: "⚠️ Sorry, an internal error occurred. Please try again or type /cancel to restart."
     }
 };
 
 // 🛡️ Security Middlewares & Multi-User Layer
 bot.use((ctx, next) => {
-    const userId = ctx.chat ? ctx.chat.id : null;
-    if (!userId) return next();
-    if (String(userId) === String(ADMIN_CHAT_ID)) return next();
-    if (isMaintenanceMode) {
-        const lang = userLanguages[userId] || 'bn';
-        return ctx.reply(locale[lang].maint_msg);
+    try {
+        const userId = ctx.chat ? ctx.chat.id : null;
+        if (!userId) return next();
+        if (String(userId) === String(ADMIN_CHAT_ID)) return next();
+        if (isMaintenanceMode) {
+            const lang = userLanguages[userId] || 'bn';
+            return ctx.reply(locale[lang].maint_msg);
+        }
+        if (bannedUsers.has(userId)) return; 
+        return next();
+    } catch (err) {
+        console.error("Middleware Error:", err);
     }
-    if (bannedUsers.has(userId)) return; 
-    return next();
 });
 
 // 📌 Core Command Orchestrations
 bot.command('start', (ctx) => { 
-    registeredUsers.add(ctx.chat.id); 
-    sendMainMenu(ctx, false); 
+    try {
+        registeredUsers.add(ctx.chat.id); 
+        sendMainMenu(ctx, false); 
+    } catch (err) { console.error(err); }
 });
 
 bot.command('cancel', (ctx) => {
-    const userId = ctx.chat.id;
-    const lang = userLanguages[userId] || 'bn';
-    if (userSessions[userId]) {
-        delete userSessions[userId];
-        ctx.reply(locale[lang].session_cancelled);
-        sendMainMenu(ctx, false);
-    } else { 
-        ctx.reply(locale[lang].no_session); 
-    }
+    try {
+        const userId = ctx.chat.id;
+        const lang = userLanguages[userId] || 'bn';
+        if (userSessions[userId]) {
+            delete userSessions[userId];
+            ctx.reply(locale[lang].session_cancelled);
+            sendMainMenu(ctx, false);
+        } else { 
+            ctx.reply(locale[lang].no_session); 
+        }
+    } catch (err) { console.error(err); }
 });
 
 // 👑 Admin Panel Infrastructure
@@ -223,7 +233,7 @@ bot.action(/^make_/, (ctx) => {
 bot.action('timer_yes', (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].step = 'AWAITING_COUNTDOWN_TIME';
-    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].prompt_time_input);
+    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].prompt_time_input, { parse_mode: 'Markdown' });
 });
 
 bot.action('timer_no', (ctx) => { 
@@ -330,7 +340,7 @@ bot.action('menu_help', (ctx) => {
     ctx.reply(locale[lang].help_text);
 });
 
-// 🎯 State Machine & Complex Validation Router
+// 🎯 State Machine & Complex Validation Router (With Heavy Error Handling Protection)
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
@@ -340,150 +350,168 @@ bot.on('text', (ctx) => {
     if (text.startsWith('/')) return;
     if (!session) return;
 
-    // Admin Processors
-    if (String(userId) === String(ADMIN_CHAT_ID)) {
-        if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
-            registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
-            ctx.reply("📡 Broadcast distribution cycle finished.");
-            delete userSessions[userId]; return;
-        }
-        if (session.step === 'AWAITING_BAN_USER_ID') {
-            const targetId = parseInt(text, 10);
-            if (bannedUsers.has(targetId)) { bannedUsers.delete(targetId); ctx.reply("🟢 Target Unbanned successfully."); }
-            else { bannedUsers.add(targetId); ctx.reply("🚫 Target Banned successfully."); }
-            delete userSessions[userId]; return;
-        }
-    }
-
-    if (session.step === 'AWAITING_USER_FEEDBACK') {
-        if (text.length < 5) return ctx.reply(locale[lang].feedback_short);
-        totalFeedbacksReceived++;
-        bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback from User ${userId}:\n\n${text}`).catch(()=>{});
-        ctx.reply(locale[lang].feedback_success);
-        delete userSessions[userId]; sendMainMenu(ctx, false); return;
-    }
-
-    if (session.step === 'AWAITING_CARD_NAME') {
-        totalCardsGenerated++; 
-        ctx.reply(locale[lang].card_ready);
-        ctx.replyWithPhoto({ url: `https://dummyimage.com/600x400/ff4b72/fff.png&text=${encodeURIComponent(text)}` }).catch(()=>{});
-        delete userSessions[userId]; sendMainMenu(ctx, false); return;
-    }
-
-    // 🕒 শুধু সময় (`12:10 PM`) ইনপুট নেওয়ার নিখুঁত ও সিকিউর লজিক
-    if (session.step === 'AWAITING_COUNTDOWN_TIME') {
-        const timeRegex = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i;
-        const match = text.match(timeRegex);
-
-        if (!match) {
-            return ctx.reply(locale[lang].invalid_time);
+    try {
+        // Admin Processors
+        if (String(userId) === String(ADMIN_CHAT_ID)) {
+            if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
+                registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
+                ctx.reply("📡 Broadcast distribution cycle finished.");
+                delete userSessions[userId]; return;
+            }
+            if (session.step === 'AWAITING_BAN_USER_ID') {
+                const targetId = parseInt(text, 10);
+                if (isNaN(targetId)) return ctx.reply("❌ Invalid Chat ID. Please send a numeric ID.");
+                if (bannedUsers.has(targetId)) { bannedUsers.delete(targetId); ctx.reply("🟢 Target Unbanned successfully."); }
+                else { bannedUsers.add(targetId); ctx.reply("🚫 Target Banned successfully."); }
+                delete userSessions[userId]; return;
+            }
         }
 
-        let [_, hours, minutes, ampm] = match;
-        hours = parseInt(hours, 10);
-        minutes = parseInt(minutes, 10);
-        ampm = ampm.toUpperCase();
-
-        if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
-            return ctx.reply(locale[lang].invalid_time);
+        if (session.step === 'AWAITING_USER_FEEDBACK') {
+            if (text.length < 5) return ctx.reply(locale[lang].feedback_short);
+            totalFeedbacksReceived++;
+            bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback from User ${userId}:\n\n${text}`).catch(()=>{});
+            ctx.reply(locale[lang].feedback_success);
+            delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // বর্তমান সার্ভার টাইম হিসাব করা
-        const now = new Date();
-        const targetDate = new Date(now);
-
-        let targetHours = hours;
-        if (ampm === 'PM' && hours !== 12) targetHours += 12;
-        if (ampm === 'AM' && hours === 12) targetHours = 0;
-
-        targetDate.setHours(targetHours, minutes, 0, 0);
-
-        // ইউজার পেছনের সময় দিলে সেটাকে অটোমেটিক আগামীকালের সময় হিসেবে ধরা হবে
-        if (targetDate < now) {
-            targetDate.setDate(targetDate.getDate() + 1);
+        if (session.step === 'AWAITING_CARD_NAME') {
+            totalCardsGenerated++; 
+            ctx.reply(locale[lang].card_ready);
+            ctx.replyWithPhoto({ url: `https://dummyimage.com/600x400/ff4b72/fff.png&text=${encodeURIComponent(text)}` }).catch(()=>{});
+            delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // ⚠️ ২ ঘণ্টার সর্বোচ্চ সীমার কন্ডিশন চেক
-        const diffMs = targetDate.getTime() - now.getTime();
-        const maxLimitMs = 2 * 60 * 60 * 1000; 
+        // 🕒 টাইমিং ইঞ্জিন উইথ প্রটেক্টেড ক্যাচ-মেকানিজম
+        if (session.step === 'AWAITING_COUNTDOWN_TIME') {
+            // মিনিট ১টি সংখ্যা লিখলেও সাপোর্ট করার জন্য রেগুলার এক্সপ্রেশন ফ্লেক্সিবল করা হলো
+            const timeRegex = /^(\d{1,2}):(\d{1,2})\s*(AM|PM)$/i;
+            const match = text.match(timeRegex);
 
-        if (diffMs > maxLimitMs) {
-            return ctx.reply(locale[lang].max_time_exceeded);
+            if (!match) {
+                return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
+            }
+
+            let [_, hours, minutes, ampm] = match;
+            hours = parseInt(hours, 10);
+            minutes = parseInt(minutes, 10);
+            ampm = ampm.toUpperCase();
+
+            if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+                return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
+            }
+
+            const now = new Date();
+            const targetDate = new Date(now);
+
+            let targetHours = hours;
+            if (ampm === 'PM' && hours !== 12) targetHours += 12;
+            if (ampm === 'AM' && hours === 12) targetHours = 0;
+
+            targetDate.setHours(targetHours, minutes, 0, 0);
+
+            // যদি ইনপুট করা সময় বর্তমান সময়ের চেয়ে পেছনে চলে যায়, তবে সেটা পরবর্তী দিনের সময় ধরা হবে
+            if (targetDate < now) {
+                targetDate.setDate(targetDate.getDate() + 1);
+            }
+
+            const diffMs = targetDate.getTime() - now.getTime();
+            const maxLimitMs = 2 * 60 * 60 * 1000; // ২ ঘণ্টা মিলিসেকেন্ডে
+
+            if (diffMs > maxLimitMs) {
+                return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
+            }
+
+            session.countdown = targetDate.toISOString(); 
+            askThemeSelection(ctx);
+            return;
         }
 
-        session.countdown = targetDate.toISOString(); 
-        askThemeSelection(ctx);
-        return;
-    }
+        if (session.step === 'AWAITING_ANIMATION_TEXT') {
+            session.animations = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (session.animations.length === 0) {
+                return ctx.reply("⚠️ অনুগ্রহ করে অন্তত এক লাইন অ্যানিমেশন টেক্সট লিখুন।");
+            }
+            session.step = 'AWAITING_LETTER_TEXT';
+            ctx.reply(locale[lang].input_anim_success(session.animations.length));
+            return;
+        }
 
-    if (session.step === 'AWAITING_ANIMATION_TEXT') {
-        session.animations = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        session.step = 'AWAITING_LETTER_TEXT';
-        ctx.reply(locale[lang].input_anim_success(session.animations.length));
-        return;
-    }
-
-    if (session.step === 'AWAITING_LETTER_TEXT') {
-        totalLinksCreated++;
-        const uniqueId = Math.random().toString(36).substring(2, 9);
-        linkDatabase[uniqueId] = {
-            userId: userId, name: session.name, type: session.type,
-            theme: session.theme, music: session.music, countdown: session.countdown,
-            animations: session.animations, letter: text, isActive: true
-        };
-        ctx.reply(locale[lang].link_ready(`${SERVER_URL}/love/${uniqueId}`));
-        delete userSessions[userId];
-        return;
+        if (session.step === 'AWAITING_LETTER_TEXT') {
+            totalLinksCreated++;
+            const uniqueId = Math.random().toString(36).substring(2, 9);
+            linkDatabase[uniqueId] = {
+                userId: userId, name: session.name, type: session.type,
+                theme: session.theme, music: session.music, countdown: session.countdown,
+                animations: session.animations, letter: text, isActive: true
+            };
+            ctx.reply(locale[lang].link_ready(`${SERVER_URL}/love/${uniqueId}`));
+            delete userSessions[userId];
+            return;
+        }
+    } catch (error) {
+        console.error("Critical Runtime Handled Error:", error);
+        ctx.reply(locale[lang].general_error);
     }
 });
 
 function sendMainMenu(ctx, isEdit = false) {
-    const userId = ctx.chat.id;
-    const lang = userLanguages[userId] || 'bn';
-    const text = locale[lang].welcome(ctx.from?.first_name || "User");
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback(locale[lang].btn_make, 'menu_makelink'), Markup.button.callback(locale[lang].btn_card, 'menu_cardgen')],
-        [Markup.button.callback(locale[lang].btn_demo, 'menu_demo'), Markup.button.callback(locale[lang].btn_stats, 'menu_stats')],
-        [Markup.button.callback(locale[lang].btn_off, 'menu_off'), Markup.button.callback(locale[lang].btn_feedback, 'menu_feedback')],
-        [Markup.button.callback(locale[lang].btn_help, 'menu_help'), Markup.button.callback(locale[lang].btn_lang, 'menu_lang')]
-    ]);
-    if (isEdit) return ctx.editMessageText(text, keyboard).catch(()=>{});
-    return ctx.reply(text, keyboard);
+    try {
+        const userId = ctx.chat.id;
+        const lang = userLanguages[userId] || 'bn';
+        const text = locale[lang].welcome(ctx.from?.first_name || "User");
+        const keyboard = Markup.inlineKeyboard([
+            [Markup.button.callback(locale[lang].btn_make, 'menu_makelink'), Markup.button.callback(locale[lang].btn_card, 'menu_cardgen')],
+            [Markup.button.callback(locale[lang].btn_demo, 'menu_demo'), Markup.button.callback(locale[lang].btn_stats, 'menu_stats')],
+            [Markup.button.callback(locale[lang].btn_off, 'menu_off'), Markup.button.callback(locale[lang].btn_feedback, 'menu_feedback')],
+            [Markup.button.callback(locale[lang].btn_help, 'menu_help'), Markup.button.callback(locale[lang].btn_lang, 'menu_lang')]
+        ]);
+        if (isEdit) return ctx.editMessageText(text, keyboard).catch(()=>{});
+        return ctx.reply(text, keyboard);
+    } catch (err) { console.error(err); }
 }
 
 // 🌐 Web UI Engine API Integration
 app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.post('/api/get-content', (req, res) => {
-    const { id } = req.body;
-    if (id.startsWith('demo-preview')) return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is a placeholder demo preview message body." });
-    
-    const data = linkDatabase[id];
-    if (!data || !data.isActive) return res.json({ success: false });
+    try {
+        const { id } = req.body;
+        if (!id) return res.json({ success: false });
+        if (id.startsWith('demo-preview')) return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is a placeholder demo preview message body." });
+        
+        const data = linkDatabase[id];
+        if (!data || !data.isActive) return res.json({ success: false });
 
-    // লাইভ ট্র্যাক নোটিফিকেশন সিস্টেম
-    const lang = userLanguages[data.userId] || 'bn';
-    const formattedTime = new Date().toLocaleTimeString();
-    bot.telegram.sendMessage(data.userId, locale[lang].someone_opened(data.type, formattedTime)).catch(()=>{});
+        const lang = userLanguages[data.userId] || 'bn';
+        const formattedTime = new Date().toLocaleTimeString();
+        bot.telegram.sendMessage(data.userId, locale[lang].someone_opened(data.type, formattedTime)).catch(()=>{});
 
-    if (data.countdown) {
-        const now = new Date();
-        if (new Date(data.countdown) > now) {
-            return res.json({ success: true, isLocked: true, countdownTime: data.countdown, theme: data.theme });
+        if (data.countdown) {
+            const now = new Date();
+            if (new Date(data.countdown) > now) {
+                return res.json({ success: true, isLocked: true, countdownTime: data.countdown, theme: data.theme });
+            }
         }
+        res.json({ success: true, isLocked: false, theme: data.theme, music: data.music, animations: data.animations, letter: data.letter });
+    } catch (err) {
+        res.json({ success: false });
     }
-    res.json({ success: true, isLocked: false, theme: data.theme, music: data.music, animations: data.animations, letter: data.letter });
 });
 
 app.post('/api/respond', (req, res) => {
-    const { response, id } = req.body;
-    const data = linkDatabase[id];
-    if (data && data.isActive) {
-        const lang = userLanguages[data.userId] || 'bn';
-        bot.telegram.sendMessage(data.userId, locale[lang].new_response(data.type, response)).catch(()=>{});
-        return res.json({ success: true });
+    try {
+        const { response, id } = req.body;
+        const data = linkDatabase[id];
+        if (data && data.isActive) {
+            const lang = userLanguages[data.userId] || 'bn';
+            bot.telegram.sendMessage(data.userId, locale[lang].new_response(data.type, response)).catch(()=>{});
+            return res.json({ success: true });
+        }
+        res.json({ success: false });
+    } catch (err) {
+        res.json({ success: false });
     }
-    res.json({ success: false });
 });
 
 const PORT = process.env.PORT || 3000;
