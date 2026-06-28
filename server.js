@@ -36,10 +36,10 @@ const locale = {
         cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
-        prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা নিচের বাটন চেপে সিলেক্ট করুন অথবা শুধু সংখ্যায় লিখে পাঠান।\n\n**সঠিক উদাহরন (Examples):**\n• \`15\` অথবা \`15m\`\n• \`90 minute\`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**।",
+        prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা নিচের বাটন চেপে সিলেক্ট করুন অথবা শুধু সংখ্যায় লিখে পাঠান।\n\n**সহীহ উদাহরণ (Examples):**\n• \`15\` অথবা \`15m\`\n• \`90 minute\`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**।",
         invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন বা বাটন ব্যবহার করুন। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
         max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ **১০০ মিনিট** পর্যন্ত টাইম লক সেট করতে পারবেন। দয়া করে ১ থেকে ১০০ এর মধ্যে সংখ্যা দিন।",
-        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেгетивное সময় গ্রহণযোগ্য নয়।",
+        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেтивное সময় গ্রহণযোগ্য নয়।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? নামটি লিখে পাঠান:",
@@ -109,7 +109,7 @@ const locale = {
     }
 };
 
-// 🤖 ফ্রি AI টেক্সট জেনারেটর ইঞ্জিন (নাম অপশন সহ)
+// 🤖 ফ্রি AI টেক্সট জেনারেটর ইঞ্জিন
 async function generateAiContent(type, category, lang, targetName = "") {
     try {
         let prompt = "";
@@ -143,7 +143,6 @@ function getDefaultFallback(type, lang, targetName = "") {
     return lang === 'bn' ? `আমি তোমাকে অনেক ভালোবাসি ${nameStr}। তুমি আমার জীবনের সেরা পাওয়া।` : `I love you so much ${nameStr}. You are the best part of my life.`;
 }
 
-// 🧠 স্মার্ট মিনিট এক্সট্রাক্টর ফাংশন
 function extractMinutes(input) {
     const cleanInput = input.trim().toLowerCase();
     const matches = cleanInput.match(/\d+/);
@@ -190,7 +189,7 @@ bot.command('cancel', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-// Admin Core Control
+// Admin Engine Controls
 const handleAdminConsole = (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return;
     ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
@@ -251,7 +250,7 @@ bot.action(/^set_lang_/, (ctx) => {
 });
 bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
 
-// Link Creation Routing
+// Link Creation Category View
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -268,29 +267,38 @@ bot.action('menu_makelink', (ctx) => {
 bot.action(/^make_/, (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id] = { type: ctx.match.input.replace('make_', ''), name: ctx.from.first_name || "User" };
+    showCountdownPrompt(ctx);
+});
+
+function showCountdownPrompt(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
     ctx.editMessageText(locale[lang].prompt_countdown_ask, Markup.inlineKeyboard([
-        [Markup.button.callback(locale[lang].btn_yes, 'timer_yes'), Markup.button.callback(locale[lang].btn_no, 'timer_no')]
-    ]));
-});
+        [Markup.button.callback(locale[lang].btn_yes, 'timer_yes'), Markup.button.callback(locale[lang].btn_no, 'timer_no')],
+        [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'menu_makelink')]
+    ])).catch(()=>{});
+}
 
 bot.action('timer_yes', (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].step = 'AWAITING_COUNTDOWN_TIME';
     const lang = userLanguages[ctx.chat.id] || 'bn';
     
-    ctx.reply(locale[lang].prompt_time_input, Markup.inlineKeyboard([
+    ctx.editMessageText(locale[lang].prompt_time_input, Markup.inlineKeyboard([
         [Markup.button.callback(lang === 'bn' ? '🕒 ৩ মিনিট' : '🕒 3 Min', 'set_time_3'), Markup.button.callback(lang === 'bn' ? '🕒 ৫ মিনিট' : '🕒 5 Min', 'set_time_5')],
-        [Markup.button.callback(lang === 'bn' ? '🕒 ১০ মিনিট' : '🕒 10 Min', 'set_time_10'), Markup.button.callback(lang === 'bn' ? '🕒 ২০ মিনিট' : '🕒 20 Min', 'set_time_20')]
-    ], { parse_mode: 'Markdown' }));
+        [Markup.button.callback(lang === 'bn' ? '🕒 ১০ মিনিট' : '🕒 10 Min', 'set_time_10'), Markup.button.callback(lang === 'bn' ? '🕒 ২০ মিনিট' : '🕒 20 Min', 'set_time_20')],
+        [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'back_to_timer_ask')]
+    ], { parse_mode: 'Markdown' })).catch(()=>{});
+});
+
+bot.action('back_to_timer_ask', (ctx) => {
+    ctx.answerCbQuery();
+    showCountdownPrompt(ctx);
 });
 
 bot.action(/^set_time_/, (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = userSessions[userId];
-    if (!session || session.step !== 'AWAITING_COUNTDOWN_TIME') return;
-    
     const minutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
     session.pendingMinutes = minutes;
     askThemeSelection(ctx);
@@ -304,30 +312,51 @@ bot.action('timer_no', (ctx) => {
 
 function askThemeSelection(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.reply(locale[lang].prompt_theme, Markup.inlineKeyboard([
+    ctx.editMessageText(locale[lang].prompt_theme, Markup.inlineKeyboard([
         [Markup.button.callback('✨ Classic Pink', 'set_theme_classic'), Markup.button.callback('🌌 Neon Magic', 'set_theme_neon')],
-        [Markup.button.callback('🎈 Birthday Gold', 'set_theme_gold'), Markup.button.callback('❤️ Dark Romance', 'set_theme_dark')]
-    ]));
+        [Markup.button.callback('🎈 Birthday Gold', 'set_theme_gold'), Markup.button.callback('❤️ Dark Romance', 'set_theme_dark')],
+        [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'back_to_timer_ask')]
+    ])).catch(()=>{});
 }
 
 bot.action(/^set_theme_/, (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].theme = ctx.match.input.replace('set_theme_', '');
+    askMusicSelection(ctx);
+});
+
+function askMusicSelection(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.reply(locale[lang].prompt_music, Markup.inlineKeyboard([
+    ctx.editMessageText(locale[lang].prompt_music, Markup.inlineKeyboard([
         [Markup.button.callback('🎵 Romantic Flute', 'set_music_romantic'), Markup.button.callback('🎵 Soft Piano', 'set_music_piano')],
-        [Markup.button.callback('🎵 Birthday Beats', 'set_music_birthday'), Markup.button.callback('🔇 No Music', 'set_music_none')]
-    ]));
+        [Markup.button.callback('🎵 Birthday Beats', 'set_music_birthday'), Markup.button.callback('🔇 No Music', 'set_music_none')],
+        [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'back_to_theme')]
+    ])).catch(()=>{});
+}
+
+bot.action('back_to_theme', (ctx) => {
+    ctx.answerCbQuery();
+    askThemeSelection(ctx);
 });
 
 bot.action(/^set_music_/, (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].music = ctx.match.input.replace('set_music_', '');
-    userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
+    showAnimationIntro(ctx);
+});
+
+function showAnimationIntro(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.reply(locale[lang].session_started(userSessions[ctx.chat.id].type), Markup.inlineKeyboard([
-        [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে অ্যানিমেশন লিখুন" : "🤖 Write Animations with AI", "ask_ai_anim_name")]
-    ]), { parse_mode: 'Markdown' });
+    userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
+    ctx.editMessageText(locale[lang].session_started(userSessions[ctx.chat.id].type), Markup.inlineKeyboard([
+        [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে অ্যানিমেশন লিখুন" : "🤖 Write Animations with AI", "ask_ai_anim_name")],
+        [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'back_to_music')]
+    ]), { parse_mode: 'Markdown' }).catch(()=>{});
+}
+
+bot.action('back_to_music', (ctx) => {
+    ctx.answerCbQuery();
+    askMusicSelection(ctx);
 });
 
 // Card & Demos & Stats Infrastructure
@@ -340,7 +369,7 @@ bot.action('menu_cardgen', (ctx) => {
 bot.action('menu_demo', (ctx) => { 
     ctx.answerCbQuery(); 
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.reply(locale[lang].demo_title, Markup.inlineKeyboard([
+    ctx.editMessageText(locale[lang].demo_title, Markup.inlineKeyboard([
         [Markup.button.callback("❤️ Love Demo", "view_demo_love"), Markup.button.callback("🎂 Birthday Demo", "view_demo_birthday")],
         [Markup.button.callback("💖 Crush Demo", "view_demo_crush"), Markup.button.callback("🔙 Main Menu", "go_to_main_menu")]
     ])); 
@@ -404,7 +433,7 @@ bot.action('menu_help', (ctx) => {
 });
 
 
-// 🎬 1. AI ANIMATION WITH CUSTOM NAME ROUTING
+// 🎬 1. AI ANIMATION WITH BACK NAVIGATION
 bot.action('ask_ai_anim_name', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -412,9 +441,15 @@ bot.action('ask_ai_anim_name', (ctx) => {
         lang === 'bn' ? "👤 **আপনি কি অ্যানিমেশন টেক্সটে নির্দিষ্ট কারো নাম যুক্ত করতে চান?**" : "👤 **Do you want to include someone's name in the animations?**",
         Markup.inlineKeyboard([
             [Markup.button.callback(lang === 'bn' ? "✍️ হ্যাঁ, নাম দিব" : "✍️ Yes, provide name", "ai_anim_provide_name")],
-            [Markup.button.callback(lang === 'bn' ? "❌ না, নাম ছাড়া বানান" : "❌ No, without name", "execute_ai_animation_raw")]
+            [Markup.button.callback(lang === 'bn' ? "❌ না, নাম ছাড়া বানান" : "❌ No, without name", "execute_ai_animation_raw")],
+            [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'back_to_anim_intro')]
         ])
     );
+});
+
+bot.action('back_to_anim_intro', (ctx) => {
+    ctx.answerCbQuery();
+    showAnimationIntro(ctx);
 });
 
 bot.action('ai_anim_provide_name', (ctx) => {
@@ -454,39 +489,37 @@ async function triggerAiAnimationGeneration(ctx) {
         : `🤖 **AI Generated Animations (Version: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **Tip:** If you dislike this, you can type your own text below.\n\nDo you like it?`;
 
     const buttons = [
-        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_anim_accept")],
+        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখ করব" : "✅ Keep this", "ai_anim_accept")],
         [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_animation_core")]
     ];
 
     if (session.animHistory.length > 1) {
         buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের লেখা" : "🔙 Previous Text", "ai_anim_previous")]);
     }
+    buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 মূল অপশনে যান" : "🔙 Main Option", "ask_ai_anim_name")]);
 
-    try { ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' }); } catch(e){}
+    try { ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' }); } catch(e){
+        ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' });
+    }
 }
 
 bot.action('regenerate_ai_animation_core', async (ctx) => {
     ctx.answerCbQuery("🤖 নতুন করে তৈরি হচ্ছে...");
-    ctx.deleteMessage().catch(()=>{});
     triggerAiAnimationGeneration(ctx);
 });
 
 bot.action('ai_anim_previous', async (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
-    if (!session || !session.animHistory || session.currentAnimIndex <= 0) {
-        return ctx.answerCbQuery(userLanguages[userId] === 'bn' ? "❌ এর আগে আর কোনো টেক্সট নেই!" : "❌ No previous version found!");
-    }
+    if (!session || !session.animHistory || session.currentAnimIndex <= 0) return ctx.answerCbQuery();
 
-    ctx.answerCbQuery("🔙 আগের ভার্সনে ফিরে যাওয়া হচ্ছে...");
+    ctx.answerCbQuery();
     const lang = userLanguages[userId] || 'bn';
-
     session.currentAnimIndex--;
     const previousAnims = session.animHistory[session.currentAnimIndex];
     session.tempAnimations = previousAnims;
 
     const showText = previousAnims.map((t, idx) => `লাইন ${idx + 1}: ${t}`).join('\n');
-
     const promptMsg = lang === 'bn'
         ? `🤖 **AI এর লেখা অ্যানিমেশন টেক্সট (সংস্করণ: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **পরামর্শ:** পছন্দ না হলে নিচে নিজের মতো করে নতুন টেক্সট লিখে পাঠাতে পারেন।\n\nআপনার কি এটি পছন্দ হয়েছে?`
         : `🤖 **AI Generated Animations (Version: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **Tip:** If you dislike this, you can type your own text below.\n\nDo you like it?`;
@@ -499,6 +532,7 @@ bot.action('ai_anim_previous', async (ctx) => {
     if (session.currentAnimIndex > 0) {
         buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের লেখা" : "🔙 Previous Text", "ai_anim_previous")]);
     }
+    buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 মূল অপশনে যান" : "🔙 Main Option", "ask_ai_anim_name")]);
 
     await ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' }).catch(()=>{});
 });
@@ -511,17 +545,18 @@ bot.action('ai_anim_accept', (ctx) => {
 
     session.animations = session.tempAnimations; 
     session.step = 'AWAITING_LETTER_TEXT'; 
-    const lang = userLanguages[userId] || 'bn';
-
-    ctx.deleteMessage().catch(()=>{});
-    
-    ctx.reply(locale[lang].input_anim_success(session.animations.length), Markup.inlineKeyboard([
-        [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে চিঠি লিখুন" : "🤖 Write Letter with AI", "ask_ai_letter_name")]
-    ]));
+    showLetterIntro(ctx);
 });
 
+function showLetterIntro(ctx) {
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    ctx.editMessageText(locale[lang].input_anim_success(userSessions[ctx.chat.id].animations.length), Markup.inlineKeyboard([
+        [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে চিঠি লিখুন" : "🤖 Write Letter with AI", "ask_ai_letter_name")]
+    ])).catch(()=>{});
+}
 
-// 🤖 2. AI LETTER WITH CUSTOM NAME ROUTING
+
+// 🤖 2. AI LETTER WITH BACK NAVIGATION
 bot.action('ask_ai_letter_name', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -529,16 +564,22 @@ bot.action('ask_ai_letter_name', (ctx) => {
         lang === 'bn' ? "👤 **আপনি কি খামের ভেতরের চিঠিতে নির্দিষ্ট কারো নাম যুক্ত করতে চান?**" : "👤 **Do you want to include someone's name inside the main letter?**",
         Markup.inlineKeyboard([
             [Markup.button.callback(lang === 'bn' ? "✍️ হ্যাঁ, নাম দিব" : "✍️ Yes, provide name", "ai_letter_provide_name")],
-            [Markup.button.callback(lang === 'bn' ? "❌ না, নাম ছাড়া বানান" : "❌ No, without name", "execute_ai_letter_raw")]
+            [Markup.button.callback(lang === 'bn' ? "❌ না, নাম ছাড়া বানান" : "❌ No, without name", "execute_ai_letter_raw")],
+            [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'back_to_letter_intro')]
         ])
     );
+});
+
+bot.action('back_to_letter_intro', (ctx) => {
+    ctx.answerCbQuery();
+    showLetterIntro(ctx);
 });
 
 bot.action('ai_letter_provide_name', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
     userSessions[ctx.chat.id].step = 'AWAITING_AI_LETTER_NAME';
-    ctx.reply(lang === 'bn' ? "尊 যার নাম দিতে চান, তার নামটি শুধু লিখে পাঠান:" : "📝 Enter the name you want to include inside the letter:");
+    ctx.reply(lang === 'bn' ? "📝 যার নাম দিতে চান, তার নামটি শুধু লিখে পাঠান:" : "📝 Enter the name you want to include inside the letter:");
 });
 
 bot.action('execute_ai_letter_raw', (ctx) => {
@@ -575,24 +616,24 @@ async function triggerAiLetterGeneration(ctx) {
     if (session.aiLettersHistory.length > 1) {
         buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের চিঠি" : "🔙 Previous Letter", "ai_letter_previous")]);
     }
+    buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 মূল অপশনে যান" : "🔙 Main Option", "ask_ai_letter_name")]);
 
-    try { ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' }); } catch(e){}
+    try { ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' }); } catch(e){
+        ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' });
+    }
 }
 
 bot.action('regenerate_ai_letter_core', async (ctx) => {
     ctx.answerCbQuery("🤖 নতুন চিঠি তৈরি হচ্ছে...");
-    ctx.deleteMessage().catch(()=>{});
     triggerAiLetterGeneration(ctx);
 });
 
 bot.action('ai_letter_previous', async (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
-    if (!session || !session.aiLettersHistory || session.currentHistoryIndex <= 0) {
-        return ctx.answerCbQuery(userLanguages[userId] === 'bn' ? "❌ এর আগে আর কোনো চিঠি নেই!" : "❌ No previous letters found!");
-    }
+    if (!session || !session.aiLettersHistory || session.currentHistoryIndex <= 0) return ctx.answerCbQuery();
 
-    ctx.answerCbQuery("🔙 আগের চিঠিতে ফিরে যাওয়া হচ্ছে...");
+    ctx.answerCbQuery();
     const lang = userLanguages[userId] || 'bn';
 
     session.currentHistoryIndex--;
@@ -611,6 +652,7 @@ bot.action('ai_letter_previous', async (ctx) => {
     if (session.currentHistoryIndex > 0) {
         buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের চিঠি" : "🔙 Previous Letter", "ai_letter_previous")]);
     }
+    buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 মূল অপশনে যান" : "🔙 Main Option", "ask_ai_letter_name")]);
 
     await ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' }).catch(()=>{});
 });
@@ -621,7 +663,6 @@ bot.action('ai_letter_accept', (ctx) => {
     const session = userSessions[userId];
     if (!session || !session.tempAiLetter) return;
 
-    ctx.deleteMessage().catch(()=>{});
     processFinalLinkCreation(ctx, session.tempAiLetter);
 });
 
@@ -683,7 +724,6 @@ bot.on('text', (ctx) => {
             return;
         }
 
-        // AI এর জন্য নাম ইনপুট হ্যান্ডলার (অ্যানিমেশন)
         if (session.step === 'AWAITING_AI_ANIM_NAME') {
             session.targetName = text;
             session.step = 'AWAITING_ANIMATION_TEXT';
@@ -691,7 +731,6 @@ bot.on('text', (ctx) => {
             return;
         }
 
-        // AI এর জন্য নাম ইনপুট হ্যান্ডলার (চিঠি)
         if (session.step === 'AWAITING_AI_LETTER_NAME') {
             session.letterTargetName = text;
             session.step = 'AWAITING_LETTER_TEXT';
@@ -723,7 +762,6 @@ bot.on('text', (ctx) => {
     }
 });
 
-// ফাইনাল লিঙ্ক তৈরির কমন ফাংশন
 function processFinalLinkCreation(ctx, letterText) {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
