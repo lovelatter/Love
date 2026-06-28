@@ -37,8 +37,8 @@ const locale = {
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
         prompt_time_input: "⏳ অনুগ্রহ করে লিঙ্কটি খোলার সময়টি নিচের নিয়মে লিখে পাঠান:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` অথবা \`08:15 PM\`\n\n⚠️ **শর্ত:** আপনি বর্তমান সময় থেকে সর্বোচ্চ আগামী **২ ঘণ্টার মধ্যে** যেকোনো সময় সেট করতে পারবেন।",
-        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে এভাবে লিখুন: \`12:10 PM\` বা \`08:05 AM\`\n\n⚠️ মিনিট ১ ডিজিটের হলে আগে ০ দিন (যেমন: \`12:8 PM\` না লিখে \`12:08 PM\` লিখুন)। AM/PM দেওয়া বাধ্যতামূলক।",
-        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি বর্তমান সময় থেকে ২ ঘণ্টার বেশি দূরের সময় সেট করতে পারবেন না। অনুগ্রহ করে আগামী ২ ঘণ্টার ভেতরের কোনো সময় দিন।",
+        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে এভাবে লিখুন: \`12:10 PM\` বা \`08:05 AM\`\n\n⚠️ মিনিট ১ ডিজিটের হলে আগে ০ দিন (যেমন: \`12:8 PM\` না লিখে \`12:08 PM\` লিখুন)। AM/PM দেওয়া বাধ্যতামুলক।",
+        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি বর্তমান সময় থেকে ২ ঘণ্টার বেশি দূরের সময় সেট করতে পারবেন না। অনুগ্রহ করে আপনার দেশের ঘড়ি অনুযায়ী আগামী ২ ঘণ্টার ভেতরের কোনো সময় দিন।",
         time_past: "❌ আপনি অতীতের কোনো সময় সেট করতে পারবেন না। বর্তমান বা ভবিষ্যৎ সময় দিন।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
@@ -77,7 +77,7 @@ const locale = {
         btn_yes: "✅ Yes", btn_no: "❌ No",
         prompt_time_input: "⏳ Send the lock release time in this exact format:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` or \`08:15 PM\`\n\n⚠️ **Rule:** Max limit is within **2 hours** from current time.",
         invalid_time: "❌ **Invalid Format or Time!**\n\nPlease follow: \`12:10 PM\` or \`08:05 AM\`\n\n⚠️ If minutes are single digit, add a leading zero (e.g., write \`12:08 PM\` instead of \`12:8 PM\`). AM/PM is mandatory.",
-        max_time_exceeded: "⚠️ **Limit Exceeded!**\n\nYou cannot set a time further than 2 hours from now. Please provide a time within the next 2 hours.",
+        max_time_exceeded: "⚠️ **Limit Exceeded!**\n\nYou cannot set a time further than 2 hours from now. Please provide a time within the next 2 hours based on your device clock.",
         time_past: "❌ You cannot set a past time.",
         prompt_theme: "🎨 **Select a Premium Web Theme (Free):**",
         prompt_music: "🎵 **Select a Background Music (Free):**",
@@ -340,7 +340,7 @@ bot.action('menu_help', (ctx) => {
     ctx.reply(locale[lang].help_text);
 });
 
-// 🎯 State Machine & Complex Validation Router (With Heavy Error Handling Protection)
+// 🎯 State Machine & Universal Device-Agnostic Validation Router
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
@@ -382,9 +382,8 @@ bot.on('text', (ctx) => {
             delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // 🕒 টাইমিং ইঞ্জিন উইথ প্রটেক্টেড ক্যাচ-মেকানিজম
+        // 🕒 সম্পূর্ণ গ্লোবাল এবং ডায়নামিক "ইউজার টাইমজোন" প্রুফ ইঞ্জিন
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
-            // মিনিট ১টি সংখ্যা লিখলেও সাপোর্ট করার জন্য রেগুলার এক্সপ্রেশন ফ্লেক্সিবল করা হলো
             const timeRegex = /^(\d{1,2}):(\d{1,2})\s*(AM|PM)$/i;
             const match = text.match(timeRegex);
 
@@ -401,28 +400,39 @@ bot.on('text', (ctx) => {
                 return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
             }
 
-            const now = new Date();
-            const targetDate = new Date(now);
+            // ১. টেলিগ্রামের মেসেজ ডেল্টা থেকে ইউজারের লোকাল টাইমজোন বের করার রিয়েল-টাইম মেকানিজম
+            const msgDateSeconds = ctx.message.date; // এটি ইউজারের মেসেজ পাঠানোর ইউনিভার্সাল টাইমস্ট্যাম্প
+            const serverNow = new Date();
+            const userNow = new Date(msgDateSeconds * 1000); 
 
+            // ২. ইউজারের ডেট অবজেক্ট থেকে সে যেই সময়টি দিয়েছে তার একটি রিলেটিভ ম্যাপ তৈরি করা
+            const targetDate = new Date(userNow);
             let targetHours = hours;
             if (ampm === 'PM' && hours !== 12) targetHours += 12;
             if (ampm === 'AM' && hours === 12) targetHours = 0;
 
             targetDate.setHours(targetHours, minutes, 0, 0);
 
-            // যদি ইনপুট করা সময় বর্তমান সময়ের চেয়ে পেছনে চলে যায়, তবে সেটা পরবর্তী দিনের সময় ধরা হবে
-            if (targetDate < now) {
+            // ৩. ইউজার যদি এমন টাইম দেয় যা তার বর্তমান সময় থেকে পেছনে (যেমন ঘড়িতে ১২:১৪ কিন্তু দিয়েছে ১২:১০), 
+            // তবে ৫ মিনিটের টাইপিং বাফার বাদে বাকি সব পেছনের সময়কে পরবর্তী দিনের সময় (Tomorrow) ধরা হবে।
+            if (targetDate.getTime() < userNow.getTime() - (5 * 60 * 1000)) { 
                 targetDate.setDate(targetDate.getDate() + 1);
             }
 
-            const diffMs = targetDate.getTime() - now.getTime();
-            const maxLimitMs = 2 * 60 * 60 * 1000; // ২ ঘণ্টা মিলিসেকেন্ডে
+            // ৪. ইউজারের ডিভাইসের কারেন্ট টাইম থেকে টার্গেটের সময়ের নিখুঁত ব্যবধান (Time Gap) হিসাব করা
+            const diffMs = targetDate.getTime() - userNow.getTime();
+            const maxLimitMs = 2 * 60 * 60 * 1000; // কঠোরভাবে ২ ঘণ্টা সর্বোচ্চ লিমিট
 
             if (diffMs > maxLimitMs) {
                 return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
             }
 
-            session.countdown = targetDate.toISOString(); 
+            // ৫. চূড়ান্ত ইউনিভার্সাল টাইমস্ট্যাম্প (ISO) ডাটাবেজে কনভার্ট করা যা বিশ্বব্যাপী ওয়েব লিঙ্কে লাইভ রিয়েল-টাইম সেকেন্ড কাউন্টডাউন দেখাবে
+            const timeDifferenceWithServer = serverNow.getTime() - userNow.getTime();
+            const finalServerTargetDate = new Date(targetDate.getTime() + timeDifferenceWithServer);
+
+            session.countdown = finalServerTargetDate.toISOString(); 
+            
             askThemeSelection(ctx);
             return;
         }
@@ -450,7 +460,7 @@ bot.on('text', (ctx) => {
             return;
         }
     } catch (error) {
-        console.error("Critical Runtime Handled Error:", error);
+        console.error("Critical Universal Runtime Handled Error:", error);
         ctx.reply(locale[lang].general_error);
     }
 });
