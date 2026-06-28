@@ -3,161 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Special Wishing Box ✨</title>
+    <title>Special Wishing Message ✨</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            height: 100vh; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; transition: background 1s ease;
-        }
-        /* 🎨 থিম কালার প্যালেট */
-        body.theme-classic { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: #ff4b72; }
-        body.theme-neon { background: #0f0c1b; color: #00ffcc; }
-        body.theme-gold { background: linear-gradient(135deg, #111 0%, #443410 100%); color: #ffd700; }
-        body.theme-dark { background: #1a0505; color: #ff3333; }
-
-        .container { text-align: center; width: 90%; max-width: 500px; padding: 30px; border-radius: 20px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        body.theme-neon .container { border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; }
-
-        /* ⏰ কাউন্টডাউন ডিজাইন */
-        .timer-box { font-size: 2.5rem; font-weight: bold; margin-top: 20px; letter-spacing: 2px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0b0b1a; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
         
-        .btn { padding: 12px 30px; font-size: 1.1rem; border: none; border-radius: 25px; cursor: pointer; margin-top: 20px; font-weight: bold; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: 0.3s; }
-        body.theme-neon .btn { background: #00ffcc; color: #000; }
+        /* ⏳ কাউন্টডাউন লক স্ক্রিন স্টাইল */
+        #lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0d0d1e; display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        .lock-box { background: #22223b; border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; border-radius: 20px; padding: 40px 30px; text-align: center; max-width: 400px; width: 100%; }
+        .lock-box h2 { font-size: 22px; color: #00ffcc; margin-bottom: 20px; font-weight: 600; }
+        .timer-display { font-size: 32px; font-weight: bold; color: #00ffcc; letter-spacing: 1px; line-height: 1.6; margin-top: 15px; }
 
-        /* 💌 এনভেলাপ ও টেক্সট */
-        #animation-text { font-size: 1.8rem; font-weight: bold; min-height: 60px; margin-bottom: 20px; }
-        #envelope-wrapper { display: none; cursor: pointer; font-size: 5rem; animation: float 2s infinite ease-in-out; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        /* 💌 মেইন কন্টেন্ট স্টাইল */
+        #main-content { display: none; text-align: center; width: 100%; max-width: 600px; padding: 20px; animation: fadeIn 1s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .envelope { background: #ff4b72; width: 200px; height: 120px; margin: 0 auto 30px; border-radius: 0 0 10px 10px; position: relative; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.3); transition: transform 0.3s, box-shadow 0.3s; }
+        .envelope:hover { transform: scale(1.05); box-shadow: 0 15px 25px rgba(255,75,114,0.4); }
         
-        #letter-box { display: none; background: #fff; color: #333; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; max-height: 300px; overflow-y: auto; }
+        .letter-box { background: white; color: #333; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; text-align: left; transform: translateY(20px); transition: all 0.5s ease; }
+        .letter-text { font-size: 18px; line-height: 1.8; white-space: pre-line; color: #2b2b2b; margin-bottom: 25px; font-weight: 500; }
+        
+        /* 📝 রেসপন্স ফর্ম */
+        .reply-box { margin-top: 20px; display: flex; gap: 10px; border-top: 1px solid #eee; padding-top: 20px; }
+        .reply-box input { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        .reply-box input:focus { border-color: #ff4b72; }
+        .reply-box button { background: #ff4b72; color: white; border: none; padding: 14px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.3s; }
+        .reply-box button:hover { background: #e03a5f; }
+        
+        /* 🎨 ডাইনামিক ৪টি প্রিমিয়াম থিম কনফিগারেশন */
+        body.theme-classic { background: #1a0913; }
+        body.theme-classic .envelope { background: #ff4b72; }
+        body.theme-classic .reply-box button { background: #ff4b72; }
+
+        body.theme-neon { background: #050510; }
+        body.theme-neon .lock-box { border-color: #ff00ff; box-shadow: 0 0 25px #ff00ff; background: #11051c; }
+        body.theme-neon .timer-display { color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
+        body.theme-neon .envelope { background: #00ffff; box-shadow: 0 0 15px #00ffff; }
+        body.theme-neon .reply-box button { background: #ff00ff; }
+
+        body.theme-gold { background: #141108; }
+        body.theme-gold .lock-box { border-color: #ffd700; box-shadow: 0 0 25px #ffd700; background: #221c0e; }
+        body.theme-gold .timer-display { color: #ffd700; }
+        body.theme-gold .envelope { background: #ffd700; }
+        body.theme-gold .reply-box button { background: #ffd700; color: #000; }
+
+        body.theme-dark { background: #0f0f0f; }
+        body.theme-dark .lock-box { border-color: #cf6679; box-shadow: 0 0 25px #cf6679; background: #1e1e1e; }
+        body.theme-dark .timer-display { color: #cf6679; }
+        body.theme-dark .envelope { background: #cf6679; }
+        body.theme-dark .reply-box button { background: #cf6679; }
     </style>
 </head>
-<body class="theme-classic">
+<body>
 
-    <div class="container">
-        <!-- লকড কাউন্টডাউন স্ক্রিন -->
-        <div id="lock-screen" style="display: none;">
+    <!-- ⏳ কাউন্টডাউন লক স্ক্রিন -->
+    <div id="lock-screen" style="display: none;">
+        <div class="lock-box">
             <h2>⏳ Waiting for the Special Moment...</h2>
-            <div class="timer-box" id="countdown-clock">00:00:00:00</div>
+            <div id="countdown-box" class="timer-display">00d 00h<br>00m 00s</div>
         </div>
+    </div>
 
-        <!-- উইশিং পেজ স্ক্রিন -->
-        <div id="wish-screen" style="display: none;">
-            <div id="animation-text">Loading surprise...</div>
-            <div id="envelope-wrapper" onclick="openEnvelope()">💌</div>
-            
-            <div id="letter-box">
-                <p id="main-letter-text"></p>
-                <input type="text" id="user-response" placeholder="Type your reply here..." style="width:100%; padding:10px; margin-top:15px; border-radius:5px; border:1px solid #ccc;">
-                <button class="btn" onclick="sendReply()">Send Reply ❤️</button>
+    <!-- 💌 মূল কনটেন্ট এরিয়া -->
+    <div id="main-content">
+        <h1 id="anim-text" style="font-size: 26px; margin-bottom: 35px; min-height: 40px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></h1>
+        <div class="envelope" id="envelope-btn" onclick="openLetter()"></div>
+        
+        <div class="letter-box" id="letter-card">
+            <div class="letter-text" id="letter-content"></div>
+            <div class="reply-box">
+                <input type="text" id="reply-input" placeholder="Write your secret reply here...">
+                <button id="send-btn" onclick="sendReply()">Send 💝</button>
             </div>
         </div>
     </div>
 
-    <!-- ফ্রি মিউজিক সোর্স প্লেয়ার লিংক -->
-    <audio id="bg-music" loop></audio>
+    <!-- 🎵 ব্যাকগ্রাউন্ড অডিও ট্র্যাক -->
+    <audio id="bg-music" loop preload="auto"></audio>
 
     <script>
         const linkId = window.location.pathname.split('/').pop();
-        let animationLines = [];
-        let currentLineIdx = 0;
+        let anims = [];
+        let animIndex = 0;
 
-        // মিউজিক ট্র‍্যাক লাইব্রেরি
-        const musicTracks = {
-            romantic: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // এক্সাম্পল প্রফেশনাল বাঁশির সুর যোগ করতে পারবেন
-            birthday: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-            piano: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-        };
+        // ডেটা ফেচিং এবং লক স্ক্রিন হ্যান্ডলিং
+        async function loadContent() {
+            try {
+                const res = await fetch('/api/get-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: linkId })
+                });
+                const data = await res.json();
 
-        fetch('/api/get-content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: linkId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(!data.success) return alert("Link Expired or Invalid!");
-
-            // থিম সেট করা
-            if(data.theme) document.body.className = 'theme-' + data.theme;
-
-            // যদি লিঙ্কটি এখনো লক থাকে (কাউন্টডাউন চলছে)
-            if(data.isLocked) {
-                document.getElementById('lock-screen').style.display = 'block';
-                startCountdownClock(data.targetTime);
-            } else {
-                // লিঙ্ক আনলকড থাকলে উইশ স্ক্রিন লোড হবে
-                document.getElementById('wish-screen').style.display = 'block';
-                animationLines = data.animations || [];
-                document.getElementById('main-letter-text').innerText = data.letter || '';
-                
-                // মিউজিক অটো-প্লে সেটআপ
-                if(data.music && musicTracks[data.music]) {
-                    const audio = document.getElementById('bg-music');
-                    audio.src = musicTracks[data.music];
-                    audio.play().catch(() => {
-                        // ব্রাউজার পলিসির জন্য ইউজার স্ক্রিনে ফার্স্ট ক্লিক করলেই গান বাজবে
-                        document.body.addEventListener('click', () => audio.play(), { once: true });
-                    });
-                }
-                showAnimations();
-            }
-        });
-
-        // লাইভ কাউন্টডাউন ফাংশন
-        function startCountdownClock(targetStr) {
-            const targetDate = new Date(targetStr.replace(' ', 'T') + ':00').getTime();
-            const interval = setInterval(() => {
-                const now = new Date().getTime();
-                const diff = targetDate - now;
-
-                if (diff <= 0) {
-                    clearInterval(interval);
-                    location.reload(); // টাইম শেষ হলে পেজটি অটো রিলোড হয়ে আনলক হবে
+                if (!data.success) {
+                    document.body.innerHTML = "<div style='text-align:center; font-size:22px; color:#ff4b72; font-weight:bold; margin-top:100px;'>❌ Link Expired, Blocked or Invalid!</div>";
                     return;
                 }
 
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                // বডি থিম ক্লাস অ্যাড করা
+                if (data.theme) {
+                    document.body.className = ''; // রিসেট
+                    document.body.classList.add(`theme-${data.theme}`);
+                }
 
-                document.getElementById('countdown-clock').innerText = 
-                    `${days}d ${hours}h ${minutes}m ${seconds}s`;
-            }, 1000);
-        }
+                // ⏳ লাইভ সার্ভার ISO টাইম চেকিং (NaN ফিক্স সহ)
+                if (data.isLocked) {
+                    document.getElementById('lock-screen').style.display = 'flex';
+                    startCountdown(data.targetTime);
+                    return;
+                }
 
-        // অ্যানিমেশন টেক্সট শো করার লজিক
-        function showAnimations() {
-            if(currentLineIdx < animationLines.length) {
-                document.getElementById('animation-text').innerText = animationLines[currentLineIdx];
-                currentLineIdx++;
-                setTimeout(showAnimations, 3000); // প্রতি ৩ সেকেন্ড পর পর লাইন পরিবর্তন হবে
-            } else {
-                document.getElementById('animation-text').style.display = 'none';
-                document.getElementById('envelope-wrapper').style.display = 'block';
+                // সাকসেস লোড মেইন পেজ
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                
+                anims = data.animations || [];
+                document.getElementById('letter-content').innerText = data.letter;
+                
+                // মিউজিক সেটআপ ট্র্যাকিং
+                if (data.music && data.music !== 'none') {
+                    const musicPlayer = document.getElementById('bg-music');
+                    // ডেমো সোর্স হিসেবে রেন্ডম ইন্সট্রুমেন্টাল ওপেন সোর্স সঙ লিঙ্ক যুক্ত করা হলো
+                    musicPlayer.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"; 
+                    document.body.addEventListener('click', () => { musicPlayer.play().catch(e => console.log("Music play blocked:", e)); }, { once: true });
+                }
+
+                startAnimation();
+
+            } catch (err) {
+                console.error("Critical Client Error:", err);
             }
         }
 
-        function openEnvelope() {
-            document.getElementById('envelope-wrapper').style.display = 'none';
-            document.getElementById('letter-box').style.display = 'block';
+        // ⏱️ ফুল-প্রুফ পার্সিং কাউন্টডাউন ফাংশন (NaN প্রবলেম সমাধানকারী)
+        function startCountdown(targetTimeStr) {
+            // ISO স্ট্রিংকে মিলি-সেকেন্ডে রূপান্তর করা
+            const countDownDate = new Date(targetTimeStr).getTime();
+
+            const x = setInterval(function() {
+                const now = new Date().getTime();
+                const distance = countDownDate - now;
+
+                // কাউন্টডাউন ফিনিশড লজিক
+                if (distance < 0) {
+                    clearInterval(x);
+                    window.location.reload(); 
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / (1000));
+
+                // ভিউপোর্টে ডেটা পাস করা (ডাবল ব্রেকিং স্পেস সহ)
+                document.getElementById("countdown-box").innerHTML = 
+                    days + "d " + hours + "h<br>" + minutes + "m " + seconds + "s";
+
+            }, 1000);
         }
 
-        function sendReply() {
-            const reply = document.getElementById('user-response').value;
-            if(!reply.trim()) return alert("Please type something!");
-            fetch('/api/respond', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: linkId, response: reply })
-            }).then(() => {
-                alert("Reply sent successfully! ❤️");
-                document.getElementById('user-response').value = '';
-            });
+        // টেক্সট রোটেশন এনিমেশন লুপ
+        function startAnimation() {
+            if (anims.length === 0) return;
+            const animEl = document.getElementById('anim-text');
+            animEl.innerText = anims[animIndex];
+            
+            setInterval(() => {
+                animIndex = (animIndex + 1) % anims.length;
+                animEl.innerText = anims[animIndex];
+            }, 3000);
         }
+
+        function openLetter() {
+            document.getElementById('envelope-btn').style.display = 'none';
+            const letterCard = document.getElementById('letter-card');
+            letterCard.style.display = 'block';
+            setTimeout(() => { letterCard.style.transform = 'translateY(0)'; }, 50);
+        }
+
+        // ব্যাকএন্ডে ইউজার ফিডব্যাক বা রেসপন্স ডেটা ট্রান্সফার
+        async function sendReply() {
+            const replyInput = document.getElementById('reply-input');
+            const replyText = replyInput.value.trim();
+            if (!replyText) return;
+
+            const btn = document.getElementById('send-btn');
+            btn.disabled = true;
+            btn.innerText = "Sending...";
+
+            try {
+                const res = await fetch('/api/respond', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: linkId, response: replyText })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("💝 Your response has been received!");
+                    replyInput.value = '';
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Send 💝";
+            }
+        }
+
+        window.onload = loadContent;
     </script>
 </body>
 </html>
