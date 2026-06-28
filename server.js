@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const axios = require('axios');
 const { Telegraf, Markup } = require('telegraf');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
@@ -15,12 +16,31 @@ const bot = new Telegraf(TELEGRAM_TOKEN);
 const linkDatabase = {}; 
 const userSessions = {}; 
 const registeredUsers = new Set(); 
-const userLanguages = {}; 
+const bannedUsers = new Set(); 
+const userLanguages = {}; // ইউজারদের ভাষা মনে রাখার জন্য { userId: 'bn' বা 'en' }
+let isMaintenanceMode = false; 
 
-// 🌐 মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি (সব আগের অপশন সহ)
+// 🎯 ডেমো ডাটাবেজ ক্যাটাগরি সেটআপ (আগের সব ক্যাটাগরি)
+const categories = ['love', 'crush', 'birthday', 'anniversary', 'newyear', 'boishakh', 'friend', 'eid', 'sorry'];
+categories.forEach(cat => {
+    linkDatabase[`demo_${cat}`] = {
+        userId: ADMIN_CHAT_ID,
+        name: "Developer",
+        username: "@admin",
+        type: cat,
+        theme: "classic",
+        music: "none",
+        countdown: null,
+        animations: ["Hello Dear", "How are you?", "I have a surprise for you... 👀"],
+        letter: `This is a demo page.\nWhen you create your custom link, your written letter will be displayed beautifully inside the envelope like this! ✨`,
+        isActive: true
+    };
+});
+
+// 🌐 মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি (আগের সব মেসেজ + নতুন ফিচারের লেখা)
 const locale = {
     bn: {
-        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nঅল-ইন-ওয়ান উইшением বটের পক্ষ থেকে স্বাগতম। নিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
+        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nঅল-ইন-ওয়ান উইশিং অ্যান্ড কনফেশন বটের পক্ষ থেকে স্বাগতম। নিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
         btn_make: "🚀 লিঙ্ক তৈরি করুন",
         btn_card: "🖼️ উইশ কার্ড বানান",
         btn_demo: "👀 ডেমো দেখুন",
@@ -28,10 +48,10 @@ const locale = {
         btn_off: "🔒 লিঙ্ক বন্ধ করুন",
         btn_feedback: "📝 মতামত",
         btn_help: "❓ সাহায্য",
-        btn_lang: "🌐 Change Language",
+        btn_lang: "🌐 ভাষা পরিবর্তন (Change Lang)",
         btn_back: "🔙 মেইন মেনু",
-        choose_cat: "✨ **কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান? সিলেক্ট করুন:**",
-        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিন",
+        choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান? নিচে থেকে সিলেক্ট করুন:**",
+        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা",
         cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ",
         cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন (সম্পূর্ণ ফ্রি):**",
@@ -40,16 +60,37 @@ const locale = {
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
         prompt_time_input: "⏳ অনুগ্রহ করে কাউন্টডাউন শেষ হওয়ার তারিখ এবং সময় নিচের ফরম্যাটে লিখে পাঠান:\n\nFormat: `YYYY-MM-DD HH:MM`\nExample: `2026-12-31 23:59` (২৪ ঘণ্টার ফরম্যাটে লিখবেন)",
         invalid_time: "❌ ভুল ফরম্যাট! অনুগ্রহ করে সঠিক ফরম্যাটে লিখুন। উদাহরণ: `2026-06-30 18:00`",
-        help_text: `❓ **কিভাবে ব্যবহার করবেন?**\n\n১. 🚀 **লিঙ্ক তৈরি করুন** বাটনে ক্লিক করে ক্যাটাগরি, ফ্রি থিম, মিউজিক ও কাউন্টডাউন সেট করুন।\n২. অ্যানিমেশন টেক্সট এবং মূল চিঠি পাঠান।\n৩. 🖼️ **উইশ কার্ড বানান** অপশন ব্যবহার করে ইন্সট্যান্ট গ্রাফিক্স কার্ড তৈরি করতে পারবেন।\n\n❌ সেশন বাতিল করতে /cancel লিখুন।`,
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? তার নামটি লিখে পাঠান:",
         card_ready: "✨ **আপনার প্রিমিয়াম উইশ কার্ডটি তৈরি হয়ে গেছে!** 👇",
-        invalid_cmd: (cmd) => `❌ **ভুল কমান্ড:** \`${cmd}\` গ্রহণযোগ্য নয়!`,
-        session_started: (cat) => `✨ কাস্টম লিঙ্ক সেশন শুরু হয়েছে!\n\n👉 প্রথমে অ্যানিমেশন টেক্সটগুলো পাঠান (প্রতি লাইনের পর এন্টার দিন):`,
-        input_anim_success: (count) => `✅ ${count} লাইনের অ্যানিমেশন যোগ হয়েছে।\n\n💌 এবার খামের ভেতরের মূল চিঠিটি লিখে পাঠান:`,
-        link_ready: (url) => `💝 অভিনন্দন! আপনার প্রিমিয়াম মাল্টি-ফিচার লিঙ্ক রেডি:\n\n🔗 ${url}\n\nএটি শেয়ার করুন, ওপেন করলেই নোটিফিকেশন পাবেন!`
+        help_text: `❓ **কিভাবে ব্যবহার করবেন?**\n\n১. প্রথমে 🚀 **লিঙ্ক তৈরি করুন** বাটনে ক্লিক করুন।\n২. আপনার পছন্দের ক্যাটাগরি, থিম, মিউজিক ও কাউন্টডাউন অপশন সিলেক্ট করুন।\n৩. অ্যানিমেশন টেক্সটগুলো এক এক লাইন করে পাঠান এবং নির্দেশ অনুযায়ী শেষ চিঠিটি লিখে পাঠিয়ে দিন।\n৪. তৈরি হওয়া লিঙ্কটি কপি করে আপনার বিশেষ মানুষকে পাঠান। তারা লিঙ্কটি ওপেন করলেই আপনি বটের মাধ্যমে সাথে সাথে নোটিফিকেশন পেয়ে যাবেন!\n\n❌ যেকোনো রানিং সেশন বাতিল করতে /cancel লিখুন।`,
+        feedback_prompt: "📝 অনুগ্রহ করে আপনার মতামত বা পরামর্শ এখানে মেসেজ আকারে লিখে পাঠান:",
+        feedback_short: "❌ মতামত একটু বড় করে লিখুন (কমপক্ষে ৫টি অক্ষর)।",
+        feedback_success: "✅ আপনার মূল্যবান মতামত সফলভাবে জমা হয়েছে। ধন্যবাদ!",
+        session_cancelled: "❌ আপনার চলমান লিঙ্ক তৈরির সেশনটি বাতিল করা হয়েছে।",
+        no_session: "💡 আপনার কোনো একটিভ সেশন নেই।",
+        invalid_cmd: (cmd) => `❌ **ভুল কমান্ড:** \`${cmd}\` এই বটটিতে গ্রহণযোগ্য নয়!\n\nঅনুগ্রহ করে নিচের বাটনগুলো অথবা সঠিক কমান্ড ব্যবহার করুন।`,
+        btn_open_help: "❓ সাহায্য মেনু দেখুন",
+        maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!**\n\nঅনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন। ধৈর্যের জন্য ধন্যবাদ।",
+        no_links: "❌ আপনি এখনো কোনো লিঙ্ক তৈরি করেননি।",
+        profile_report: (name, list) => `📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n👤 নাম: ${name}\n🎫 আপনার লিঙ্কসমূহ:\n${list}`,
+        btn_want_deactivate: "🔒 লিঙ্ক ডিঅ্যাক্টিভেট করতে চান?",
+        no_active_links: "💡 আপনার এই মুহূর্তে কোনো সক্রিয় লিঙ্ক নেই।",
+        off_link_title: "🔒 **আপনি কোন লিঙ্কটি বন্ধ করতে চান? নিচে ক্লিক করুন:**",
+        off_all_links: "❌ সব লিঙ্ক বন্ধ করুন",
+        deactivate_success_all: (count) => `✅ আপনার সবকটি (\`${count}\`) সক্রিয় লিঙ্ক সফলভাবে বন্ধ করা হয়েছে!`,
+        deactivate_success_single: (id) => `✅ আপনার লিঙ্কটি (\`${id}\`) সফলভাবে বন্ধ করা হয়েছে।`,
+        link_not_found: "❌ লিঙ্কটি পাওয়া যায়নি অথবা ইতিমধ্যে বন্ধ করা হয়েছে।",
+        session_started: (cat) => `✨ আপনার কাস্টম লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 প্রথমে অ্যানিমেশন টেক্সটগুলো পাঠান (একের অধিক লাইন হলে প্রতি লাইনের পর এন্টার দিন)।`,
+        demo_title: "👀 **আপনি কোন ডেমো পেজটি দেখতে চান? নিচে সিলেক্ট করুন:**",
+        demo_ready: (type, url) => `✨ **আপনার অনুরোধ করা ডেমো লিঙ্কটি তৈরি!**\n\n🔗 ডেমো লিঙ্ক: ${url}`,
+        input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা মেসেজটি লিখে পাঠান:`,
+        link_ready: (url) => `💝 অভিনন্দন! আপনার কাস্টমাইজড লিঙ্ক সম্পূর্ণ রেডি:\n\n${url}\n\nএটি কপি করে পাঠিয়ে দিন। সে ওপেন করলেই আপনি নোটিফিকেশন পাবেন!`,
+        btn_rate_feedback: "📝 বটটি কেমন লাগলো? মতামত দিন",
+        someone_opened: (type, time) => `👀 **বিজ্ঞপ্তি:** কেউ একজন আপনার তৈরি করা \`${type.toUpperCase()}\` লিঙ্কটি ওপেন করেছে!\n⏰ **সময়:** ${time}`,
+        new_response: (type, res) => `💌 আপনার কাস্টম \`${type.toUpperCase()}\` লিঙ্কে একটি নতুন রেসপন্স এসেছে!\n\nউত্তর: ${res}`
     },
     en: {
-        welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to Wishing Bot. Choose an option:`,
+        welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to All-in-One Wishing & Confession Bot. Choose an option from below:`,
         btn_make: "🚀 Make Link",
         btn_card: "🖼️ Wish Card Generator",
         btn_demo: "👀 Demo",
@@ -57,11 +98,11 @@ const locale = {
         btn_off: "🔒 Off Link",
         btn_feedback: "📝 Feedback",
         btn_help: "❓ Help",
-        btn_lang: "🌐 বাংলা ভাষা করুন",
+        btn_lang: "🌐 Change Language",
         btn_back: "🔙 Main Menu",
-        choose_cat: "✨ **Select Category:**",
+        choose_cat: "✨ **Which category link do you want to create? Select below:**",
         cat_love: "❤️ Love Letter", cat_crush: "💖 Crush Confession", cat_birthday: "🎂 Birthday Wish",
-        cat_anniversary: "💍 Anniversary", cat_newyear: "🎉 New Year", cat_boishakh: "🌾 Pohela Boishakh",
+        cat_anniversary: "💍 Anniversary Wish", cat_newyear: "🎉 New Year Wish", cat_boishakh: "🌾 Pohela Boishakh",
         cat_friend: "🫂 Best Friend", cat_eid: "🌙 Eid Wish", cat_sorry: "🥺 Sorry Letter",
         prompt_theme: "🎨 **Select a Premium Web Theme (Free):**",
         prompt_music: "🎵 **Select a Background Music (Free):**",
@@ -69,22 +110,55 @@ const locale = {
         btn_yes: "✅ Yes", btn_no: "❌ No",
         prompt_time_input: "⏳ Send Countdown end date & time in this format:\n\nFormat: `YYYY-MM-DD HH:MM`\nExample: `2026-12-31 23:59`",
         invalid_time: "❌ Invalid format! Please follow: `2026-06-30 18:00`",
-        help_text: `❓ **How to use?**\n\n1. Click 🚀 **Make Link**, choose category, theme, music, and countdown.\n2. Send animation and main letter.\n\n❌ Type /cancel to stop.`,
         prompt_card_name: "🖼️ Enter the name you want to print on the Wish Card:",
         card_ready: "✨ **Your premium Wish Card is ready!** 👇",
-        invalid_cmd: (cmd) => `❌ **Invalid Command:** \`${cmd}\``,
-        session_started: (cat) => `✨ Custom Link started!\n\n👉 Send animation texts line by line:`,
-        input_anim_success: (count) => `✅ Added ${count} lines.\n\n💌 Now send the main letter text:`,
-        link_ready: (url) => `💝 Customized Link Ready:\n\n🔗 ${url}`
+        help_text: `❓ **How to use?**\n\n1. First, click on the 🚀 **Make Link** button.\n2. Select your preferred category, free theme, music, and countdown.\n3. Send the animation texts line by line and then send the final letter text as instructed.\n4. Copy the generated link and send it. You will get instant notifications when they open it!\n\n❌ Type /cancel to cancel any running session.`,
+        feedback_prompt: "📝 Please send your feedback or suggestions here as a message:",
+        feedback_short: "❌ Please write your feedback with some more details.",
+        feedback_success: "✅ Your valuable feedback has been successfully submitted. Thank you!",
+        session_cancelled: "❌ Your current link generation session has been cancelled.",
+        no_session: "💡 You don't have any active session.",
+        invalid_cmd: (cmd) => `❌ **Invalid Command:** \`${cmd}\` is not recognized by this bot!`,
+        btn_open_help: "❓ Open Help Menu",
+        maint_msg: "🚧 **Bot is under maintenance!**\n\nPlease try again later.",
+        no_links: "❌ You haven't created any links yet.",
+        profile_report: (name, list) => `📊 **Your Profile Report:**\n\n👤 Name: ${name}\n🎫 Your Links:\n${list}`,
+        btn_want_deactivate: "🔒 Want to deactivate a link?",
+        no_active_links: "💡 You have no active links at the moment.",
+        off_link_title: "🔒 **Which link do you want to deactivate? Click below:**",
+        off_all_links: "❌ Off All Links",
+        deactivate_success_all: (count) => `✅ Successfully deactivated all (\`${count}\`) of your active links!`,
+        deactivate_success_single: (id) => `✅ Successfully deactivated your link (\`${id}\`).`,
+        link_not_found: "❌ Link not found or already deactivated.",
+        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link session started!\n\n👉 Send the animation texts first.`,
+        demo_title: "👀 **Which demo page do you want to see? Select below:**",
+        demo_ready: (type, url) => `✨ **Your requested demo link has been generated!**\n\n🔗 Demo Link: ${url}`,
+        input_anim_success: (count) => `✅ Great! You added ${count} animation lines.\n\n💌 Now write and send the main letter:`,
+        link_ready: (url) => `💝 Congratulations! Your customized link is completely ready:\n\n${url}`,
+        btn_rate_feedback: "📝 Give feedback",
+        someone_opened: (type, time) => `👀 **Notification:** Someone just opened your custom \`${type.toUpperCase()}\` link!\n⏰ **Time:** ${time}`,
+        new_response: (type, res) => `💌 New response received on your \`${type.toUpperCase()}\` link!\n\nAnswer: ${res}`
     }
 };
 
-// 🔄 মেইন মেনু
+// 🛠️ মেইনটেন্যান্স ও ব্যান ফিল্টার (আগের লজিক)
+bot.use((ctx, next) => {
+    const userId = ctx.chat ? ctx.chat.id : (ctx.from ? ctx.from.id : null);
+    if (!userId) return next();
+    if (String(userId) === String(ADMIN_CHAT_ID)) return next();
+    if (isMaintenanceMode) {
+        const lang = userLanguages[userId] || 'bn';
+        return ctx.reply(locale[lang].maint_msg);
+    }
+    if (bannedUsers.has(userId) || bannedUsers.has(Number(userId))) return;
+    return next();
+});
+
+// 🔄 মূল মেনু মেসেজ (Wish Card বাটন পাশাপাশি সেট করা হয়েছে)
 function sendMainMenu(ctx, isEdit = false) {
     const userId = ctx.chat.id;
     const lang = userLanguages[userId] || 'bn';
     const firstName = ctx.from ? ctx.from.first_name : "User";
-    
     const text = locale[lang].welcome(firstName);
     
     const keyboard = Markup.inlineKeyboard([
@@ -98,23 +172,177 @@ function sendMainMenu(ctx, isEdit = false) {
     return ctx.reply(text, keyboard);
 }
 
+// 👑 অ্যাডমিন ড্যাশবোর্ড ফাংশন (আগের ফুল প্রফেশনাল ড্যাশবোর্ড)
+function sendAdminDashboard(ctx, isEdit = false) {
+    const text = `👑 **Welcome Boss! Your Complete Admin Dashboard:**\n\nUse the buttons below to control the bot's activities instantly.`;
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback('📊 Bot Live Stats', 'adm_stats'), Markup.button.callback('📋 All Links List', 'adm_alllinks_main')],
+        [Markup.button.callback('⚙️ Maintenance (On/Off)', 'adm_toggle_maint'), Markup.button.callback('📢 Broadcast Message', 'adm_prompt_broadcast')],
+        [Markup.button.callback('🧼 Clean Inactive Links', 'adm_clean'), Markup.button.callback('💾 Database Backup', 'adm_backup')],
+        [Markup.button.callback('🔥 Delete All Links (NUKE)', 'adm_prompt_nuke')]
+    ]);
+    if (isEdit) return ctx.editMessageText(text, keyboard).catch(e => {});
+    return ctx.reply(text, keyboard);
+}
+
 // 🎯 স্টার্ট কম্যান্ড
 bot.command('start', (ctx) => {
     registeredUsers.add(ctx.chat.id);
     sendMainMenu(ctx, false);
 });
 
-// 🌐 ল্যাঙ্গুয়েজ পরিবর্তন
+// 🌐 ভাষা পরিবর্তন করার মেনু অপশন
 bot.action('menu_lang', (ctx) => {
-    const current = userLanguages[ctx.chat.id] || 'bn';
-    userLanguages[ctx.chat.id] = current === 'bn' ? 'en' : 'bn';
-    ctx.answerCbQuery(userLanguages[ctx.chat.id] === 'bn' ? "ভাষা বাংলা করা হয়েছে!" : "Language set to English!");
+    ctx.answerCbQuery();
+    ctx.editMessageText("🌐 **Please select your language / আপনার ভাষা নির্বাচন করুন:**", 
+        Markup.inlineKeyboard([
+            [Markup.button.callback('🇧🇩 বাংলা', 'set_lang_bn'), Markup.button.callback('🇺🇸 English', 'set_lang_en')],
+            [Markup.button.callback('🔙 Back / পিছনে যান', 'go_to_main_menu')]
+        ])
+    );
+});
+
+bot.action(/^set_lang_/, (ctx) => {
+    const selectedLang = ctx.match.input.replace('set_lang_', '');
+    userLanguages[ctx.chat.id] = selectedLang;
+    ctx.answerCbQuery(selectedLang === 'bn' ? "ভাষা বাংলা সেট করা হয়েছে!" : "Language has been set to English!");
     sendMainMenu(ctx, true);
 });
 
 bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
+bot.action('go_to_admin_dashboard', (ctx) => { ctx.answerCbQuery(); sendAdminDashboard(ctx, true); });
 
-// 🖼️ ১. উইশ কার্ড জেনারেটর
+// 👑 ==================== COMPLETE ADMIN MODULE (রিস্টোর করা হয়েছে) ==================== 👑
+bot.command('adm', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) {
+        return ctx.reply("⚠️ **Access Denied!** This command is strictly reserved for the **Bot Admin** only.");
+    }
+    sendAdminDashboard(ctx, false);
+});
+
+bot.action('adm_stats', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    const totalUsers = registeredUsers.size;
+    let totalLinks = 0;
+    Object.keys(linkDatabase).forEach(id => { if(!id.startsWith('demo_')) totalLinks++; });
+    const text = `📊 **Bot Live Statistics Summary:**\n\n👥 Total Active Users: \`${totalUsers}\`\n🔗 Total Links Generated: \`${totalLinks}\`\n🚫 Total Banned Users: \`${bannedUsers.size}\`\n⚙️ Maintenance Mode: \`${isMaintenanceMode ? "ON 🚧" : "OFF 🟢"}\``;
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback('👥 User List', 'adm_sub_userlist'), Markup.button.callback('📋 All Links List', 'adm_alllinks_stats')],
+        [Markup.button.callback('🚫 Banned Users List', 'adm_sub_banlist')],
+        [Markup.button.callback('🔙 Back to Dashboard', 'go_to_admin_dashboard')]
+    ]);
+    ctx.editMessageText(text, keyboard);
+});
+
+bot.action('adm_sub_userlist', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    let userArr = Array.from(registeredUsers);
+    let text = `👥 **Registered Users List (${userArr.length}):**\n\n`;
+    userArr.slice(0, 50).forEach((uId, idx) => {
+        const isBanned = bannedUsers.has(uId) || bannedUsers.has(Number(uId));
+        text += `${idx + 1}. User ID: \`${uId}\` ${isBanned ? '🔴 (Banned)' : '🟢 (Active)'}\n`;
+    });
+    const keyboard = Markup.inlineKeyboard([[Markup.button.callback('🚫 Ban User', 'adm_prompt_input_ban')], [Markup.button.callback('🔙 Back to Stats', 'adm_stats')]]);
+    ctx.editMessageText(text, keyboard);
+});
+
+bot.action('adm_prompt_input_ban', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_ID_INPUT' };
+    ctx.reply("🚫 Please write the **User ID** you want to ban:");
+});
+
+bot.action('adm_sub_banlist', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    let banArr = Array.from(bannedUsers);
+    let text = `🚫 **Banned Users List (${banArr.length}):**\n\n`;
+    banArr.forEach((uId, idx) => { text += `${idx + 1}. User ID: \`${uId}\` 🚫\n`; });
+    const keyboard = Markup.inlineKeyboard([[Markup.button.callback('🔓 Unban User', 'adm_prompt_input_unban')], [Markup.button.callback('🔙 Back to Stats', 'adm_stats')]]);
+    ctx.editMessageText(text, keyboard);
+});
+
+bot.action('adm_prompt_input_unban', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    userSessions[ctx.chat.id] = { step: 'AWAITING_UNBAN_ID_INPUT' };
+    ctx.reply("🔓 Please write the **User ID** you want to UNBAN:");
+});
+
+const renderAllLinksList = () => {
+    let list = [];
+    Object.keys(linkDatabase).forEach(id => {
+        if (!id.startsWith('demo_')) {
+            const status = linkDatabase[id].isActive !== false ? "🟢" : "🔴";
+            list.push(`${status} ID: \`${id}\` | \`${linkDatabase[id].type.toUpperCase()}\` | Maker: ${linkDatabase[id].name}`);
+        }
+    });
+    return list.length === 0 ? "💡 No links generated in database yet." : `📋 **All Generated Links List:**\n\n${list.slice(0, 30).join('\n')}\n\n💡 Ban: /banlink [ID] | Details: /linkdetails [ID]`;
+};
+
+bot.action('adm_alllinks_main', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    ctx.editMessageText(renderAllLinksList(), Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Dashboard', 'go_to_admin_dashboard')]]));
+});
+
+bot.action('adm_alllinks_stats', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    ctx.editMessageText(renderAllLinksList(), Markup.inlineKeyboard([[Markup.button.callback('🔙 Back to Stats', 'adm_stats')]]));
+});
+
+bot.action('adm_toggle_maint', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    isMaintenanceMode = !isMaintenanceMode;
+    ctx.reply(`⚙️ Maintenance Mode turned **${isMaintenanceMode ? "ON 🚧" : "OFF 🟢"}**!`);
+    sendAdminDashboard(ctx, false);
+});
+
+bot.action('adm_clean', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    let count = 0;
+    Object.keys(linkDatabase).forEach(id => { if (!id.startsWith('demo_') && linkDatabase[id].isActive === false) { delete linkDatabase[id]; count++; } });
+    ctx.reply(`🧼 Database cleared! Total \`${count}\` inactive links deleted.`);
+});
+
+bot.action('adm_backup', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    try {
+        const backupData = JSON.stringify(linkDatabase, null, 2);
+        fs.writeFileSync('backup.txt', backupData);
+        ctx.replyWithDocument({ source: fs.createReadStream('backup.txt'), filename: 'database_backup.txt' });
+    } catch(e) { ctx.reply("❌ Backup Error."); }
+});
+
+bot.action('adm_prompt_broadcast', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    userSessions[ctx.chat.id] = { step: 'AWAITING_BROADCAST' };
+    ctx.reply("📢 Type and send your broadcast notification message:");
+});
+
+bot.action('adm_prompt_nuke', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    ctx.editMessageText("⚠️ **WARNING BOSS!** Nuke all user links?", Markup.inlineKeyboard([[Markup.button.callback('💥 YES, NUKE', 'adm_confirm_nuke')], [Markup.button.callback('❌ Cancel', 'go_to_admin_dashboard')]]));
+});
+
+bot.action('adm_confirm_nuke', (ctx) => {
+    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    let count = 0;
+    for (let key in linkDatabase) { if (!key.startsWith('demo_')) { delete linkDatabase[key]; count++; } }
+    ctx.editMessageText(`🔥 Nuke Successful. Deleted \`${count}\` links.`, Markup.inlineKeyboard([[Markup.button.callback('🔙 Dashboard', 'go_to_admin_dashboard')]]));
+});
+
+// 🖼️ ১. WISH CARD GENERATOR অপশন লজিক
 bot.action('menu_cardgen', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -140,9 +368,8 @@ bot.action(/^make_/, (ctx) => {
     ctx.answerCbQuery();
     const type = ctx.match.input.replace('make_', '');
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    userSessions[ctx.chat.id] = { type: type, name: ctx.from.first_name };
+    userSessions[ctx.chat.id] = { type: type, name: ctx.from.first_name, username: ctx.from.username ? '@' + ctx.from.username : 'None' };
     
-    // থিম সিলেকশন প্রম্পট
     ctx.editMessageText(locale[lang].prompt_theme,
         Markup.inlineKeyboard([
             [Markup.button.callback('✨ Classic Pink', 'set_theme_classic'), Markup.button.callback('🌌 Neon Magic', 'set_theme_neon')],
@@ -157,7 +384,6 @@ bot.action(/^set_theme_/, (ctx) => {
     const lang = userLanguages[ctx.chat.id] || 'bn';
     userSessions[ctx.chat.id].theme = theme;
 
-    // মিউজিক সিলেকশন প্রম্পট
     ctx.editMessageText(locale[lang].prompt_music,
         Markup.inlineKeyboard([
             [Markup.button.callback('🎵 Romantic Flute', 'set_music_romantic'), Markup.button.callback('🎂 Happy Birthday Tune', 'set_music_birthday')],
@@ -172,7 +398,6 @@ bot.action(/^set_music_/, (ctx) => {
     const lang = userLanguages[ctx.chat.id] || 'bn';
     userSessions[ctx.chat.id].music = music;
 
-    // কাউন্টডাউন টাইমার প্রম্পট
     ctx.editMessageText(locale[lang].prompt_countdown_ask,
         Markup.inlineKeyboard([
             [Markup.button.callback(locale[lang].btn_yes, 'timer_yes'), Markup.button.callback(locale[lang].btn_no, 'timer_no')]
@@ -195,19 +420,142 @@ bot.action('timer_no', (ctx) => {
     ctx.reply(locale[lang].session_started(userSessions[ctx.chat.id].type));
 });
 
-// 🎯 টেক্সট প্রসেসিং
+bot.action(/^demo_/, (ctx) => {
+    const selectedType = ctx.match.input.replace('demo_', '');
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    ctx.answerCbQuery();
+    ctx.reply(locale[lang].demo_ready(selectedType, `${SERVER_URL}/love/demo_${selectedType}`));
+});
+
+bot.action('menu_help', (ctx) => {
+    ctx.answerCbQuery();
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    ctx.editMessageText(locale[lang].help_text, Markup.inlineKeyboard([[Markup.button.callback(locale[lang].btn_back, 'go_to_main_menu')]]));
+});
+
+bot.action('menu_feedback', (ctx) => {
+    ctx.answerCbQuery();
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    userSessions[ctx.chat.id] = { step: 'AWAITING_FEEDBACK', name: ctx.from.first_name };
+    ctx.reply(locale[lang].feedback_prompt);
+});
+
+bot.action('menu_stats', (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id; 
+    const lang = userLanguages[userId] || 'bn';
+    let myLinks = [];
+    Object.keys(linkDatabase).forEach(id => {
+        if (linkDatabase[id].userId === userId && !id.startsWith('demo_')) {
+            const status = linkDatabase[id].isActive !== false ? "🟢 Active" : "🔴 Deactivated";
+            myLinks.push(`🎫 ID: \`${id}\` (${linkDatabase[id].type.toUpperCase()}) [${status}]`);
+        }
+    });
+    const responseText = myLinks.length === 0 ? locale[lang].no_links : locale[lang].profile_report(ctx.from.first_name, myLinks.join('\n'));
+    ctx.editMessageText(responseText, Markup.inlineKeyboard([[Markup.button.callback(locale[lang].btn_want_deactivate, 'menu_off')], [Markup.button.callback(locale[lang].btn_back, 'go_to_main_menu')]]).catch(e=>{}));
+});
+
+bot.action('menu_off', (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const lang = userLanguages[userId] || 'bn';
+    let buttons = [];
+    Object.keys(linkDatabase).forEach(id => {
+        if (linkDatabase[id].userId === userId && !id.startsWith('demo_') && linkDatabase[id].isActive !== false) {
+            buttons.push([Markup.button.callback(`🚫 Off Link: ${id}`, `deactivate_${id}`)]);
+        }
+    });
+    if (buttons.length === 0) return ctx.editMessageText(locale[lang].no_active_links, Markup.inlineKeyboard([[Markup.button.callback(locale[lang].btn_back, 'go_to_main_menu')]]));
+    buttons.push([Markup.button.callback(locale[lang].off_all_links, 'deactivate_all')]);
+    buttons.push([Markup.button.callback(locale[lang].btn_back, 'go_to_main_menu')]);
+    ctx.editMessageText(locale[lang].off_link_title, Markup.inlineKeyboard(buttons));
+});
+
+bot.action(/^deactivate_/, (ctx) => {
+    ctx.answerCbQuery();
+    const target = ctx.match.input.replace('deactivate_', '');
+    const userId = ctx.chat.id;
+    const lang = userLanguages[userId] || 'bn';
+    if (target === 'all') {
+        let count = 0;
+        Object.keys(linkDatabase).forEach(id => { if (linkDatabase[id].userId === userId && !id.startsWith('demo_') && linkDatabase[id].isActive !== false) { linkDatabase[id].isActive = false; count++; } });
+        return ctx.reply(locale[lang].deactivate_success_all(count));
+    }
+    if (linkDatabase[target] && linkDatabase[target].userId === userId) {
+        linkDatabase[target].isActive = false;
+        ctx.reply(locale[lang].deactivate_success_single(target));
+    }
+});
+
+// 🎯 টেক্সট ইনপুট প্রসেস (সব ওল্ড এডমিন কমান্ড + কাস্টম প্রসেস)
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
     const text = ctx.message.text;
     const lang = userLanguages[userId] || 'bn';
-
-    if (!session) {
-        if (text.startsWith('/')) return ctx.reply(locale[lang].invalid_cmd(text));
-        return;
+    
+    // 👑 অ্যাডমিন টেক্সট কম্যান্ডস (স্ল্যাশ কম্যান্ডস - সবসময় ইংলিশ রেসপন্স)
+    if (String(userId) === String(ADMIN_CHAT_ID)) {
+        if (text.startsWith('/userinfo')) {
+            const targetUid = text.replace('/userinfo', '').trim();
+            if (!targetUid) return ctx.reply("❌ Usage: /userinfo [User_ID]");
+            let userLinksCount = 0;
+            Object.keys(linkDatabase).forEach(id => { if (String(linkDatabase[id].userId) === String(targetUid)) userLinksCount++; });
+            const isBanned = bannedUsers.has(Number(targetUid)) || bannedUsers.has(targetUid);
+            return ctx.reply(`👤 **User Information:**\n\n🆔 User ID: \`${targetUid}\`\n📊 Total Links Created: \`${userLinksCount}\` \n🚦 Status: ${isBanned ? "🔴 Banned" : "🟢 Active"}`);
+        }
+        if (text.startsWith('/banlink')) {
+            const targetId = text.replace('/banlink', '').trim();
+            if (!targetId || !linkDatabase[targetId] || targetId.startsWith('demo_')) return ctx.reply("❌ Invalid Link ID!");
+            linkDatabase[targetId].isActive = false;
+            ctx.reply(`🚫 Link \`${targetId}\` has been successfully blocked!`);
+            return bot.telegram.sendMessage(linkDatabase[targetId].userId, `⚠️ **Notice:** Your link (\`${targetId}\`) has been blocked by Admin.`).catch(e => {});
+        }
+        if (text.startsWith('/linkdetails')) {
+            const targetId = text.replace('/linkdetails', '').trim();
+            if (!targetId || !linkDatabase[targetId]) return ctx.reply("❌ Invalid Link ID!");
+            const data = linkDatabase[targetId];
+            return ctx.reply(`🔍 **Link ID: ${targetId} Details:**\n\n👤 Creator: ${data.name}\n🏷 Category: \`${data.type}\`\n🎬 Animations: \`${JSON.stringify(data.animations)}\`\n💌 Letter:\n"${data.letter}"`);
+        }
+        if (text.startsWith('/blockuser')) {
+            const targetUid = text.replace('/blockuser', '').trim();
+            if (!targetUid || String(targetUid) === String(ADMIN_CHAT_ID)) return ctx.reply("❌ Invalid User ID!");
+            bannedUsers.add(Number(targetUid)); bannedUsers.add(targetUid);
+            return ctx.reply(`🚫 User \`${targetUid}\` has been successfully banned!`);
+        }
+        if (text.startsWith('/unblockuser')) {
+            const targetUid = text.replace('/unblockuser', '').trim();
+            if (!targetUid) return ctx.reply("❌ Invalid User ID!");
+            bannedUsers.delete(Number(targetUid)); bannedUsers.delete(targetUid);
+            return ctx.reply(`🔓 User \`${targetUid}\` has been unbanned.`);
+        }
     }
 
-    // উইশ কার্ডের নাম প্রসেসিং
+    if (!session && text.startsWith('/')) {
+        if (text !== '/start' && text !== '/cancel') return ctx.reply(locale[lang].invalid_cmd(text));
+    }
+
+    if (!session) return;
+
+    if (session.step === 'AWAITING_BAN_ID_INPUT' && String(userId) === String(ADMIN_CHAT_ID)) {
+        bannedUsers.add(text.trim()); bannedUsers.add(Number(text.trim()));
+        ctx.reply("✅ User Banned Successfully."); delete userSessions[userId]; return;
+    }
+    if (session.step === 'AWAITING_UNBAN_ID_INPUT' && String(userId) === String(ADMIN_CHAT_ID)) {
+        bannedUsers.delete(text.trim()); bannedUsers.delete(Number(text.trim()));
+        ctx.reply("🔓 User Unbanned Successfully."); delete userSessions[userId]; return;
+    }
+    if (session.step === 'AWAITING_BROADCAST' && String(userId) === String(ADMIN_CHAT_ID)) {
+        registeredUsers.forEach(uId => { bot.telegram.sendMessage(uId, `📢 **Official Notification:**\n\n${text}`).catch(e=>{}); });
+        ctx.reply("📢 Broadcast Finished."); delete userSessions[userId]; sendAdminDashboard(ctx, false); return;
+    }
+    if (session.step === 'AWAITING_FEEDBACK') {
+        if (text.trim().length < 5) return ctx.reply(locale[lang].feedback_short);
+        bot.telegram.sendMessage(ADMIN_CHAT_ID, `💬 **Feedback from ${session.name} (ID: ${userId}):** ${text}`).catch(e=>{});
+        ctx.reply(locale[lang].feedback_success); delete userSessions[userId]; return;
+    }
+
+    // উইশ কার্ড জেনারেশন নাম প্রোসেস
     if (session.step === 'AWAITING_CARD_NAME') {
         ctx.reply(locale[lang].card_ready);
         const cardUrl = `https://dummyimage.com/800x500/ff4b72/fff.png&text=Best+Wishes+To+${encodeURIComponent(text)}!+✨`;
@@ -215,11 +563,10 @@ bot.on('text', (ctx) => {
         return;
     }
 
-    // কাউন্টডাউন টাইম ইনপুট নেওয়া
+    // টাইমার ডেট প্রোসেস
     if (session.step === 'AWAITING_COUNTDOWN_TIME') {
         const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
         if (!regex.test(text.trim())) return ctx.reply(locale[lang].invalid_time);
-        
         session.countdown = text.trim();
         session.step = 'AWAITING_ANIMATION_TEXT';
         ctx.reply(locale[lang].session_started(session.type));
@@ -234,26 +581,30 @@ bot.on('text', (ctx) => {
         return;
     }
 
-    // ফাইনাল চিঠি ও লিঙ্ক জেনারেশন
+    // ফাইনাল মেক লিঙ্ক সেভ লজিক
     if (session.step === 'AWAITING_LETTER_TEXT') {
         const uniqueId = Math.random().toString(36).substring(2, 9);
         linkDatabase[uniqueId] = {
-            userId: userId, name: session.name, type: session.type,
+            userId: userId, name: session.name, username: session.username, type: session.type,
             theme: session.theme, music: session.music, countdown: session.countdown,
             animations: session.animations, letter: text.trim(), isActive: true 
         };
-        
         ctx.reply(locale[lang].link_ready(`${SERVER_URL}/love/${uniqueId}`));
+        
+        if (String(userId) !== String(ADMIN_CHAT_ID)) {
+            bot.telegram.sendMessage(ADMIN_CHAT_ID, `🚨 **New Link!**\n👤 **Creator:** ${session.name}\n🎫 **ID:** ${uniqueId}`).catch(e=>{});
+        }
         delete userSessions[userId];
     }
 });
 
 bot.command('cancel', (ctx) => {
-    delete userSessions[ctx.chat.id];
-    ctx.reply("❌ Session cancelled.");
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    if (userSessions[ctx.chat.id]) { delete userSessions[ctx.chat.id]; ctx.reply(locale[lang].session_cancelled); }
+    else ctx.reply(locale[lang].no_session);
 });
 
-// 🎯 এক্সপ্রেস ও ফ্রন্টএন্ড এপিআই রাউটিং
+// 🎯 এক্সপ্রেস ও ফ্রন্টএন্ড এপিআই রাউটিং 
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.post('/api/get-content', (req, res) => {
@@ -261,13 +612,18 @@ app.post('/api/get-content', (req, res) => {
     const data = linkDatabase[id];
     if (!data || data.isActive === false) return res.json({ success: false });
 
-    // লাইভ সার্ভার কাউন্টডাউন টাইম ভ্যালিডেশন
     if (data.countdown) {
         const targetTime = new Date(data.countdown.replace(' ', 'T') + ':00');
         const now = new Date();
         if (targetTime > now) {
             return res.json({ success: true, isLocked: true, targetTime: data.countdown, theme: data.theme });
         }
+    }
+
+    if (!id.startsWith('demo_')) {
+        const openTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
+        const userLang = userLanguages[data.userId] || 'bn';
+        bot.telegram.sendMessage(data.userId, locale[userLang].someone_opened(data.type, openTime)).catch(e=>{});
     }
 
     res.json({ 
@@ -279,7 +635,10 @@ app.post('/api/get-content', (req, res) => {
 app.post('/api/respond', (req, res) => {
     const { response, id } = req.body; const data = linkDatabase[id];
     if (data && data.isActive !== false) {
-        bot.telegram.sendMessage(data.userId, `💌 New Response: ${response}`);
+        if (!id.startsWith('demo_')) {
+            const userLang = userLanguages[data.userId] || 'bn';
+            bot.telegram.sendMessage(data.userId, locale[userLang].new_response(data.type, response));
+        }
         res.json({ success: true });
     } else res.json({ success: false });
 });
