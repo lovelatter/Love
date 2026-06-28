@@ -36,10 +36,10 @@ const locale = {
         cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
-        prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা শুধু সংখ্যায় লিখে পাঠান।\n\n**সঠিক উদাহরন (Examples):**\n• `15` অথবা `15m`\n• `90 minute` অথবা `35মিনিট`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**। আপনি যদি ৯০ মিনিট দেন, তবে লিঙ্কটি ১ ঘণ্টা ৩০ মিনিট লক থাকবে।",
-        invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন। যেমন: `20`, `45m` অথবা `90 minute` লিখে পাঠান। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
+        prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা শুধু সংখ্যায় লিখে পাঠান।\n\n**সঠিক উদাহরন (Examples):**\n• \`15\` অথবা \`15m\`\n• \`90 minute\` অথবা \`35মিনিট\`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**। আপনি যদি ৯০ মিনিট দেন, তবে লিঙ্কটি ১ ঘণ্টা ৩০ মিনিট লক থাকবে।",
+        invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন। যেমন: \`20\`, \`45m\` অথবা \`90 minute\` লিখে পাঠান। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
         max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ **১০০ মিনিট** পর্যন্ত টাইম লক সেট করতে পারবেন। দয়া করে ১ থেকে ১০০ এর মধ্যে সংখ্যা দিন।",
-        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেটিভ সময় গ্রহণযোগ্য নয়।",
+        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেティブ সময় গ্রহণযোগ্য নয়।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? নামটি লিখে পাঠান:",
@@ -59,10 +59,10 @@ const locale = {
         deactivate_success_all: (count) => `✅ আপনার সবকটি (\`${count}\`) লিঙ্ক সফলভাবে বন্ধ করা হয়েছে!`,
         deactivate_success_single: (id) => `✅ আপনার লিঙ্কটি (\`${id}\`) সফলভাবে বন্ধ করা হয়েছে।`,
         link_not_found: "❌ লিঙ্কটি পাওয়া যায়নি।",
-        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 প্রথমে অ্যানিমেশন টেক্সটগুলো পাঠান (একের অধিক লাইন হলে প্রতি লাইনের পর নতুন লাইন ব্যবহার করুন)।`,
+        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 আপনার প্রিয়জনের জন্য **অ্যানিমেশন টেক্সটগুলো** পাঠান。\n\n💡 **লেখার নিয়ম (How to write):**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন।\n• অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন。\n\n📌 *যেমন:* হেই সুন্দরী, কেমন আছো, তুমি কী আমার হবে?`,
         demo_title: "👀 **আপনি কোন ডেমো পেজটি দেখতে চান? নিচে সিলেক্ট করুন:**",
         demo_ready: (type, url) => `✨ **আপনার অনুরোধ করা ডেমো লিঙ্কটি তৈরি!**\n\n🔗 ডেমো লিঙ্ক: ${url}`,
-        input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান:`,
+        input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান:`,
         link_ready: (url) => `💝 অভিনন্দন! আপনার কাস্টমাইজড প্রিমিয়াম লিঙ্ক সম্পূর্ণ রেডি:\n\n${url}\n\n👉 এই লিঙ্কটি আপনার প্রিয়জনের সাথে শেয়ার করুন।`,
         someone_opened: (type, time) => `👀 **বিজ্ঞপ্তি:** কেউ একজন আপনার তৈরি করা \`${type.toUpperCase()}\` লিঙ্কটি ওপেন করেছে!\n⏰ **সময়:** ${time}`,
         new_response: (type, res) => `💌 আপনার কাস্টম \`${type.toUpperCase()}\` লিঙ্কে একটি নতুন রেসপন্স এসেছে!\n\nউত্তর: ${res}`,
@@ -98,7 +98,7 @@ const locale = {
         deactivate_success_all: (count) => `✅ Deactivated all (\`${count}\`) links!`,
         deactivate_success_single: (id) => `✅ Deactivated link (\`${id}\`).`,
         link_not_found: "❌ Link not found.",
-        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started!`,
+        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started!\n\n👉 Send animation texts separated by line breaks or commas (,).`,
         demo_title: "👀 **Select demo page:**",
         demo_ready: (type, url) => `✨ **Demo Link:** ${url}`,
         input_anim_success: (count) => `✅ Added ${count} lines. Send main letter:`,
@@ -109,14 +109,11 @@ const locale = {
     }
 };
 
-// 🧠 নতুন রেগুলার এক্সপ্রেশন বেসড মিনিট এক্সট্রাক্টর লজিক
+// 🧠 স্মার্ট মিনিট এক্সট্রাক্টর ফাংশন
 function extractMinutes(input) {
     const cleanInput = input.trim().toLowerCase();
-    
-    // টেক্সট থেকে শুধু প্রথম সংখ্যাটি বের করবে
     const matches = cleanInput.match(/\d+/);
     if (!matches) return null;
-    
     return parseInt(matches[0], 10);
 }
 
@@ -277,7 +274,7 @@ bot.action(/^set_music_/, (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].music = ctx.match.input.replace('set_music_', '');
     userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].session_started(userSessions[ctx.chat.id].type));
+    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].session_started(userSessions[ctx.chat.id].type), { parse_mode: 'Markdown' });
 });
 
 // Card & Demos & Stats Infrastructure
@@ -353,7 +350,7 @@ bot.action('menu_help', (ctx) => {
     ctx.reply(locale[lang].help_text);
 });
 
-// 🎯 State Machine & Smart Text Processing Engine
+// 🎯 State Machine & Text Processing Engine
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
@@ -399,33 +396,33 @@ bot.on('text', (ctx) => {
             delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // 🕒 স্মার্ট মিনিট ডিটেক্টর ও লিমিট চেকার এরিয়া
+        // 🕒 কাস্টম মিনিট ডিটেকশন ও ভ্যালিডেশন
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
             const parsedMinutes = extractMinutes(text);
 
-            // ১. যদি টেক্সটে কোনো সংখ্যাই না পাওয়া যায়
             if (parsedMinutes === null || isNaN(parsedMinutes)) {
                 return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
             }
-            // ২. সর্বনিম্ন ১ মিনিটের লিমিট চেক
             if (parsedMinutes < 1) {
                 return ctx.reply(locale[lang].time_past, { parse_mode: 'Markdown' });
             }
-            // ৩. সর্বোচ্চ ১০০ মিনিটের লিমিট চেক
             if (parsedMinutes > 100) {
                 return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
             }
 
-            // সেশনে মিনিট সেভ রাখা
             session.pendingMinutes = parsedMinutes; 
             askThemeSelection(ctx);
             return;
         }
 
+        // 📝 নতুন লাইন এবং কমা (,) হ্যান্ডেলার ইন্টেলিজেন্স
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            session.animations = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            session.animations = text.split(/[\n,，]+/)
+                                     .map(l => l.trim())
+                                     .filter(l => l.length > 0);
+
             if (session.animations.length === 0) {
-                return ctx.reply("⚠️ অনুগ্রহ করে অন্তত এক লাইন অ্যানিমেশন টেক্সট লিখুন।");
+                return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন বা কমা দিয়ে আলাদা করুন।");
             }
             session.step = 'AWAITING_LETTER_TEXT';
             ctx.reply(locale[lang].input_anim_success(session.animations.length));
@@ -435,7 +432,6 @@ bot.on('text', (ctx) => {
         if (session.step === 'AWAITING_LETTER_TEXT') {
             totalLinksCreated++;
             
-            // 🚀 ফাইনাল প্রসেসিং: একদম শেষ মুহূর্তে এসে কারেন্ট টাইমের সাথে মিনিট যোগ হয়ে ISOString তৈরি হয়
             let finalCountdownIso = null;
             if (session.pendingMinutes) {
                 const targetDate = new Date();
@@ -479,7 +475,7 @@ function sendMainMenu(ctx, isEdit = false) {
     } catch (err) { console.error(err); }
 }
 
-// 🌐 Web Content Distribution Routing API
+// 🌐 Web Content Distribution Routing API (Fixed Link Multi-Use Bug)
 app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.post('/api/get-content', (req, res) => {
@@ -497,12 +493,16 @@ app.post('/api/get-content', (req, res) => {
 
         if (data.countdown) {
             const now = new Date();
-            if (new Date(data.countdown) > now) {
+            const lockTime = new Date(data.countdown);
+            if (lockTime > now) {
                 return res.json({ success: true, isLocked: true, countdownTime: data.countdown, theme: data.theme });
             }
         }
-        res.json({ success: true, isLocked: false, theme: data.theme, music: data.music, animations: data.animations, letter: data.letter });
+        
+        // 🚀 ফিক্সড এবং রিটার্নড ডেটা রেসপন্স (যার ফলে লিঙ্ক বারবার আনলিমিটেড ব্যবহার করা যাবে)
+        return res.json({ success: true, isLocked: false, theme: data.theme, music: data.music, animations: data.animations, letter: data.letter });
     } catch (err) {
+        console.error("Get Content API Error:", err);
         res.json({ success: false });
     }
 });
