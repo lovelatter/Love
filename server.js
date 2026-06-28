@@ -8,9 +8,9 @@ const app = express();
 app.use(express.json());
 
 // ⚙️ Configurations & Environment Variables
-const TELEGRAM_TOKEN = "8922778423:AAGbdZfdUDol_5w3dPbeBH0aucf9qkgtPTA"; 
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN; 
 const SERVER_URL = "https://love-bb7p.onrender.com"; 
-const ADMIN_CHAT_ID = 6719885052; 
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; 
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
