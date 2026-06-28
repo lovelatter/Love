@@ -36,15 +36,15 @@ const locale = {
         cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ稳 কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
-        prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা শুধু সংখ্যায় লিখে পাঠান।\n\n**সঠিক উদাহরন (Examples):**\n• \`15\` অথবা \`15m\`\n• \`90 minute\` অথবা \`35মিনিট\`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**। আপনি যদি ৯০ মিনিট দেন, তবে লিঙ্কটি ১ ঘণ্টা ৩০ মিনিট লক থাকবে।",
-        invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন। যেমন: \`20\`, \`45m\` অথবা \`90 minute\` লিখে পাঠান। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
+        prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা নিচের বাটন চেপে সিলেক্ট করুন অথবা শুধু সংখ্যায় লিখে পাঠান।\n\n**সঠিক উদাহরন (Examples):**\n• \`15\` অথবা \`15m\`\n• \`90 minute\`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**।",
+        invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন বা বাটন ব্যবহার করুন। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
         max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ **১০০ মিনিট** পর্যন্ত টাইম লক সেট করতে পারবেন। দয়া করে ১ থেকে ১০০ এর মধ্যে সংখ্যা দিন।",
         time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেティブ সময় গ্রহণযোগ্য নয়।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? নামটি লিখে পাঠান:",
         card_ready: "✨ **আপনার প্রিমিয়াম উইশ কার্ডটি তৈরি হয়ে গেছে!** 👇",
-        help_text: `❓ **সাহায্য গাইড:**\n\n১. **লিঙ্ক তৈরি:** '🚀 লিঙ্ক তৈরি করুন' বাটনে ক্লিক করে ক্যাটাগরি বেছে নিন। এরপর কত মিনিট লিঙ্ক লক রাখতে চান তা লিখে দিন (যেমন: 15 বা 90m)।\n২. **ডাইনামিক কাউন্টডাউন:** ইউজার যখন লিঙ্কে ঢুকবে সে সেখানে লাইভ সেকেন্ডসহ রিয়েল-টাইম কাউন্টডাউন দেখতে পাবে।\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
+        help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
         feedback_prompt: "📝 অনুগ্রহ করে আপনার মতামত বা পরামর্শ এখানে লিখে পাঠান:",
         feedback_short: "❌ মতামত একটু বড় করে লিখুন (কমপক্ষে ৫টি অক্ষর)।",
         feedback_success: "✅ আপনার মূল্যবান মতামত সফলভাবে জমা হয়েছে। ধন্যবাদ!",
@@ -59,7 +59,7 @@ const locale = {
         deactivate_success_all: (count) => `✅ আপনার সবকটি (\`${count}\`) লিঙ্ক সফলভাবে বন্ধ করা হয়েছে!`,
         deactivate_success_single: (id) => `✅ আপনার লিঙ্কটি (\`${id}\`) সফলভাবে বন্ধ করা হয়েছে।`,
         link_not_found: "❌ লিঙ্কটি পাওয়া যায়নি।",
-        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 আপনার প্রিয়জনের জন্য **অ্যানিমেশন টেক্সটগুলো** পাঠান。\n\n💡 **লেখার নিয়ম (How to write):**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন।\n• অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন。\n\n📌 *যেমন:* হেই সুন্দরী, কেমন আছো, তুমি কী আমার হবে?`,
+        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 আপনার প্রিয়জনের জন্য **অ্যানিমেশন টেক্সটগুলো** পাঠান।\n\n💡 **লেখার নিয়ম (How to write):**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন।\n• অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন。`,
         demo_title: "👀 **আপনি কোন ডেমো পেজটি দেখতে চান? নিচে সিলেক্ট করুন:**",
         demo_ready: (type, url) => `✨ **আপনার অনুরোধ করা ডেমো লিঙ্কটি তৈরি!**\n\n🔗 ডেমো লিঙ্ক: ${url}`,
         input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান। \n\n🤖 (নিজে লিখতে না চাইলে নিচের AI বাটনটি ব্যবহার করতে পারেন)`,
@@ -75,8 +75,8 @@ const locale = {
         cat_love: "❤️ Love Letter", cat_crush: "💖 Crush Confession", cat_birthday: "🎂 Birthday Wish", cat_anniversary: "💍 Anniversary Wish", cat_newyear: "🎉 New Year Wish", cat_boishakh: "🌾 Pohela Boishakh", cat_friend: "🫂 Best Friend", cat_eid: "🌙 Eid Wish", cat_sorry: "🥺 Sorry Letter",
         prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**",
         btn_yes: "✅ Yes", btn_no: "❌ No",
-        prompt_time_input: "⏳ Send the lock duration in minutes.\n\nExamples:\n• \`15\`, \`15m\` or \`90 minute\`\n\n⚠️ Limits: Min 1 min, Max 100 mins.",
-        invalid_time: "❌ **Invalid format!** Please send minutes only (e.g. \`20\` or \`45m\`).",
+        prompt_time_input: "⏳ Select lock duration using buttons below or send minutes as text.\n\n⚠️ Limits: Min 1 min, Max 100 mins.",
+        invalid_time: "❌ **Invalid format!** Please send minutes only.",
         max_time_exceeded: "⚠️ **Limit Exceeded!** Max lock time is 100 minutes.",
         time_past: "❌ Minimum lock duration is 1 minute.",
         prompt_theme: "🎨 **Select a Premium Web Theme:**",
@@ -118,7 +118,6 @@ async function generateAiLetter(category, lang) {
         };
         const prompt = prompts[lang] || prompts['bn'];
         
-        // ফ্রি ম্যাজিক এপিআই কল
         const response = await axios.get(`https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}`);
         if (response.data && response.data.answer) {
             return response.data.answer.replace(/["']/g, "").trim();
@@ -260,10 +259,27 @@ bot.action(/^make_/, (ctx) => {
     ]));
 });
 
+// 🕒 টাইম লক বাটন লেআউট
 bot.action('timer_yes', (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].step = 'AWAITING_COUNTDOWN_TIME';
-    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].prompt_time_input, { parse_mode: 'Markdown' });
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    
+    ctx.reply(locale[lang].prompt_time_input, Markup.inlineKeyboard([
+        [Markup.button.callback(lang === 'bn' ? '🕒 ৩ মিনিট' : '🕒 3 Min', 'set_time_3'), Markup.button.callback(lang === 'bn' ? '🕒 ৫ মিনিট' : '🕒 5 Min', 'set_time_5')],
+        [Markup.button.callback(lang === 'bn' ? '🕒 ১০ মিনিট' : '🕒 10 Min', 'set_time_10'), Markup.button.callback(lang === 'bn' ? '🕒 ২০ মিনিট' : '🕒 20 Min', 'set_time_20')]
+    ], { parse_mode: 'Markdown' }));
+});
+
+bot.action(/^set_time_/, (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = userSessions[userId];
+    if (!session || session.step !== 'AWAITING_COUNTDOWN_TIME') return;
+    
+    const minutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
+    session.pendingMinutes = minutes;
+    askThemeSelection(ctx);
 });
 
 bot.action('timer_no', (ctx) => { 
@@ -371,7 +387,7 @@ bot.action('menu_help', (ctx) => {
 });
 
 
-// 🤖 AI LETTER GENERATION ACTIONS
+// 🤖 AI LETTER GENERATION ACTIONS & RE-WRITE/PREVIOUS LOGIC
 bot.action('generate_ai_letter', async (ctx) => {
     ctx.answerCbQuery("🤖 AI চিঠি তৈরি করছে...");
     const userId = ctx.chat.id;
@@ -380,21 +396,66 @@ bot.action('generate_ai_letter', async (ctx) => {
 
     const lang = userLanguages[userId] || 'bn';
     
-    // মেসেজ লোডিং স্টেট দেখানো হচ্ছে
-    const loadingMsg = await ctx.reply(lang === 'bn' ? "⏳ একটু অপেক্ষা করুন, AI দিয়ে সুন্দর একটি চিঠি লেখা হচ্ছে..." : "⏳ Please wait, AI is writing a beautiful letter...");
-    
+    if (!session.aiLettersHistory) {
+        session.aiLettersHistory = [];
+        session.currentHistoryIndex = -1;
+    }
+
     const generatedText = await generateAiLetter(session.type, lang);
-    session.tempAiLetter = generatedText; // সাময়িকভাবে স্টোর করা হলো
-
-    // লোডিং মেসেজ ডিলিট করে মূল বাটন দেখানো হচ্ছে
-    await ctx.telegram.deleteMessage(userId, loadingMsg.message_id).catch(()=>{});
-
-    const promptMsg = lang === 'bn' ? `🤖 **AI এর লেখা চিঠিটি নিচে দেওয়া হলো:**\n\n_"${generatedText}"_\n\nআপনার কি এটি পছন্দ হয়েছে?` : `🤖 **Here is the AI generated letter:**\n\n_"${generatedText}"_\n\nDo you like it?`;
     
-    ctx.reply(promptMsg, Markup.inlineKeyboard([
+    session.aiLettersHistory.push(generatedText);
+    session.currentHistoryIndex = session.aiLettersHistory.length - 1;
+    session.tempAiLetter = generatedText; 
+
+    // নতুন নোটিশ মেসেজে যুক্ত করা হলো (ইউজার চাইলে নিজেও লিখে দিতে পারবে)
+    const promptMsg = lang === 'bn' 
+        ? `🤖 **AI এর লেখা চিঠিটি নিচে দেওয়া হলো (সংস্করণ: ${session.currentHistoryIndex + 1}):**\n\n_"${generatedText}"_\n\n💡 **পরামর্শ:** আপনার যদি এটি পছন্দ না হয়, তবে আপনি চাইলে নিচের চ্যাটবক্সে **নিজের মতো করেও** যেকোনো চিঠি লিখে পাঠিয়ে দিতে পারেন।\n\nআপনার কি এটি পছন্দ হয়েছে?` 
+        : `🤖 **Here is the AI generated letter (Version: ${session.currentHistoryIndex + 1}):**\n\n_"${generatedText}"_\n\n💡 **Tip:** If you don't like this, you can also write and send **your own custom letter** directly in the chat box.\n\nDo you like it?`;
+    
+    const buttons = [
         [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_letter_accept")],
         [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "generate_ai_letter")]
-    ], { parse_mode: 'Markdown' }));
+    ];
+
+    if (session.aiLettersHistory.length > 1) {
+        buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের চিঠি" : "🔙 Previous Letter", "ai_letter_previous")]);
+    }
+
+    try {
+        await ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' });
+    } catch (e) {
+        await ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' });
+    }
+});
+
+bot.action('ai_letter_previous', async (ctx) => {
+    const userId = ctx.chat.id;
+    const session = userSessions[userId];
+    if (!session || !session.aiLettersHistory || session.currentHistoryIndex <= 0) {
+        return ctx.answerCbQuery(userLanguages[userId] === 'bn' ? "❌ এর আগে আর কোনো চিঠি নেই!" : "❌ No previous letters found!");
+    }
+
+    ctx.answerCbQuery("🔙 আগের চিঠিতে ফিরে যাওয়া হচ্ছে...");
+    const lang = userLanguages[userId] || 'bn';
+
+    session.currentHistoryIndex--;
+    const previousText = session.aiLettersHistory[session.currentHistoryIndex];
+    session.tempAiLetter = previousText; 
+
+    const promptMsg = lang === 'bn' 
+        ? `🤖 **AI এর লেখা চিঠিটি নিচে দেওয়া হলো (সংস্করণ: ${session.currentHistoryIndex + 1}):**\n\n_"${previousText}"_\n\n💡 **পরামর্শ:** আপনার যদি এটি পছন্দ না হয়, তবে আপনি চাইলে নিচের চ্যাটবক্সে **নিজের মতো করেও** যেকোনো চিঠি লিখে পাঠিয়ে দিতে পারেন।\n\nআপনার কি এটি পছন্দ হয়েছে?` 
+        : `🤖 **Here is the AI generated letter (Version: ${session.currentHistoryIndex + 1}):**\n\n_"${previousText}"_\n\n💡 **Tip:** If you don't like this, you can also write and send **your own custom letter** directly in the chat box.\n\nDo you like it?`;
+
+    const buttons = [
+        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখ করব" : "✅ Keep this", "ai_letter_accept")],
+        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "generate_ai_letter")]
+    ];
+
+    if (session.currentHistoryIndex > 0) {
+        buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের চিঠি" : "🔙 Previous Letter", "ai_letter_previous")]);
+    }
+
+    await ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' }).catch(()=>{});
 });
 
 bot.action('ai_letter_accept', (ctx) => {
@@ -403,7 +464,7 @@ bot.action('ai_letter_accept', (ctx) => {
     const session = userSessions[userId];
     if (!session || !session.tempAiLetter) return;
 
-    // AI এর টেক্সটটি ফাইনাল লেটার হিসেবে সাবমিট করে দেওয়া হলো
+    ctx.deleteMessage().catch(()=>{});
     processFinalLinkCreation(ctx, session.tempAiLetter);
 });
 
@@ -454,7 +515,6 @@ bot.on('text', (ctx) => {
             delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // 🕒 কাস্টম মিনিট ডিটেকশন ও ভ্যালিডেশন
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
             const parsedMinutes = extractMinutes(text);
 
@@ -473,18 +533,16 @@ bot.on('text', (ctx) => {
             return;
         }
 
-        // 📝 নতুন লাইন এবং কমা (,) হ্যান্ডেলার ইন্টেলিজেন্স
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             session.animations = text.split(/[\n,，]+/)
                                      .map(l => l.trim())
                                      .filter(l => l.length > 0);
 
             if (session.animations.length === 0) {
-                return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অভিনামেশন টেক্সট লিখুন বা কমা দিয়ে আলাদা করুন।");
+                return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন বা কমা দিয়ে আলাদা করুন।");
             }
             session.step = 'AWAITING_LETTER_TEXT';
             
-            // 🤖 এখানে ইনলাইন বাটন যোগ করা হলো AI দিয়ে চিঠি জেনারেট করার জন্য
             ctx.reply(locale[lang].input_anim_success(session.animations.length), Markup.inlineKeyboard([
                 [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে চিঠি লিখুন" : "🤖 Write Letter with AI", "generate_ai_letter")]
             ]));
@@ -492,7 +550,6 @@ bot.on('text', (ctx) => {
         }
 
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            // ইউজার নিজে টেক্সট লিখে দিলে সরাসরি প্রসেস হবে
             processFinalLinkCreation(ctx, text);
             return;
         }
@@ -547,7 +604,7 @@ function sendMainMenu(ctx, isEdit = false) {
     } catch (err) { console.error(err); }
 }
 
-// 🌐 Web Content Distribution Routing API (Fixed Link Multi-Use Bug)
+// 🌐 Web Content Distribution Routing API 
 app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.post('/api/get-content', (req, res) => {
