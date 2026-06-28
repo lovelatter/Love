@@ -8,13 +8,13 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0b0b1a; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
         
-        /* ⏳ কাউন্টডাউন লক স্ক্রিন স্টাইল */
+        /* ⏳ লক স্ক্রিন স্টাইল */
         #lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0d0d1e; display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
-        .lock-box { background: #22223b; border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; border-radius: 20px; padding: 40px 30px; text-align: center; max-width: 450px; width: 100%; }
+        .lock-box { background: #22223b; border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; border-radius: 20px; padding: 40px 30px; text-align: center; max-width: 500px; width: 100%; }
         .lock-box h2 { font-size: 20px; color: #00ffcc; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; }
         
-        /* 🕒 এক লাইনের ডিজিটাল ক্লক ডিজাইন */
-        .timer-display { font-size: 38px; font-weight: 700; color: #00ffcc; letter-spacing: 2px; font-family: 'Courier New', Courier, monospace; white-space: nowrap; margin-top: 10px; }
+        /* 🕒 সেকেন্ডসহ লাইভ কাউন্টডাউন ডিসপ্লে */
+        .timer-display { font-size: 32px; font-weight: 700; color: #ff00ff; letter-spacing: 1px; font-family: 'Courier New', Courier, monospace; white-space: nowrap; margin-top: 10px; text-shadow: 0 0 15px #ff00ff; }
 
         /* 💌 মেইন কন্টেন্ট স্টাইল */
         #main-content { display: none; text-align: center; width: 100%; max-width: 600px; padding: 20px; animation: fadeIn 1s ease-in; }
@@ -33,39 +33,28 @@
         .reply-box button { background: #ff4b72; color: white; border: none; padding: 14px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.3s; }
         .reply-box button:hover { background: #e03a5f; }
         
-        /* 🎨 ৪টি প্রিমিয়াম থিম কনফিগারেশন */
+        /* 🎨 থিম কনফিগারেশন */
         body.theme-classic { background: #1a0913; }
-        body.theme-classic .envelope { background: #ff4b72; }
-        body.theme-classic .reply-box button { background: #ff4b72; }
-
         body.theme-neon { background: #050510; }
-        body.theme-neon .lock-box { border-color: #ff00ff; box-shadow: 0 0 25px #ff00ff; background: #11051c; }
-        body.theme-neon .timer-display { color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
-        body.theme-neon .envelope { background: #00ffff; box-shadow: 0 0 15px #00ffff; }
-        body.theme-neon .reply-box button { background: #ff00ff; }
-
+        body.theme-neon .lock-box { border-color: #00ffff; box-shadow: 0 0 25px #00ffff; background: #11051c; }
+        body.theme-neon .timer-display { color: #00ffff; text-shadow: 0 0 10px #00ffff; }
         body.theme-gold { background: #141108; }
         body.theme-gold .lock-box { border-color: #ffd700; box-shadow: 0 0 25px #ffd700; background: #221c0e; }
-        body.theme-gold .timer-display { color: #ffd700; }
-        body.theme-gold .envelope { background: #ffd700; }
-        body.theme-gold .reply-box button { background: #ffd700; color: #000; }
-
+        body.theme-gold .timer-display { color: #ffd700; text-shadow: 0 0 10px #ffd700; }
         body.theme-dark { background: #0f0f0f; }
-        body.theme-dark .lock-box { border-color: #cf6679; box-shadow: 0 0 25px #cf6679; background: #1e1e1e; }
-        body.theme-dark .timer-display { color: #cf6679; }
-        body.theme-dark .envelope { background: #cf6679; }
-        body.theme-dark .reply-box button { background: #cf6679; }
     </style>
 </head>
 <body>
 
+    <!-- ⏳ লক স্ক্রিন (এখানে সেকেন্ডসহ কাস্টম কাউন্টডাউন হবে) -->
     <div id="lock-screen" style="display: none;">
         <div class="lock-box">
             <h2>⏳ Waiting for the Special Moment...</h2>
-            <div id="countdown-box" class="timer-display">00:00:00</div>
+            <div id="countdown-box" class="timer-display">Calculating...</div>
         </div>
     </div>
 
+    <!-- 💌 মূল কনটেন্ট এরিয়া -->
     <div id="main-content">
         <h1 id="anim-text" style="font-size: 26px; margin-bottom: 35px; min-height: 40px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></h1>
         <div class="envelope" id="envelope-btn" onclick="openLetter()"></div>
@@ -85,6 +74,7 @@
         const linkId = window.location.pathname.split('/').pop();
         let anims = [];
         let animIndex = 0;
+        let timerInterval = null;
 
         async function loadContent() {
             try {
@@ -96,7 +86,7 @@
                 const data = await res.json();
 
                 if (!data.success) {
-                    document.body.innerHTML = "<div style='text-align:center; font-size:22px; color:#ff4b72; font-weight:bold; margin-top:100px;'>❌ Link Expired, Blocked or Invalid!</div>";
+                    document.body.innerHTML = "<div style='text-align:center; font-size:22px; color:#ff4b72; font-weight:bold; margin-top:100px;'>❌ Link Expired or Invalid!</div>";
                     return;
                 }
 
@@ -107,61 +97,71 @@
 
                 if (data.isLocked) {
                     document.getElementById('lock-screen').style.display = 'flex';
-                    startCountdown(data.targetTime);
+                    startLiveCountdown(data.countdownTime);
                     return;
                 }
 
-                document.getElementById('lock-screen').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                
-                anims = data.animations || [];
-                document.getElementById('letter-content').innerText = data.letter;
-                
-                if (data.music && data.music !== 'none') {
-                    const musicPlayer = document.getElementById('bg-music');
-                    musicPlayer.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"; 
-                    document.body.addEventListener('click', () => { musicPlayer.play().catch(e => console.log(e)); }, { once: true });
-                }
-
-                startAnimation();
+                showMainContent(data);
 
             } catch (err) {
                 console.error("Client Error:", err);
             }
         }
 
-        // ⏱️ ডিজিটাল ক্লক ফরম্যাট কাউন্টডাউন (এক লাইনে দেখাবে)
-        function startCountdown(targetTimeStr) {
-            const countDownDate = new Date(targetTimeStr).getTime();
+        // 🕒 সেকেন্ডসহ ডাইনামিক কাউন্টডাউন লজিক
+        function startLiveCountdown(targetISO) {
+            const targetTime = new Date(targetISO).getTime();
+            const box = document.getElementById("countdown-box");
 
-            const x = setInterval(function() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
                 const now = new Date().getTime();
-                const distance = countDownDate - now;
+                const diff = targetTime - now;
 
-                if (distance < 0) {
-                    clearInterval(x);
-                    window.location.reload(); 
+                if (diff <= 0) {
+                    clearInterval(timerInterval);
+                    window.location.reload(); // সময় শেষ হলে পেজ রিফ্রেশ হয়ে লক খুলে যাবে
                     return;
                 }
 
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                // মিলিসেকেন্ড থেকে ঘণ্টা, মিনিট ও সেকেন্ড কনভার্ট
+                const totalSeconds = Math.floor(diff / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
 
-                const pad = (num) => String(num).padStart(2, '0');
+                let timeString = "";
 
-                // দিন থাকলে দিনসহ এক লাইনে, না থাকলে শুধু HH:MM:SS এক লাইনে দেখাবে
-                let clockText = "";
-                if (days > 0) {
-                    clockText = `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+                if (hours > 0) {
+                    // ঘণ্টা থাকলে: X hour: Y minutes: Z seconds
+                    timeString = `${hours} ${hours === 1 ? 'hour' : 'hours'}: ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}: ${seconds} ${seconds === 1 ? 'second' : 'seconds'}`;
+                } else if (minutes > 0) {
+                    // ঘণ্টা না থাকলে কিন্তু মিনিট থাকলে: Y minutes: Z seconds
+                    timeString = `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}: ${seconds} ${seconds === 1 ? 'second' : 'seconds'}`;
                 } else {
-                    clockText = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+                    // শুধু সেকেন্ড থাকলে: Z seconds
+                    timeString = `${seconds} ${seconds === 1 ? 'second' : 'seconds'}`;
                 }
 
-                document.getElementById("countdown-box").innerText = clockText;
-
+                box.innerText = timeString;
             }, 1000);
+        }
+
+        function showMainContent(data) {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            
+            anims = data.animations || [];
+            document.getElementById('letter-content').innerText = data.letter;
+            
+            if (data.music && data.music !== 'none') {
+                const musicPlayer = document.getElementById('bg-music');
+                musicPlayer.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"; 
+                document.body.addEventListener('click', () => { musicPlayer.play().catch(e => console.log(e)); }, { once: true });
+            }
+
+            startAnimation();
         }
 
         function startAnimation() {
@@ -202,12 +202,7 @@
                     alert("💝 Your response has been received!");
                     replyInput.value = '';
                 }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Send 💝";
-            }
+            } catch (e) { console.error(e); } finally { btn.disabled = false; btn.innerText = "Send 💝"; }
         }
 
         window.onload = loadContent;
