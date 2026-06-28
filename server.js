@@ -10,7 +10,7 @@ app.use(express.json());
 // ⚙️ Configurations & Environment Variables
 const TELEGRAM_TOKEN = "8922778423:AAGbdZfdUDol_5w3dPbeBH0aucf9qkgtPTA"; 
 const SERVER_URL = "https://love-bb7p.onrender.com"; 
-const ADMIN_CHAT_ID = "6719885052"; 
+const ADMIN_CHAT_ID = 6719885052; // Number ফরম্যাটে ফিক্স করা হয়েছে যেন এডমিন কমান্ড কাজ করে
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
@@ -30,14 +30,14 @@ let totalFeedbacksReceived = 0;
 // 🌐 Multi-Language Messages Comprehensive Dictionary
 const locale = {
     bn: {
-        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম লক করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
+        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে स्वागतম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম লক করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
         btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_card: "🖼️ উইশ কার্ড বানান", btn_demo: "👀 ডেমো দেখুন", btn_stats: "📊 স্ট্যাটাস", btn_off: "🔒 লিঙ্ক বন্ধ করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_lang: "🌐 ভাষা পরিবর্তন", btn_back: "🔙 মেইন মেনু",
         choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান?**",
-        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
+        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনфেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
         prompt_time_input: "⏳ অনুগ্রহ করে লিঙ্কটি খোলার সময়টি নিচের নিয়মে লিখে পাঠান:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` অথবা \`08:15 PM\`\n\n⚠️ **শর্ত:** আপনি বর্তমান সময় থেকে সর্বোচ্চ আগামী **২ ঘণ্টার মধ্যে** যেকোনো সময় সেট করতে পারবেন।",
-        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে এভাবে লিখুন: \`12:10 PM\` বা \`08:05 AM\`\n\n⚠️ মিনিট ১ ডিজিটের হলে আগে ০ দিন (যেমন: \`12:8 PM\` না লিখে \`12:08 PM\` লিখুন)। AM/PM দেওয়া বাধ্যতামুলক।",
+        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে এভাবে লিখুন: \`12:10 PM\` বা \`08:05 AM\`\n\n⚠️ মিনিট ১ ডিজিটের হলে আগে ০ দিন (যেমন: \`12:8 PM\` না লিখে \`12:08 PM\` লিখুন)। AM/PM দেওয়া বাধ্যতামূলক।",
         max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি বর্তমান সময় থেকে ২ ঘণ্টার বেশি দূরের সময় সেট করতে পারবেন না। অনুগ্রহ করে আপনার দেশের ঘড়ি অনুযায়ী আগামী ২ ঘণ্টার ভেতরের কোনো সময় দিন।",
         time_past: "❌ আপনি অতীতের কোনো সময় সেট করতে পারবেন না। বর্তমান বা ভবিষ্যৎ সময় দিন।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
@@ -50,7 +50,7 @@ const locale = {
         feedback_success: "✅ আপনার মূল্যবান মতামত সফলভাবে জমা হয়েছে। ধন্যবাদ!",
         session_cancelled: "❌ আপনার চলমান লিঙ্ক তৈরির সেশনটি বাতিল করা হয়েছে।",
         no_session: "💡 আপনার কোনো একটিভ সেশন নেই।",
-        invalid_cmd: (cmd) => `❌ **ভুল আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়।`,
+        invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়। অনুগ্রহ করে নিচের মেইন মেনু ব্যবহার করুন অথবা সেশনটি বাতিল করতে /cancel লিখুন।`,
         maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে আসছি।",
         no_links: "❌ আপনি এখনো কোনো লিঙ্ক তৈরি করেননি।",
         profile_report: (name, list) => `📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n👤 নাম: ${name}\n🎫 আপনার একটিভ লিঙ্কসমূহ:\n${list}`,
@@ -89,7 +89,7 @@ const locale = {
         feedback_success: "✅ Feedback submitted! Thank you.",
         session_cancelled: "❌ Your active session has been cancelled.",
         no_session: "💡 You don't have any active session.",
-        invalid_cmd: (cmd) => `❌ **Invalid Command:** \`${cmd}\``,
+        invalid_cmd: (cmd) => `❌ **Invalid input:** \`${cmd}\` is not recognized. Please use the menu below or send /cancel to stop current session.`,
         maint_msg: "🚧 **Bot is under maintenance!** We will be back shortly.",
         no_links: "❌ You haven't created any links yet.",
         profile_report: (name, list) => `📊 **Your Profile:**\n\n👤 Name: ${name}\n🎫 Your Active Links:\n${list}`,
@@ -114,7 +114,7 @@ bot.use((ctx, next) => {
     try {
         const userId = ctx.chat ? ctx.chat.id : null;
         if (!userId) return next();
-        if (String(userId) === String(ADMIN_CHAT_ID)) return next();
+        if (Number(userId) === Number(ADMIN_CHAT_ID)) return next();
         if (isMaintenanceMode) {
             const lang = userLanguages[userId] || 'bn';
             return ctx.reply(locale[lang].maint_msg);
@@ -148,9 +148,9 @@ bot.command('cancel', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-// 👑 Admin Panel Infrastructure
+// 👑 Admin Panel Infrastructure (ফিক্সড)
 bot.command('admin', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return;
     ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
         [Markup.button.callback("📊 System Status", "admin_stats"), Markup.button.callback("📢 Global Broadcast", "admin_broadcast")],
         [Markup.button.callback(isMaintenanceMode ? "🟢 Live Mode" : "🚧 Maint Mode", "admin_toggle_maint")],
@@ -159,35 +159,35 @@ bot.command('admin', (ctx) => {
 });
 
 bot.action('admin_stats', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     const activeLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].isActive).length;
     ctx.reply(`📊 **Metrics:**\n\nUsers: \`${registeredUsers.size}\`\nActive Links: \`${activeLinks}\` (Total: \`${totalLinksCreated}\`)\nCards: \`${totalCardsGenerated}\`\nFeedbacks: \`${totalFeedbacksReceived}\``);
 });
 
 bot.action('admin_toggle_maint', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     isMaintenanceMode = !isMaintenanceMode;
     ctx.answerCbQuery();
     ctx.reply(`⚙️ Maintenance Mode -> ${isMaintenanceMode ? 'ENABLED 🚧' : 'DISABLED 🟢'}`);
 });
 
 bot.action('admin_broadcast', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
     ctx.reply("📢 Enter the broadcast transmission message:");
 });
 
 bot.action('admin_ban_menu', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_ID' };
     ctx.reply("🚫 Send the Telegram Chat ID to BAN/UNBAN:");
 });
 
 bot.action('admin_view_logs', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     ctx.reply("📜 Logs: Engines running smoothly.");
 });
@@ -340,7 +340,7 @@ bot.action('menu_help', (ctx) => {
     ctx.reply(locale[lang].help_text);
 });
 
-// 🎯 State Machine & Universal Device-Agnostic Validation Router
+// 🎯 State Machine & Universal Validation Router (স্মার্ট এরর রিপ্লাই সহ)
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
@@ -348,11 +348,17 @@ bot.on('text', (ctx) => {
     const lang = userLanguages[userId] || 'bn';
 
     if (text.startsWith('/')) return;
-    if (!session) return;
+
+    // 🛑 যদি ইউজারের কোনো সেশন না থাকে এবং সে ভুলভাল টেক্সট লেখে
+    if (!session) {
+        ctx.reply(locale[lang].invalid_cmd(text), { parse_mode: 'Markdown' });
+        sendMainMenu(ctx, false);
+        return;
+    }
 
     try {
         // Admin Processors
-        if (String(userId) === String(ADMIN_CHAT_ID)) {
+        if (Number(userId) === Number(ADMIN_CHAT_ID)) {
             if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
                 registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
                 ctx.reply("📡 Broadcast distribution cycle finished.");
@@ -382,9 +388,10 @@ bot.on('text', (ctx) => {
             delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // 🕒 সম্পূর্ণ গ্লোবাল এবং ডায়নামিক "ইউজার টাইমজোন" প্রুফ ইঞ্জিন
+        // 🕒 সম্পূর্ণ গ্লোবাল এবং ডায়নামিক "ইউজার টাইমজোন" প্রুফ ইঞ্জিন (ফিক্সড RegEx)
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
-            const timeRegex = /^(\d{1,2}):(\d{1,2})\s*(AM|PM)$/i;
+            // RegEx মডিফাই করা হয়েছে যাতে স্পেস এবং ছোট/বড় হাতের অক্ষরের কোনো সমস্যা না হয় (যেমন: 12:25am)
+            const timeRegex = /^(\d{1,2})\s*:\s*(\d{1,2})\s*(AM|PM)$/i;
             const match = text.match(timeRegex);
 
             if (!match) {
@@ -400,12 +407,10 @@ bot.on('text', (ctx) => {
                 return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
             }
 
-            // ১. টেলিগ্রামের মেসেজ ডেল্টা থেকে ইউজারের লোকাল টাইমজোন বের করার রিয়েল-টাইম মেকানিজম
-            const msgDateSeconds = ctx.message.date; // এটি ইউজারের মেসেজ পাঠানোর ইউনিভার্সাল টাইমস্ট্যাম্প
+            const msgDateSeconds = ctx.message.date; 
             const serverNow = new Date();
             const userNow = new Date(msgDateSeconds * 1000); 
 
-            // ২. ইউজারের ডেট অবজেক্ট থেকে সে যেই সময়টি দিয়েছে তার একটি রিলেটিভ ম্যাপ তৈরি করা
             const targetDate = new Date(userNow);
             let targetHours = hours;
             if (ampm === 'PM' && hours !== 12) targetHours += 12;
@@ -413,21 +418,18 @@ bot.on('text', (ctx) => {
 
             targetDate.setHours(targetHours, minutes, 0, 0);
 
-            // ৩. ইউজার যদি এমন টাইম দেয় যা তার বর্তমান সময় থেকে পেছনে (যেমন ঘড়িতে ১২:১৪ কিন্তু দিয়েছে ১২:১০), 
-            // তবে ৫ মিনিটের টাইপিং বাফার বাদে বাকি সব পেছনের সময়কে পরবর্তী দিনের সময় (Tomorrow) ধরা হবে।
+            // ৫ মিনিটের বাফার রাখা হয়েছে টাইপিং সময়ের সুবিধার জন্য
             if (targetDate.getTime() < userNow.getTime() - (5 * 60 * 1000)) { 
                 targetDate.setDate(targetDate.getDate() + 1);
             }
 
-            // ৪. ইউজারের ডিভাইসের কারেন্ট টাইম থেকে টার্গেটের সময়ের নিখুঁত ব্যবধান (Time Gap) হিসাব করা
             const diffMs = targetDate.getTime() - userNow.getTime();
-            const maxLimitMs = 2 * 60 * 60 * 1000; // কঠোরভাবে ২ ঘণ্টা সর্বোচ্চ লিমিট
+            const maxLimitMs = 2 * 60 * 60 * 1000; 
 
             if (diffMs > maxLimitMs) {
                 return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
             }
 
-            // ৫. চূড়ান্ত ইউনিভার্সাল টাইমস্ট্যাম্প (ISO) ডাটাবেজে কনভার্ট করা যা বিশ্বব্যাপী ওয়েব লিঙ্কে লাইভ রিয়েল-টাইম সেকেন্ড কাউন্টডাউন দেখাবে
             const timeDifferenceWithServer = serverNow.getTime() - userNow.getTime();
             const finalServerTargetDate = new Date(targetDate.getTime() + timeDifferenceWithServer);
 
@@ -459,6 +461,10 @@ bot.on('text', (ctx) => {
             delete userSessions[userId];
             return;
         }
+
+        // সেশন রানিং থাকা অবস্থায় যদি অন্য কোনো অদ্ভুত টেক্সট আসে
+        ctx.reply(locale[lang].invalid_cmd(text), { parse_mode: 'Markdown' });
+
     } catch (error) {
         console.error("Critical Universal Runtime Handled Error:", error);
         ctx.reply(locale[lang].general_error);
