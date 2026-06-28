@@ -1,226 +1,162 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Special Wish For You...</title>
+    <title>Special Wishing Box ✨</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body, html { width:100%; height:100%; overflow:hidden; background-color:#000; font-family:'Arial',sans-serif; display:flex; justify-content:center; align-items:center; color:#fff; user-select:none; flex-direction:column; }
-        
-        #openBtn { font-size:2rem; color:#fff; background:linear-gradient(45deg, #ff4d6d, #ff758f); border:none; padding:16px 40px; border-radius:50px; cursor:pointer; z-index:20; position:relative; transition:transform 0.2s ease; }
-        #openBtn::before { content:''; position:absolute; top:-4px; left:-4px; right:-4px; bottom:-4px; border-radius:50px; background:linear-gradient(45deg, #ff4d6d, #ff758f, #ff85a2, #ff4d6d); background-size:400%; z-index:-1; filter:blur(15px); animation:streamingLight 3s linear infinite; }
-        @keyframes streamingLight { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
-        
-        .blast-out { animation:blastAway 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards !important; pointer-events:none; }
-        @keyframes blastAway { 0% { transform:scale(1); opacity:1; filter:blur(0px); } 100% { transform:scale(3); opacity:0; filter:blur(10px); } }
-        
-        .text-container { position:absolute; text-align:center; font-size:2.5rem; font-weight:bold; width:90%; max-width:600px; opacity:0; transform:scale(0.95); transition:opacity 0.5s ease, transform 0.5s ease; }
-        .text-container::after { content:'|'; animation:blinkCursor 0.6s infinite; color:#ff4d6d; }
-        @keyframes blinkCursor { 0%, 100% { opacity:0; } 50% { opacity:1; } }
-        
-        .envelope-container { display:none; position:relative; width:320px; height:220px; background-color:#d93654; border-radius:0 0 10px 10px; box-shadow:0 30px 50px rgba(0,0,0,0.6); cursor:pointer; z-index:10; opacity:0; transform:scale(0.8); transition:all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); perspective:1000px; }
-        .envelope-flap { position:absolute; top:0; left:0; width:0; height:0; border-left:160px solid transparent; border-right:160px solid transparent; border-top:120px solid #ff4d6d; transform-origin:top; transition:transform 0.6s ease-in-out; z-index:5; filter:drop-shadow(0 4px 5px rgba(0,0,0,0.2)); }
-        .envelope-pockets { position:absolute; bottom:0; left:0; width:100%; height:100%; z-index:4; overflow:hidden; border-radius:0 0 10px 10px; }
-        .envelope-pockets::before { content:''; position:absolute; bottom:0; left:0; width:0; height:0; border-left:165px solid #ff5c7a; border-top:110px solid transparent; border-bottom:110px solid #ff5c7a; }
-        .envelope-pockets::after { content:''; position:absolute; bottom:0; right:0; width:0; height:0; border-right:165px solid #ff5c7a; border-top:110px solid transparent; border-bottom:110px solid #ff5c7a; }
-        .envelope-bottom { position:absolute; bottom:0; left:0; width:0; height:0; border-left:160px solid transparent; border-right:160px solid transparent; border-bottom:115px solid #e6425e; z-index:4; border-radius:0 0 10px 10px; }
-        .envelope-label { position:absolute; top:130px; left:50%; transform:translateX(-50%); background:#fff; color:#ff4d6d; padding:8px 20px; font-size:1.1rem; font-weight:bold; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:6; white-space:nowrap; transition:all 0.4s ease; }
-        .envelope-heart { position:absolute; top:75px; left:50%; transform:translate(-50%, -50%); font-size:2.2rem; z-index:6; transition:all 0.4s ease; animation:pulseHeart 1.5s infinite; }
-        @keyframes pulseHeart { 0%, 100% { transform:translate(-50%, -50%) scale(1); } 50% { transform:translate(-50%, -50%) scale(1.15); } }
-        
-        .envelope-container.open .envelope-flap { transform:rotateX(180deg); z-index:1; border-top-color:#ff5c7a; }
-        .envelope-container.open .envelope-heart, .envelope-container.open .envelope-label { opacity:0; transform:translate(-50%, -50%) scale(0) !important; }
-        
-        .love-letter { position:absolute; background:#fff0f5; padding:25px; border-radius:15px; text-align:center; max-width:380px; width:85%; box-shadow:0 15px 40px rgba(0,0,0,0.4); color:#333; z-index:2; transform:translateY(20px) scale(0.85); opacity:0; transition:all 1.2s cubic-bezier(0.1, 1, 0.2, 1); pointer-events:none; }
-        .letter-popout { opacity:1 !important; transform:translateY(-50px) scale(1) !important; z-index:12 !important; pointer-events:auto !important; }
-        .love-letter h2 { color:#ff4d6d; margin-bottom:10px; font-size:1.8rem; font-family:'Georgia', serif; }
-        .love-letter p { font-size:1.05rem; line-height:1.6; color:#444; margin-bottom:15px; white-space: pre-line; }
-        
-        .question-box { border-top:1px dashed #ff758f; padding-top:15px; margin-top:10px; }
-        .question-box h3 { font-size:1.3rem; color:#ff4d6d; margin-bottom:12px; }
-        
-        .btn-group { display:flex; justify-content:center; align-items:center; gap:25px; min-height:60px; position:relative; margin-top:10px; }
-        .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height:42px; }
-        .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index:5; }
-        .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
-        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index:5; }
-        
-        .floating-emoji { position:absolute; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index:100; font-size:25px; }
-        @keyframes floatUp { 
-            0% { transform:translateY(100vh) scale(0) rotate(0deg); opacity:0; } 
-            10% { opacity:0.8; } 
-            90% { opacity:0.8; } 
-            100% { transform:translateY(-10vh) scale(1.5) rotate(360deg); opacity:0; } 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; transition: background 1s ease;
         }
-        .fade-in { opacity:1 !important; transform:scale(1) !important; transition:all 0.8s ease; }
+        /* 🎨 থিম কালার প্যালেট */
+        body.theme-classic { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: #ff4b72; }
+        body.theme-neon { background: #0f0c1b; color: #00ffcc; }
+        body.theme-gold { background: linear-gradient(135deg, #111 0%, #443410 100%); color: #ffd700; }
+        body.theme-dark { background: #1a0505; color: #ff3333; }
+
+        .container { text-align: center; width: 90%; max-width: 500px; padding: 30px; border-radius: 20px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        body.theme-neon .container { border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; }
+
+        /* ⏰ কাউন্টডাউন ডিজাইন */
+        .timer-box { font-size: 2.5rem; font-weight: bold; margin-top: 20px; letter-spacing: 2px; }
+        
+        .btn { padding: 12px 30px; font-size: 1.1rem; border: none; border-radius: 25px; cursor: pointer; margin-top: 20px; font-weight: bold; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: 0.3s; }
+        body.theme-neon .btn { background: #00ffcc; color: #000; }
+
+        /* 💌 এনভেলাপ ও টেক্সট */
+        #animation-text { font-size: 1.8rem; font-weight: bold; min-height: 60px; margin-bottom: 20px; }
+        #envelope-wrapper { display: none; cursor: pointer; font-size: 5rem; animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        #letter-box { display: none; background: #fff; color: #333; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; max-height: 300px; overflow-y: auto; }
     </style>
 </head>
-<body>
-    <audio id="bgMusic" src="https://cdn.jsdelivr.net/gh/lovelatter/Love@main/music.mp3" loop preload="auto"></audio>
-    <button id="openBtn">Open ❤️</button>
-    <div id="textDisplay" class="text-container"></div>
-    
-    <div id="envelope" class="envelope-container">
-        <div class="envelope-flap"></div>
-        <div class="envelope-pockets"></div>
-        <div class="envelope-bottom"></div>
-        <div class="envelope-heart" id="envelopeEmoji">💝</div>
-        <div class="envelope-label">খাম খুলুন</div>
-    </div>
-    
-    <div id="loveLetter" class="love-letter">
-        <h2 id="letterTitle">আপনার জন্য বার্তা...</h2>
-        <p id="letterContent">লোডিং...</p>
-        
-        <div class="question-box" id="questionBox">
-            <h3 id="questionText">Do you love me? 🥺</h3>
-            <div class="btn-group">
-                <button class="ask-btn btn-yes" onclick="sendResponse('Yes! ❤️')">Yes</button>
-                <button class="ask-btn btn-no" id="noBtn" onmouseover="moveNoButton()" onclick="sendResponse('No 💔')">No</button>
+<body class="theme-classic">
+
+    <div class="container">
+        <!-- লকড কাউন্টডাউন স্ক্রিন -->
+        <div id="lock-screen" style="display: none;">
+            <h2>⏳ Waiting for the Special Moment...</h2>
+            <div class="timer-box" id="countdown-clock">00:00:00:00</div>
+        </div>
+
+        <!-- উইশিং পেজ স্ক্রিন -->
+        <div id="wish-screen" style="display: none;">
+            <div id="animation-text">Loading surprise...</div>
+            <div id="envelope-wrapper" onclick="openEnvelope()">💌</div>
+            
+            <div id="letter-box">
+                <p id="main-letter-text"></p>
+                <input type="text" id="user-response" placeholder="Type your reply here..." style="width:100%; padding:10px; margin-top:15px; border-radius:5px; border:1px solid #ccc;">
+                <button class="btn" onclick="sendReply()">Send Reply ❤️</button>
             </div>
         </div>
     </div>
 
-    <script>
-        const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), noBtn = document.getElementById('noBtn'), questionBox = document.getElementById('questionBox');
-        
-        let textArray = [];
-        let arrayIndex = 0, audioCtx = null;
-        let currentEmoji = '❤️'; 
+    <!-- ফ্রি মিউজিক সোর্স প্লেয়ার লিংক -->
+    <audio id="bg-music" loop></audio>
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            const pathParts = window.location.pathname.split('/');
-            const id = pathParts[pathParts.length - 1];
-            
-            try {
-                const response = await fetch('/api/get-content', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id })
-                });
-                const data = await response.json();
+    <script>
+        const linkId = window.location.pathname.split('/').pop();
+        let animationLines = [];
+        let currentLineIdx = 0;
+
+        // মিউজিক ট্র‍্যাক লাইব্রেরি
+        const musicTracks = {
+            romantic: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // এক্সাম্পল প্রফেশনাল বাঁশির সুর যোগ করতে পারবেন
+            birthday: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+            piano: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+        };
+
+        fetch('/api/get-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: linkId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(!data.success) return alert("Link Expired or Invalid!");
+
+            // থিম সেট করা
+            if(data.theme) document.body.className = 'theme-' + data.theme;
+
+            // যদি লিঙ্কটি এখনো লক থাকে (কাউন্টডাউন চলছে)
+            if(data.isLocked) {
+                document.getElementById('lock-screen').style.display = 'block';
+                startCountdownClock(data.targetTime);
+            } else {
+                // লিঙ্ক আনলকড থাকলে উইশ স্ক্রিন লোড হবে
+                document.getElementById('wish-screen').style.display = 'block';
+                animationLines = data.animations || [];
+                document.getElementById('main-letter-text').innerText = data.letter || '';
                 
-                if(data.success) {
-                    textArray = data.animations;
-                    document.getElementById('letterContent').innerText = data.letter;
-                    
-                    // 🎯 অল-ইন-ওয়ান ক্যাটাগরি ও অটো ইমোজি অ্যানিমেশন কন্ডিশনাল ম্যাপিং
-                    if (data.type === 'birthday') {
-                        currentEmoji = '🎈'; document.getElementById('letterTitle').innerText = "Happy Birthday! 🎂";
-                        document.getElementById('questionText').innerText = "Are you happy? 🎂";
-                        document.getElementById('envelopeEmoji').innerText = "🎂"; openBtn.innerText = "Open 🎂";
-                    } else if (data.type === 'anniversary') {
-                        currentEmoji = '💍'; document.getElementById('letterTitle').innerText = "Happy Anniversary! 💍";
-                        document.getElementById('questionText').innerText = "Are you happy with me? 💍";
-                        document.getElementById('envelopeEmoji').innerText = "💍"; openBtn.innerText = "Open 💍";
-                    } else if (data.type === 'crush') {
-                        currentEmoji = '💖'; document.getElementById('letterTitle').innerText = "Crush Confession... 💖";
-                        document.getElementById('questionText').innerText = "Do you love me? 🥺";
-                        document.getElementById('envelopeEmoji').innerText = "💖"; openBtn.innerText = "Open 💖";
-                    } else if (data.type === 'newyear') {
-                        currentEmoji = '🎉'; document.getElementById('letterTitle').innerText = "Happy New Year! ✨";
-                        document.getElementById('questionText').innerText = "Are you excited for this year? 🤩";
-                        document.getElementById('envelopeEmoji').innerText = "🎉"; openBtn.innerText = "Open 🎉";
-                    } else if (data.type === 'boishakh') {
-                        currentEmoji = '🌾'; document.getElementById('letterTitle').innerText = "এসো হে বৈশাখ! 🥁";
-                        document.getElementById('questionText').innerText = "শুভ নববর্ষ! উৎসবটি কেমন কাটছে? 🥁";
-                        document.getElementById('envelopeEmoji').innerText = "🌾"; openBtn.innerText = "Open 🌾";
-                    } else if (data.type === 'friend') {
-                        currentEmoji = '🫂'; document.getElementById('letterTitle').innerText = "To My Best Friend! 🫂";
-                        document.getElementById('questionText').innerText = "Am I your best friend? 🤝";
-                        document.getElementById('envelopeEmoji').innerText = "🤝"; openBtn.innerText = "Open 🫂";
-                    } else if (data.type === 'eid') {
-                        currentEmoji = '🌙'; document.getElementById('letterTitle').innerText = "ঈদ মোবারক! 🌙";
-                        document.getElementById('questionText').innerText = "ঈদ মোবারক! সেমাই খাওয়াচ্ছো কবে? 😋";
-                        document.getElementById('envelopeEmoji').innerText = "🌙"; openBtn.innerText = "Open 🌙";
-                    } else if (data.type === 'sorry') {
-                        currentEmoji = '🥺'; document.getElementById('letterTitle').innerText = "I am Sorry... 🥺";
-                        document.getElementById('questionText').innerText = "Will you forgive me? 🙏";
-                        document.getElementById('envelopeEmoji').innerText = "💧"; openBtn.innerText = "Open 🥺";
-                    } else {
-                        currentEmoji = '❤️'; document.getElementById('letterTitle').innerText = "আমার হৃদয়ের কথা... ❤️";
-                        document.getElementById('questionText').innerText = "Do you love me? 🥺";
-                        document.getElementById('envelopeEmoji').innerText = "💝"; openBtn.innerText = "Open ❤️";
-                    }
-                } else {
-                    document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
+                // মিউজিক অটো-প্লে সেটআপ
+                if(data.music && musicTracks[data.music]) {
+                    const audio = document.getElementById('bg-music');
+                    audio.src = musicTracks[data.music];
+                    audio.play().catch(() => {
+                        // ব্রাউজার পলিসির জন্য ইউজার স্ক্রিনে ফার্স্ট ক্লিক করলেই গান বাজবে
+                        document.body.addEventListener('click', () => audio.play(), { once: true });
+                    });
                 }
-            } catch(e) { console.log('Content fetch error'); }
+                showAnimations();
+            }
         });
 
-        function playIphoneTinkSound() {
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const now = audioCtx.currentTime, osc1 = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator(), gainNode = audioCtx.createGain(), filter = audioCtx.createBiquadFilter();
-                osc1.type = 'sine'; osc1.frequency.setValueAtTime(1800, now); osc1.frequency.exponentialRampToValueAtTime(1200, now + 0.01);
-                osc2.type = 'triangle'; osc2.frequency.setValueAtTime(300, now); osc2.frequency.exponentialRampToValueAtTime(80, now + 0.015);
-                filter.type = 'lowpass'; filter.frequency.setValueAtTime(2500, now);
-                gainNode.gain.setValueAtTime(0.9, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
-                osc1.connect(filter); osc2.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
-                osc1.start(now); osc2.start(now); osc1.stop(now + 0.03); osc2.stop(now + 0.03);
-            } catch (e) {}
+        // লাইভ কাউন্টডাউন ফাংশন
+        function startCountdownClock(targetStr) {
+            const targetDate = new Date(targetStr.replace(' ', 'T') + ':00').getTime();
+            const interval = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = targetDate - now;
+
+                if (diff <= 0) {
+                    clearInterval(interval);
+                    location.reload(); // টাইম শেষ হলে পেজটি অটো রিলোড হয়ে আনলক হবে
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('countdown-clock').innerText = 
+                    `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }, 1000);
         }
-        
-        function typeText(text, charIndex, callback) {
-            if (charIndex < text.length) {
-                if (text.charAt(charIndex) !== ' ') playIphoneTinkSound();
-                textDisplay.innerText += text.charAt(charIndex);
-                setTimeout(() => typeText(text, charIndex + 1, callback), 140);
-            } else { setTimeout(callback, 1500); }
-        }
-        
-        function startTextSequence() {
-            if (arrayIndex < textArray.length) {
-                textDisplay.innerText = '';
-                textDisplay.classList.remove('fade-out'); textDisplay.classList.add('fade-in');
-                typeText(textArray[arrayIndex], 0, () => {
-                    textDisplay.classList.remove('fade-in'); textDisplay.classList.add('fade-out');
-                    setTimeout(() => { arrayIndex++; startTextSequence(); }, 600);
-                });
+
+        // অ্যানিমেশন টেক্সট শো করার লজিক
+        function showAnimations() {
+            if(currentLineIdx < animationLines.length) {
+                document.getElementById('animation-text').innerText = animationLines[currentLineIdx];
+                currentLineIdx++;
+                setTimeout(showAnimations, 3000); // প্রতি ৩ সেকেন্ড পর পর লাইন পরিবর্তন হবে
             } else {
-                textDisplay.style.display = 'none'; envelope.style.display = 'block';
-                setTimeout(() => envelope.classList.add('fade-in'), 50);
+                document.getElementById('animation-text').style.display = 'none';
+                document.getElementById('envelope-wrapper').style.display = 'block';
             }
         }
-        
-        openBtn.addEventListener('click', () => {
-            openBtn.classList.add('blast-out'); bgMusic.volume = 0; bgMusic.muted = true;
-            bgMusic.play().then(() => { bgMusic.muted = false; bgMusic.volume = 0.001; }).catch(e => console.log("Audio unlock retry"));
-            setTimeout(() => { openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence(); }, 800);
-        });
-        
-        envelope.addEventListener('click', () => {
-            envelope.classList.add('open'); bgMusic.currentTime = 0; bgMusic.volume = 1.0; bgMusic.play().catch(e => console.log("Final play blocked"));
-            setTimeout(() => {
-                loveLetter.style.display = 'block';
-                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(createFloatingAnimation, 300); }, 50);
-            }, 550);
-        });
-        
-        function createFloatingAnimation() {
-            const element = document.createElement('div'); element.classList.add('floating-emoji');
-            element.innerText = currentEmoji; element.style.left = Math.random() * 100 + 'vw'; 
-            element.style.animationDuration = Math.random() * 2 + 3 + 's';
-            document.body.appendChild(element); setTimeout(() => { element.remove(); }, 5000);
+
+        function openEnvelope() {
+            document.getElementById('envelope-wrapper').style.display = 'none';
+            document.getElementById('letter-box').style.display = 'block';
         }
 
-        function moveNoButton() {
-            noBtn.style.position = 'absolute';
-            const x = Math.random() * (loveLetter.offsetWidth - noBtn.offsetWidth - 40) + 10;
-            const y = Math.random() * (loveLetter.offsetHeight - noBtn.offsetHeight - 180) + 120;
-            noBtn.style.left = `${x}px`; noBtn.style.top = `${y}px`;
-        }
-
-        function sendResponse(answer) {
-            questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">রেসপন্স সফলভাবে পাঠানো হয়েছে! ✨</h3>`;
-            const pathParts = window.location.pathname.split('/'); const id = pathParts[pathParts.length - 1];
+        function sendReply() {
+            const reply = document.getElementById('user-response').value;
+            if(!reply.trim()) return alert("Please type something!");
             fetch('/api/respond', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ response: answer, id: id })
-            }).catch(error => console.log('Error sending response'));
+                body: JSON.stringify({ id: linkId, response: reply })
+            }).then(() => {
+                alert("Reply sent successfully! ❤️");
+                document.getElementById('user-response').value = '';
+            });
         }
     </script>
 </body>
