@@ -123,6 +123,14 @@ const locale = {
 };
 
 // 🤖 ফ্রি AI টেক্সট জেনারেটর ইঞ্জিন
+function getDefaultFallback(type, lang, targetName = "") {
+    const nameStr = targetName ? targetName : (lang === 'bn' ? "প্রিয়" : "Dear");
+    if (type === 'animation') {
+        return lang === 'bn' ? `${nameStr} প্রথম দেখা, মিষ্টি হাসি, তোমায় ভালোবাসি` : `Hey ${nameStr}, first sight, sweet smile, love you forever`;
+    }
+    return lang === 'bn' ? `আমি তোমাকে অনেক ভালোবাসি ${nameStr}। তুমি আমার জীবনের সেরা পাওয়া।` : `I love you so much ${nameStr}. You are the best part of my life.`;
+}
+
 async function generateAiContent(type, category, lang, targetName = "") {
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
