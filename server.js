@@ -27,7 +27,7 @@ let totalLinksCreated = 0;
 let totalCardsGenerated = 0;
 let totalFeedbacksReceived = 0;
 
-// 🌐 Multi-Language Messages Comprehensive Dictionary
+// 🌐 Multi-Language Messages Dictionary
 const locale = {
     bn: {
         welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম লক করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
@@ -36,15 +36,15 @@ const locale = {
         cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
-        prompt_time_input: "⏳ লিঙ্কটি কত সময় পর খুলবে তা লিখে পাঠান।\n\n**উদাহরন (Examples):**\n• শুধু মিনিটের জন্য: \`10\` অথবা \`10m\`\n• ঘণ্টা ও মিনিটের জন্য: \`1h 20m\` অথবা \`1:20\`\n\n⚠️ **শর্ত:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **২ ঘণ্টা** (১২০ মিনিট) এর মধ্যে যেকোনো সময় দিতে পারবেন। সেকেন্ড গ্রহণযোগ্য নয়।",
-        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে সঠিক সময় দিন। যেমন: \`20\` (২০ মিনিট) অথবা \`1h 30m\` (১ ঘণ্টা ৩০ মিনিট)।",
-        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ ২ ঘণ্টা (১২০ মিনিট) পর্যন্ত টাইম লক সেট করতে পারবেন।",
+        prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা শুধু সংখ্যায় লিখে পাঠান।\n\n**সঠিক উদাহরন (Examples):**\n• `15` অথবা `15m`\n• `90 minute` অথবা `35মিনিট`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**। আপনি যদি ৯০ মিনিট দেন, তবে লিঙ্কটি ১ ঘণ্টা ৩০ মিনিট লক থাকবে।",
+        invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন। যেমন: `20`, `45m` অথবা `90 minute` লিখে পাঠান। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
+        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ **১০০ মিনিট** পর্যন্ত টাইম লক সেট করতে পারবেন। দয়া করে ১ থেকে ১০০ এর মধ্যে সংখ্যা দিন।",
         time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেটিভ সময় গ্রহণযোগ্য নয়।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? নামটি লিখে পাঠান:",
         card_ready: "✨ **আপনার প্রিমিয়াম উইশ কার্ডটি তৈরি হয়ে গেছে!** 👇",
-        help_text: `❓ **সাহায্য গাইড:**\n\n১. **লিঙ্ক তৈরি:** '🚀 লিঙ্ক তৈরি করুন' বাটনে ক্লিক করে ক্যাটাগরি বেছে নিন। এরপর কত মিনিট লিঙ্ক লক রাখতে চান তা লিখে দিন (যেমন: 10m বা 1:15)।\n২. **ডাইনামিক কাউন্টডাউন:** ইউজার যখন লিঙ্কে ঢুকবে সে সেখানে লাইভ সেকেন্ডসহ রিয়েল-টাইম কাউন্টডাউন দেখতে পাবে।\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
+        help_text: `❓ **সাহায্য গাইড:**\n\n১. **লিঙ্ক তৈরি:** '🚀 লিঙ্ক তৈরি করুন' বাটনে ক্লিক করে ক্যাটাগরি বেছে নিন। এরপর কত মিনিট লিঙ্ক লক রাখতে চান তা লিখে দিন (যেমন: 15 বা 90m)।\n২. **ডাইনামিক কাউন্টডাউন:** ইউজার যখন লিঙ্কে ঢুকবে সে সেখানে লাইভ সেকেন্ডসহ রিয়েল-টাইম কাউন্টডাউন দেখতে পাবে।\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
         feedback_prompt: "📝 অনুগ্রহ করে আপনার মতামত বা পরামর্শ এখানে লিখে পাঠান:",
         feedback_short: "❌ মতামত একটু বড় করে লিখুন (কমপক্ষে ৫টি অক্ষর)।",
         feedback_success: "✅ আপনার মূল্যবান মতামত সফলভাবে জমা হয়েছে। ধন্যবাদ!",
@@ -75,9 +75,9 @@ const locale = {
         cat_love: "❤️ Love Letter", cat_crush: "💖 Crush Confession", cat_birthday: "🎂 Birthday Wish", cat_anniversary: "💍 Anniversary Wish", cat_newyear: "🎉 New Year Wish", cat_boishakh: "🌾 Pohela Boishakh", cat_friend: "🫂 Best Friend", cat_eid: "🌙 Eid Wish", cat_sorry: "🥺 Sorry Letter",
         prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**",
         btn_yes: "✅ Yes", btn_no: "❌ No",
-        prompt_time_input: "⏳ Send the lock duration.\n\nExamples:\n• Minutes only: \`10\` or \`10m\`\n• Hours & Minutes: \`1h 20m\` or \`1:20\`\n\n⚠️ Limits: Min 1 min, Max 2 hours (120 mins).",
-        invalid_time: "❌ **Invalid format!** Please use formats like \`20\` or \`1h 30m\`.",
-        max_time_exceeded: "⚠️ **Limit Exceeded!** Max lock time is 2 hours (120 minutes).",
+        prompt_time_input: "⏳ Send the lock duration in minutes.\n\nExamples:\n• \`15\`, \`15m\` or \`90 minute\`\n\n⚠️ Limits: Min 1 min, Max 100 mins.",
+        invalid_time: "❌ **Invalid format!** Please send minutes only (e.g. \`20\` or \`45m\`).",
+        max_time_exceeded: "⚠️ **Limit Exceeded!** Max lock time is 100 minutes.",
         time_past: "❌ Minimum lock duration is 1 minute.",
         prompt_theme: "🎨 **Select a Premium Web Theme:**",
         prompt_music: "🎵 **Select a Background Music:**",
@@ -109,43 +109,18 @@ const locale = {
     }
 };
 
-// Flexible duration parser function
-function parseDurationToMinutes(input) {
-    const cleanInput = input.toLowerCase().replace(/\s+/g, '');
+// 🧠 নতুন রেগুলার এক্সপ্রেশন বেসড মিনিট এক্সট্রাক্টর লজিক
+function extractMinutes(input) {
+    const cleanInput = input.trim().toLowerCase();
     
-    // Pattern 1: HH:MM or H:M (e.g., 1:20, 01:05, 1:2)
-    const colonMatch = cleanInput.match(/^(\d{1,2}):(\d{1,2})$/);
-    if (colonMatch) {
-        const hrs = parseInt(colonMatch[1], 10);
-        const mins = parseInt(colonMatch[2], 10);
-        return (hrs * 60) + mins;
-    }
-
-    // Pattern 2: Pure digits only (e.g., 10, 5, 120)
-    if (/^\d+$/.test(cleanInput)) {
-        return parseInt(cleanInput, 10);
-    }
-
-    // Pattern 3: Dynamic extraction of hours and minutes (e.g., 1h30m, 45m, 1hour2minute)
-    let totalMinutes = 0;
-    let foundMatch = false;
-
-    const hourMatch = cleanInput.match(/(\d+)\s*(h|hour|ghonta)/);
-    const minMatch = cleanInput.match(/(\d+)\s*(m|min|mini|minute|mili)/);
-
-    if (hourMatch) {
-        totalMinutes += parseInt(hourMatch[1], 10) * 60;
-        foundMatch = true;
-    }
-    if (minMatch) {
-        totalMinutes += parseInt(minMatch[1], 10);
-        foundMatch = true;
-    }
-
-    return foundMatch ? totalMinutes : null;
+    // টেক্সট থেকে শুধু প্রথম সংখ্যাটি বের করবে
+    const matches = cleanInput.match(/\d+/);
+    if (!matches) return null;
+    
+    return parseInt(matches[0], 10);
 }
 
-// 🛡️ Security Middlewares & Multi-User Layer
+// 🛡️ Security Middlewares
 bot.use((ctx, next) => {
     try {
         const userId = ctx.chat ? ctx.chat.id : null;
@@ -184,7 +159,7 @@ bot.command('cancel', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-// 👑 Admin Panel Console (Handles both /admin and /adm shortcut)
+// Admin Control Panel
 const handleAdminConsole = (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return;
     ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
@@ -276,7 +251,7 @@ bot.action('timer_yes', (ctx) => {
 
 bot.action('timer_no', (ctx) => { 
     ctx.answerCbQuery(); 
-    userSessions[ctx.chat.id].countdown = null; 
+    userSessions[ctx.chat.id].pendingMinutes = null; 
     askThemeSelection(ctx); 
 });
 
@@ -378,7 +353,7 @@ bot.action('menu_help', (ctx) => {
     ctx.reply(locale[lang].help_text);
 });
 
-// 🎯 State Machine & Universal Validation Router
+// 🎯 State Machine & Smart Text Processing Engine
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
@@ -394,7 +369,6 @@ bot.on('text', (ctx) => {
     }
 
     try {
-        // Admin Command Interceptors
         if (Number(userId) === Number(ADMIN_CHAT_ID)) {
             if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
                 registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
@@ -425,28 +399,25 @@ bot.on('text', (ctx) => {
             delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // 🕒 Duration-based CountDown Engine Layer
+        // 🕒 স্মার্ট মিনিট ডিটেক্টর ও লিমিট চেকার এরিয়া
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
-            const parsedMinutes = parseDurationToMinutes(text);
+            const parsedMinutes = extractMinutes(text);
 
+            // ১. যদি টেক্সটে কোনো সংখ্যাই না পাওয়া যায়
             if (parsedMinutes === null || isNaN(parsedMinutes)) {
                 return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
             }
-
+            // ২. সর্বনিম্ন ১ মিনিটের লিমিট চেক
             if (parsedMinutes < 1) {
                 return ctx.reply(locale[lang].time_past, { parse_mode: 'Markdown' });
             }
-
-            if (parsedMinutes > 120) { // Limit to maximum of 2 hours (120 minutes)
+            // ৩. সর্বোচ্চ ১০০ মিনিটের লিমিট চেক
+            if (parsedMinutes > 100) {
                 return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
             }
 
-            // Calculations based on instant addition to the link generation execution time
-            const targetDate = new Date();
-            targetDate.setMinutes(targetDate.getMinutes() + parsedMinutes);
-
-            session.countdown = targetDate.toISOString(); 
-            
+            // সেশনে মিনিট সেভ রাখা
+            session.pendingMinutes = parsedMinutes; 
             askThemeSelection(ctx);
             return;
         }
@@ -463,12 +434,22 @@ bot.on('text', (ctx) => {
 
         if (session.step === 'AWAITING_LETTER_TEXT') {
             totalLinksCreated++;
+            
+            // 🚀 ফাইনাল প্রসেসিং: একদম শেষ মুহূর্তে এসে কারেন্ট টাইমের সাথে মিনিট যোগ হয়ে ISOString তৈরি হয়
+            let finalCountdownIso = null;
+            if (session.pendingMinutes) {
+                const targetDate = new Date();
+                targetDate.setMinutes(targetDate.getMinutes() + session.pendingMinutes);
+                finalCountdownIso = targetDate.toISOString();
+            }
+
             const uniqueId = Math.random().toString(36).substring(2, 9);
             linkDatabase[uniqueId] = {
                 userId: userId, name: session.name, type: session.type,
-                theme: session.theme, music: session.music, countdown: session.countdown,
+                theme: session.theme, music: session.music, countdown: finalCountdownIso,
                 animations: session.animations, letter: text, isActive: true
             };
+            
             ctx.reply(locale[lang].link_ready(`${SERVER_URL}/love/${uniqueId}`));
             delete userSessions[userId];
             return;
@@ -477,7 +458,7 @@ bot.on('text', (ctx) => {
         ctx.reply(locale[lang].invalid_cmd(text), { parse_mode: 'Markdown' });
 
     } catch (error) {
-        console.error("Critical Universal Runtime Handled Error:", error);
+        console.error("Critical Runtime Error:", error);
         ctx.reply(locale[lang].general_error);
     }
 });
@@ -498,14 +479,14 @@ function sendMainMenu(ctx, isEdit = false) {
     } catch (err) { console.error(err); }
 }
 
-// 🌐 Web UI Engine API Integration
+// 🌐 Web Content Distribution Routing API
 app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.post('/api/get-content', (req, res) => {
     try {
         const { id } = req.body;
         if (!id) return res.json({ success: false });
-        if (id.startsWith('demo-preview')) return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is a placeholder demo preview message body." });
+        if (id.startsWith('demo-preview')) return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is placeholder preview letter." });
         
         const data = linkDatabase[id];
         if (!data || !data.isActive) return res.json({ success: false });
@@ -542,4 +523,4 @@ app.post('/api/respond', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => { bot.launch(); console.log(`Core Bot System operational on port: ${PORT}`); });
+app.listen(PORT, () => { bot.launch(); console.log(`Engines configured. Port: ${PORT}`); });
