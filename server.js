@@ -33,13 +33,13 @@ const locale = {
         welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম লক করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
         btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_card: "🖼️ উইশ কার্ড বানান", btn_demo: "👀 ডেমো দেখুন", btn_stats: "📊 স্ট্যাটাস", btn_off: "🔒 লিঙ্ক বন্ধ করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_lang: "🌐 ভাষা পরিবর্তন", btn_back: "🔙 মেইন মেনু",
         choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান?**",
-        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ稳 কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
+        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
         prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা নিচের বাটন চেপে সিলেক্ট করুন অথবা শুধু সংখ্যায় লিখে পাঠান।\n\n**সঠিক উদাহরন (Examples):**\n• \`15\` অথবা \`15m\`\n• \`90 minute\`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**।",
         invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন বা বাটন ব্যবহার করুন। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
         max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ **১০০ মিনিট** পর্যন্ত টাইম লক সেট করতে পারবেন। দয়া করে ১ থেকে ১০০ এর মধ্যে সংখ্যা দিন।",
-        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেティブ সময় গ্রহণযোগ্য নয়।",
+        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেгетивное সময় গ্রহণযোগ্য নয়।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? নামটি লিখে পাঠান:",
@@ -59,7 +59,7 @@ const locale = {
         deactivate_success_all: (count) => `✅ আপনার সবকটি (\`${count}\`) লিঙ্ক সফলভাবে বন্ধ করা হয়েছে!`,
         deactivate_success_single: (id) => `✅ আপনার লিঙ্কটি (\`${id}\`) সফলভাবে বন্ধ করা হয়েছে।`,
         link_not_found: "❌ লিঙ্কটি পাওয়া যায়নি।",
-        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 আপনার প্রিয়জনের জন্য **অ্যানিমেশন টেক্সটগুলো** পাঠান।\n\n💡 **লেখার নিয়ম (How to write):**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন।\n• অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন。`,
+        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 আপনার প্রিয়জনের জন্য **অ্যানিমেশন টেক্সটগুলো** পাঠান।\n\n💡 **লেখার নিয়ম (How to write):**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন।\n• অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন。\n\n🤖 (নিজে লিখতে না চাইলে নিচের AI বাটনটি ব্যবহার করতে পারেন)`,
         demo_title: "👀 **আপনি কোন ডেমো পেজটি দেখতে চান? নিচে সিলেক্ট করুন:**",
         demo_ready: (type, url) => `✨ **আপনার অনুরোধ করা ডেমো লিঙ্কটি তৈরি!**\n\n🔗 ডেমো লিঙ্ক: ${url}`,
         input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান। \n\n🤖 (নিজে লিখতে না চাইলে নিচের AI বাটনটি ব্যবহার করতে পারেন)`,
@@ -98,7 +98,7 @@ const locale = {
         deactivate_success_all: (count) => `✅ Deactivated all (\`${count}\`) links!`,
         deactivate_success_single: (id) => `✅ Deactivated link (\`${id}\`).`,
         link_not_found: "❌ Link not found.",
-        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started!\n\n👉 Send animation texts separated by line breaks or commas (,).`,
+        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started!\n\n👉 Send animation texts separated by line breaks or commas (,). \n\n🤖 (Or use the AI helper button below)`,
         demo_title: "👀 **Select demo page:**",
         demo_ready: (type, url) => `✨ **Demo Link:** ${url}`,
         input_anim_success: (count) => `✅ Added ${count} lines. Send main letter or use AI helper below:`,
@@ -109,23 +109,38 @@ const locale = {
     }
 };
 
-// 🤖 ফ্রি AI টেক্সট জেনারেটর ইঞ্জিন ফাংশন
-async function generateAiLetter(category, lang) {
+// 🤖 ফ্রি AI টেক্সট জেনারেটর ইঞ্জিন (নাম অপশন সহ)
+async function generateAiContent(type, category, lang, targetName = "") {
     try {
-        const prompts = {
-            bn: `Write a short, highly emotional, touchy, beautiful message or letter in Bengali for the category: "${category}". Keep it under 100 words. Do not use any introductory or extra English text, just give the Bengali text.`,
-            en: `Write a short, heart-touching, beautiful message or letter in English for the category: "${category}". Keep it under 80 words. Give only the core letter.`
-        };
-        const prompt = prompts[lang] || prompts['bn'];
+        let prompt = "";
+        const nameContext = targetName ? `The person's name is "${targetName}". Try to naturally include or mention this name inside the content.` : "";
+
+        if (type === 'animation') {
+            prompt = lang === 'bn' 
+                ? `Generate 3 to 5 separate short romantic/emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output must be only the lines separated by commas. No numbering, no extra text. Example: line 1, line 2, line 3`
+                : `Generate 3 to 5 separate short emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output only lines separated by commas. No numbering.`;
+        } else {
+            prompt = lang === 'bn'
+                ? `Write a short, highly emotional, touchy, beautiful message or letter in Bengali for the category: "${category}". ${nameContext} Keep it under 100 words. Do not use any introductory or extra English text, just give the Bengali text.`
+                : `Write a short, heart-touching, beautiful message or letter in English for the category: "${category}". ${nameContext} Keep it under 80 words. Give only the core letter.`;
+        }
         
         const response = await axios.get(`https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}`);
         if (response.data && response.data.answer) {
             return response.data.answer.replace(/["']/g, "").trim();
         }
-        return lang === 'bn' ? "আমি তোমাকে অনেক ভালোবাসি। তুমি আমার জীবনের সেরা পাওয়া।" : "I love you so much. You are the best part of my life.";
+        return getDefaultFallback(type, lang, targetName);
     } catch (e) {
-        return lang === 'bn' ? "আমি তোমাকে অনেক ভালোবাসি। তুমি আমার জীবনের সেরা পাওয়া।" : "I love you so much. You are the best part of my life.";
+        return getDefaultFallback(type, lang, targetName);
     }
+}
+
+function getDefaultFallback(type, lang, targetName = "") {
+    const nameStr = targetName ? targetName : (lang === 'bn' ? "প্রিয়" : "Dear");
+    if (type === 'animation') {
+        return lang === 'bn' ? `${nameStr} প্রথম দেখা, মিষ্টি হাসি, তোমায় ভালোবাসি` : `Hey ${nameStr}, first sight, sweet smile, love you forever`;
+    }
+    return lang === 'bn' ? `আমি তোমাকে অনেক ভালোবাসি ${nameStr}। তুমি আমার জীবনের সেরা পাওয়া।` : `I love you so much ${nameStr}. You are the best part of my life.`;
 }
 
 // 🧠 স্মার্ট মিনিট এক্সট্রাক্টর ফাংশন
@@ -175,7 +190,7 @@ bot.command('cancel', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-// Admin Control Panel
+// Admin Core Control
 const handleAdminConsole = (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return;
     ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
@@ -259,7 +274,6 @@ bot.action(/^make_/, (ctx) => {
     ]));
 });
 
-// 🕒 টাইম লক বাটন লেআউট
 bot.action('timer_yes', (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].step = 'AWAITING_COUNTDOWN_TIME';
@@ -310,7 +324,10 @@ bot.action(/^set_music_/, (ctx) => {
     ctx.answerCbQuery();
     userSessions[ctx.chat.id].music = ctx.match.input.replace('set_music_', '');
     userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].session_started(userSessions[ctx.chat.id].type), { parse_mode: 'Markdown' });
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    ctx.reply(locale[lang].session_started(userSessions[ctx.chat.id].type), Markup.inlineKeyboard([
+        [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে অ্যানিমেশন লিখুন" : "🤖 Write Animations with AI", "ask_ai_anim_name")]
+    ]), { parse_mode: 'Markdown' });
 });
 
 // Card & Demos & Stats Infrastructure
@@ -387,45 +404,185 @@ bot.action('menu_help', (ctx) => {
 });
 
 
-// 🤖 AI LETTER GENERATION ACTIONS & RE-WRITE/PREVIOUS LOGIC
-bot.action('generate_ai_letter', async (ctx) => {
-    ctx.answerCbQuery("🤖 AI চিঠি তৈরি করছে...");
+// 🎬 1. AI ANIMATION WITH CUSTOM NAME ROUTING
+bot.action('ask_ai_anim_name', (ctx) => {
+    ctx.answerCbQuery();
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    ctx.editMessageText(
+        lang === 'bn' ? "👤 **আপনি কি অ্যানিমেশন টেক্সটে নির্দিষ্ট কারো নাম যুক্ত করতে চান?**" : "👤 **Do you want to include someone's name in the animations?**",
+        Markup.inlineKeyboard([
+            [Markup.button.callback(lang === 'bn' ? "✍️ হ্যাঁ, নাম দিব" : "✍️ Yes, provide name", "ai_anim_provide_name")],
+            [Markup.button.callback(lang === 'bn' ? "❌ না, নাম ছাড়া বানান" : "❌ No, without name", "execute_ai_animation_raw")]
+        ])
+    );
+});
+
+bot.action('ai_anim_provide_name', (ctx) => {
+    ctx.answerCbQuery();
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    userSessions[ctx.chat.id].step = 'AWAITING_AI_ANIM_NAME';
+    ctx.reply(lang === 'bn' ? "📝 যার নাম দিতে চান, তার নামটি শুধু লিখে পাঠান:" : "📝 Enter the name you want to include:");
+});
+
+bot.action('execute_ai_animation_raw', (ctx) => {
+    userSessions[ctx.chat.id].targetName = "";
+    triggerAiAnimationGeneration(ctx);
+});
+
+async function triggerAiAnimationGeneration(ctx) {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
-    if (!session || session.step !== 'AWAITING_LETTER_TEXT') return;
-
+    if (!session) return;
     const lang = userLanguages[userId] || 'bn';
+
+    if (!session.animHistory) {
+        session.animHistory = [];
+        session.currentAnimIndex = -1;
+    }
+
+    const rawAnimText = await generateAiContent('animation', session.type, lang, session.targetName);
+    const parsedAnims = rawAnimText.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
+
+    session.animHistory.push(parsedAnims);
+    session.currentAnimIndex = session.animHistory.length - 1;
+    session.tempAnimations = parsedAnims;
+
+    const showText = parsedAnims.map((t, idx) => `লাইন ${idx + 1}: ${t}`).join('\n');
+
+    const promptMsg = lang === 'bn'
+        ? `🤖 **AI এর লেখা অ্যানিমেশন টেক্সট (সংস্করণ: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **পরামর্শ:** পছন্দ না হলে নিচে নিজের মতো করে নতুন টেক্সট লিখে পাঠাতে পারেন।\n\nআপনার কি এটি পছন্দ হয়েছে?`
+        : `🤖 **AI Generated Animations (Version: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **Tip:** If you dislike this, you can type your own text below.\n\nDo you like it?`;
+
+    const buttons = [
+        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_anim_accept")],
+        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_animation_core")]
+    ];
+
+    if (session.animHistory.length > 1) {
+        buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের লেখা" : "🔙 Previous Text", "ai_anim_previous")]);
+    }
+
+    try { ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' }); } catch(e){}
+}
+
+bot.action('regenerate_ai_animation_core', async (ctx) => {
+    ctx.answerCbQuery("🤖 নতুন করে তৈরি হচ্ছে...");
+    ctx.deleteMessage().catch(()=>{});
+    triggerAiAnimationGeneration(ctx);
+});
+
+bot.action('ai_anim_previous', async (ctx) => {
+    const userId = ctx.chat.id;
+    const session = userSessions[userId];
+    if (!session || !session.animHistory || session.currentAnimIndex <= 0) {
+        return ctx.answerCbQuery(userLanguages[userId] === 'bn' ? "❌ এর আগে আর কোনো টেক্সট নেই!" : "❌ No previous version found!");
+    }
+
+    ctx.answerCbQuery("🔙 আগের ভার্সনে ফিরে যাওয়া হচ্ছে...");
+    const lang = userLanguages[userId] || 'bn';
+
+    session.currentAnimIndex--;
+    const previousAnims = session.animHistory[session.currentAnimIndex];
+    session.tempAnimations = previousAnims;
+
+    const showText = previousAnims.map((t, idx) => `লাইন ${idx + 1}: ${t}`).join('\n');
+
+    const promptMsg = lang === 'bn'
+        ? `🤖 **AI এর লেখা অ্যানিমেশন টেক্সট (সংস্করণ: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **পরামর্শ:** পছন্দ না হলে নিচে নিজের মতো করে নতুন টেক্সট লিখে পাঠাতে পারেন।\n\nআপনার কি এটি পছন্দ হয়েছে?`
+        : `🤖 **AI Generated Animations (Version: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **Tip:** If you dislike this, you can type your own text below.\n\nDo you like it?`;
+
+    const buttons = [
+        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_anim_accept")],
+        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_animation_core")]
+    ];
+
+    if (session.currentAnimIndex > 0) {
+        buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের লেখা" : "🔙 Previous Text", "ai_anim_previous")]);
+    }
+
+    await ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' }).catch(()=>{});
+});
+
+bot.action('ai_anim_accept', (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = userSessions[userId];
+    if (!session || !session.tempAnimations) return;
+
+    session.animations = session.tempAnimations; 
+    session.step = 'AWAITING_LETTER_TEXT'; 
+    const lang = userLanguages[userId] || 'bn';
+
+    ctx.deleteMessage().catch(()=>{});
     
+    ctx.reply(locale[lang].input_anim_success(session.animations.length), Markup.inlineKeyboard([
+        [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে চিঠি লিখুন" : "🤖 Write Letter with AI", "ask_ai_letter_name")]
+    ]));
+});
+
+
+// 🤖 2. AI LETTER WITH CUSTOM NAME ROUTING
+bot.action('ask_ai_letter_name', (ctx) => {
+    ctx.answerCbQuery();
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    ctx.editMessageText(
+        lang === 'bn' ? "👤 **আপনি কি খামের ভেতরের চিঠিতে নির্দিষ্ট কারো নাম যুক্ত করতে চান?**" : "👤 **Do you want to include someone's name inside the main letter?**",
+        Markup.inlineKeyboard([
+            [Markup.button.callback(lang === 'bn' ? "✍️ হ্যাঁ, নাম দিব" : "✍️ Yes, provide name", "ai_letter_provide_name")],
+            [Markup.button.callback(lang === 'bn' ? "❌ না, নাম ছাড়া বানান" : "❌ No, without name", "execute_ai_letter_raw")]
+        ])
+    );
+});
+
+bot.action('ai_letter_provide_name', (ctx) => {
+    ctx.answerCbQuery();
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    userSessions[ctx.chat.id].step = 'AWAITING_AI_LETTER_NAME';
+    ctx.reply(lang === 'bn' ? "尊 যার নাম দিতে চান, তার নামটি শুধু লিখে পাঠান:" : "📝 Enter the name you want to include inside the letter:");
+});
+
+bot.action('execute_ai_letter_raw', (ctx) => {
+    userSessions[ctx.chat.id].letterTargetName = "";
+    triggerAiLetterGeneration(ctx);
+});
+
+async function triggerAiLetterGeneration(ctx) {
+    const userId = ctx.chat.id;
+    const session = userSessions[userId];
+    if (!session) return;
+    const lang = userLanguages[userId] || 'bn';
+
     if (!session.aiLettersHistory) {
         session.aiLettersHistory = [];
         session.currentHistoryIndex = -1;
     }
 
-    const generatedText = await generateAiLetter(session.type, lang);
+    const generatedText = await generateAiContent('letter', session.type, lang, session.letterTargetName);
     
     session.aiLettersHistory.push(generatedText);
     session.currentHistoryIndex = session.aiLettersHistory.length - 1;
     session.tempAiLetter = generatedText; 
 
-    // নতুন নোটিশ মেসেজে যুক্ত করা হলো (ইউজার চাইলে নিজেও লিখে দিতে পারবে)
     const promptMsg = lang === 'bn' 
         ? `🤖 **AI এর লেখা চিঠিটি নিচে দেওয়া হলো (সংস্করণ: ${session.currentHistoryIndex + 1}):**\n\n_"${generatedText}"_\n\n💡 **পরামর্শ:** আপনার যদি এটি পছন্দ না হয়, তবে আপনি চাইলে নিচের চ্যাটবক্সে **নিজের মতো করেও** যেকোনো চিঠি লিখে পাঠিয়ে দিতে পারেন।\n\nআপনার কি এটি পছন্দ হয়েছে?` 
         : `🤖 **Here is the AI generated letter (Version: ${session.currentHistoryIndex + 1}):**\n\n_"${generatedText}"_\n\n💡 **Tip:** If you don't like this, you can also write and send **your own custom letter** directly in the chat box.\n\nDo you like it?`;
     
     const buttons = [
         [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_letter_accept")],
-        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "generate_ai_letter")]
+        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_letter_core")]
     ];
 
     if (session.aiLettersHistory.length > 1) {
         buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের চিঠি" : "🔙 Previous Letter", "ai_letter_previous")]);
     }
 
-    try {
-        await ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' });
-    } catch (e) {
-        await ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' });
-    }
+    try { ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' }); } catch(e){}
+}
+
+bot.action('regenerate_ai_letter_core', async (ctx) => {
+    ctx.answerCbQuery("🤖 নতুন চিঠি তৈরি হচ্ছে...");
+    ctx.deleteMessage().catch(()=>{});
+    triggerAiLetterGeneration(ctx);
 });
 
 bot.action('ai_letter_previous', async (ctx) => {
@@ -447,8 +604,8 @@ bot.action('ai_letter_previous', async (ctx) => {
         : `🤖 **Here is the AI generated letter (Version: ${session.currentHistoryIndex + 1}):**\n\n_"${previousText}"_\n\n💡 **Tip:** If you don't like this, you can also write and send **your own custom letter** directly in the chat box.\n\nDo you like it?`;
 
     const buttons = [
-        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখ করব" : "✅ Keep this", "ai_letter_accept")],
-        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "generate_ai_letter")]
+        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_letter_accept")],
+        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_letter_core")]
     ];
 
     if (session.currentHistoryIndex > 0) {
@@ -517,34 +674,38 @@ bot.on('text', (ctx) => {
 
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
             const parsedMinutes = extractMinutes(text);
-
-            if (parsedMinutes === null || isNaN(parsedMinutes)) {
-                return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
-            }
-            if (parsedMinutes < 1) {
-                return ctx.reply(locale[lang].time_past, { parse_mode: 'Markdown' });
-            }
-            if (parsedMinutes > 100) {
-                return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
-            }
+            if (parsedMinutes === null || isNaN(parsedMinutes)) return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
+            if (parsedMinutes < 1) return ctx.reply(locale[lang].time_past, { parse_mode: 'Markdown' });
+            if (parsedMinutes > 100) return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
 
             session.pendingMinutes = parsedMinutes; 
             askThemeSelection(ctx);
             return;
         }
 
-        if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            session.animations = text.split(/[\n,，]+/)
-                                     .map(l => l.trim())
-                                     .filter(l => l.length > 0);
+        // AI এর জন্য নাম ইনপুট হ্যান্ডলার (অ্যানিমেশন)
+        if (session.step === 'AWAITING_AI_ANIM_NAME') {
+            session.targetName = text;
+            session.step = 'AWAITING_ANIMATION_TEXT';
+            triggerAiAnimationGeneration(ctx);
+            return;
+        }
 
-            if (session.animations.length === 0) {
-                return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন বা কমা দিয়ে আলাদা করুন।");
-            }
+        // AI এর জন্য নাম ইনপুট হ্যান্ডলার (চিঠি)
+        if (session.step === 'AWAITING_AI_LETTER_NAME') {
+            session.letterTargetName = text;
             session.step = 'AWAITING_LETTER_TEXT';
+            triggerAiLetterGeneration(ctx);
+            return;
+        }
+
+        if (session.step === 'AWAITING_ANIMATION_TEXT') {
+            session.animations = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
+            if (session.animations.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
             
+            session.step = 'AWAITING_LETTER_TEXT';
             ctx.reply(locale[lang].input_anim_success(session.animations.length), Markup.inlineKeyboard([
-                [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে চিঠি লিখুন" : "🤖 Write Letter with AI", "generate_ai_letter")]
+                [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে চিঠি লিখুন" : "🤖 Write Letter with AI", "ask_ai_letter_name")]
             ]));
             return;
         }
