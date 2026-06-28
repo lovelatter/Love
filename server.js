@@ -1,4 +1,4 @@
-const express = require('express');
+2const express = require('express');
 const path = require('path');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -9,7 +9,8 @@ const app = express();
 app.use(express.json());
 
 // ⚙️ Configurations & Environment Variables
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN; 
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
 const SERVER_URL = "https://love-bb7p.onrender.com"; 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; 
 
