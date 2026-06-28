@@ -68,42 +68,42 @@ const locale = {
         new_response: (type, res) => `💌 আপনার কাস্টম \`${type.toUpperCase()}\` লিঙ্কে একটি নতুন রেসপন্স এসেছে!\n\nউত্তর: ${res}`
     },
     en: {
-        welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to Wishing Bot. Create premium links with customized time locks for free.`,
+        welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to Wishing Bot. Create premium links with customized time locks for free.\n\nPlease select an option below:`,
         btn_make: "🚀 Make Link", btn_card: "🖼️ Wish Card Generator", btn_demo: "👀 Demo", btn_stats: "📊 Stats", btn_off: "🔒 Off Link", btn_feedback: "📝 Feedback", btn_help: "❓ Help", btn_lang: "🌐 Change Language", btn_back: "🔙 Main Menu",
         choose_cat: "✨ **Select Category:**",
         cat_love: "❤️ Love Letter", cat_crush: "💖 Crush Confession", cat_birthday: "🎂 Birthday Wish", cat_anniversary: "💍 Anniversary Wish", cat_newyear: "🎉 New Year Wish", cat_boishakh: "🌾 Pohela Boishakh", cat_friend: "🫂 Best Friend", cat_eid: "🌙 Eid Wish", cat_sorry: "🥺 Sorry Letter",
-        prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**",
+        prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**\n\n(If set, no one can view the inner content before the specified time.)",
         btn_yes: "✅ Yes", btn_no: "❌ No",
         prompt_time_input: "⏳ Send the lock release time in this exact format:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` or \`08:15 PM\`\n\n⚠️ **Rule:** Max limit is within **2 hours** from current time.",
-        invalid_time: "❌ Invalid format! Follow: \`12:10 PM\` or \`08:15 PM\`",
+        invalid_time: "❌ Invalid format! Follow: \`12:10 PM\` or \`08:15 PM\` (AM/PM is mandatory)",
         max_time_exceeded: "⚠️ **Limit Exceeded!** You cannot set a time further than 2 hours from now.",
         time_past: "❌ You cannot set a past time.",
         prompt_theme: "🎨 **Select a Premium Web Theme (Free):**",
         prompt_music: "🎵 **Select a Background Music (Free):**",
         prompt_card_name: "🖼️ Enter the name you want to print on the Wish Card:",
         card_ready: "✨ **Your premium Wish Card is ready!** 👇",
-        help_text: `❓ Help menu instructions...`,
+        help_text: `❓ **Help Guide:**\n\n1. **Link Creation:** Click '🚀 Make Link', pick a category, and enter a time within a 2-hour limit (e.g., 12:10 PM).\n2. **Dynamic Countdown:** Even though you input standard time, users visiting the link will see a real-time countdown with seconds.\n3. **Deactivation:** Turn off any link anytime using '🔒 Off Link'.\n\n💡 Contact admin for support.`,
         feedback_prompt: "📝 Please send your feedback:",
-        feedback_short: "❌ Please write more details.",
-        feedback_success: "✅ Feedback submitted!",
-        session_cancelled: "❌ Session cancelled.",
-        no_session: "💡 No active session.",
+        feedback_short: "❌ Please write more details (min 5 characters).",
+        feedback_success: "✅ Feedback submitted! Thank you.",
+        session_cancelled: "❌ Your active session has been cancelled.",
+        no_session: "💡 You don't have any active session.",
         invalid_cmd: (cmd) => `❌ **Invalid Command:** \`${cmd}\``,
-        maint_msg: "🚧 **Bot is under maintenance!**",
-        no_links: "❌ No links created yet.",
-        profile_report: (name, list) => `📊 **Your Profile:**\n\n👤 Name: ${name}\n🎫 Your Links:\n${list}`,
+        maint_msg: "🚧 **Bot is under maintenance!** We will be back shortly.",
+        no_links: "❌ You haven't created any links yet.",
+        profile_report: (name, list) => `📊 **Your Profile:**\n\n👤 Name: ${name}\n🎫 Your Active Links:\n${list}`,
         off_link_title: "🔒 **Select link to deactivate:**",
         off_all_links: "❌ Off All Links",
         deactivate_success_all: (count) => `✅ Deactivated all (\`${count}\`) links!`,
         deactivate_success_single: (id) => `✅ Deactivated link (\`${id}\`).`,
         link_not_found: "❌ Link not found.",
-        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started! Send animation texts:`,
+        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started! Send animation texts (use new lines for multiple lines):`,
         demo_title: "👀 **Select demo page:**",
         demo_ready: (type, url) => `✨ **Demo Link:** ${url}`,
         input_anim_success: (count) => `✅ Added ${count} lines. Send main letter:`,
-        link_ready: (url) => `💝 Link Ready:\n\n${url}`,
-        someone_opened: (type, time) => `👀 **Notification:** Someone opened your link!`,
-        new_response: (type, res) => `💌 New response: ${res}`
+        link_ready: (url) => `💝 Link Ready:\n\n${url}\n\n👉 Share this link with your loved one.`,
+        someone_opened: (type, time) => `👀 **Notification:** Someone opened your ${type.toUpperCase()} link!\n⏰ **Time:** ${time}`,
+        new_response: (type, res) => `💌 New response on your ${type.toUpperCase()} link!\n\nAnswer: ${res}`
     }
 };
 
@@ -111,24 +111,19 @@ const locale = {
 bot.use((ctx, next) => {
     const userId = ctx.chat ? ctx.chat.id : null;
     if (!userId) return next();
-    
-    // Admin bypass guardrails
     if (String(userId) === String(ADMIN_CHAT_ID)) return next();
-    
-    // Safety & Maintenance Interceptors
     if (isMaintenanceMode) {
         const lang = userLanguages[userId] || 'bn';
         return ctx.reply(locale[lang].maint_msg);
     }
     if (bannedUsers.has(userId)) return; 
-    
     return next();
 });
 
 // 📌 Core Command Orchestrations
-bot.command('start', (ctx) => {
-    registeredUsers.add(ctx.chat.id);
-    sendMainMenu(ctx, false);
+bot.command('start', (ctx) => { 
+    registeredUsers.add(ctx.chat.id); 
+    sendMainMenu(ctx, false); 
 });
 
 bot.command('cancel', (ctx) => {
@@ -138,12 +133,12 @@ bot.command('cancel', (ctx) => {
         delete userSessions[userId];
         ctx.reply(locale[lang].session_cancelled);
         sendMainMenu(ctx, false);
-    } else {
-        ctx.reply(locale[lang].no_session);
+    } else { 
+        ctx.reply(locale[lang].no_session); 
     }
 });
 
-// 👑 Advanced Admin Panel Infrastructure
+// 👑 Admin Panel Infrastructure
 bot.command('admin', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return;
     ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
@@ -153,64 +148,56 @@ bot.command('admin', (ctx) => {
     ]));
 });
 
-// Admin Callbacks Engine
 bot.action('admin_stats', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     const activeLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].isActive).length;
-    const statsMsg = `📊 **Realtime Engine Metrics:**\n\n👥 Registered Active Users: \`${registeredUsers.size}\`\n🔗 Total Active Links: \`${activeLinks}\` (All-time: \`${totalLinksCreated}\`)\n🖼️ Wish Cards Made: \`${totalCardsGenerated}\`\n📝 User Feedback Count: \`${totalFeedbacksReceived}\`\n🚫 Total Banned Entities: \`${bannedUsers.size}\``;
-    ctx.reply(statsMsg);
+    ctx.reply(`📊 **Metrics:**\n\nUsers: \`${registeredUsers.size}\`\nActive Links: \`${activeLinks}\` (Total: \`${totalLinksCreated}\`)\nCards: \`${totalCardsGenerated}\`\nFeedbacks: \`${totalFeedbacksReceived}\``);
 });
 
 bot.action('admin_toggle_maint', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     isMaintenanceMode = !isMaintenanceMode;
-    ctx.answerCbQuery(`Maintenance Mode is now ${isMaintenanceMode ? 'ON' : 'OFF'}`);
-    ctx.reply(`⚙️ System Status changed: **Maintenance Mode -> ${isMaintenanceMode ? 'ENABLED 🚧' : 'DISABLED 🟢'}**`);
+    ctx.answerCbQuery();
+    ctx.reply(`⚙️ Maintenance Mode -> ${isMaintenanceMode ? 'ENABLED 🚧' : 'DISABLED 🟢'}`);
 });
 
 bot.action('admin_broadcast', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
-    ctx.reply("📢 Enter the broadcast transmission message. Send /cancel to drop execution.");
+    ctx.reply("📢 Enter the broadcast transmission message:");
 });
 
 bot.action('admin_ban_menu', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_ID' };
-    ctx.reply("🚫 Send the precise Telegram Chat ID of the user you wish to BAN/UNBAN:");
+    ctx.reply("🚫 Send the Telegram Chat ID to BAN/UNBAN:");
 });
 
 bot.action('admin_view_logs', (ctx) => {
     if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
-    ctx.reply("📜 **Latest Node Framework Operational Logs:**\n\n[INFO] Engines initialized successfully.\n[INFO] Bot instance securely connected to Telegram servers.\n[SYSTEM] Live Web Server handling dynamic API calls cleanly.");
+    ctx.reply("📜 Logs: Engines running smoothly.");
 });
 
-// 🌐 Localization Engine Routing
+// Language Routing
 bot.action('menu_lang', (ctx) => {
     ctx.answerCbQuery();
-    ctx.editMessageText("🌐 **Select Preferred Interface Language / ভাষা নির্বাচন করুন:**", Markup.inlineKeyboard([
+    ctx.editMessageText("🌐 **Language / ভাষা:**", Markup.inlineKeyboard([
         [Markup.button.callback('🇧🇩 বাংলা', 'set_lang_bn'), Markup.button.callback('🇺🇸 English', 'set_lang_en')],
-        [Markup.button.callback('🔙 Back to Menu', 'go_to_main_menu')]
+        [Markup.button.callback('🔙 Back', 'go_to_main_menu')]
     ]));
 });
-
-bot.action(/^set_lang_/, (ctx) => {
-    const selectedLang = ctx.match.input.replace('set_lang_', '');
-    userLanguages[ctx.chat.id] = selectedLang;
-    ctx.answerCbQuery();
-    sendMainMenu(ctx, true);
+bot.action(/^set_lang_/, (ctx) => { 
+    userLanguages[ctx.chat.id] = ctx.match.input.replace('set_lang_', ''); 
+    ctx.answerCbQuery(); 
+    sendMainMenu(ctx, true); 
 });
+bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
 
-bot.action('go_to_main_menu', (ctx) => {
-    ctx.answerCbQuery();
-    sendMainMenu(ctx, true);
-});
-
-// 🚀 Dynamic Web Link Creation Protocol
+// Link Creation Routing
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -226,12 +213,7 @@ bot.action('menu_makelink', (ctx) => {
 
 bot.action(/^make_/, (ctx) => {
     ctx.answerCbQuery();
-    const cat = ctx.match.input.replace('make_', '');
-    userSessions[ctx.chat.id] = { 
-        type: cat, 
-        name: ctx.from.first_name || "Anonymous", 
-        username: ctx.from.username ? '@' + ctx.from.username : 'None' 
-    };
+    userSessions[ctx.chat.id] = { type: ctx.match.input.replace('make_', ''), name: ctx.from.first_name || "User" };
     const lang = userLanguages[ctx.chat.id] || 'bn';
     ctx.editMessageText(locale[lang].prompt_countdown_ask, Markup.inlineKeyboard([
         [Markup.button.callback(locale[lang].btn_yes, 'timer_yes'), Markup.button.callback(locale[lang].btn_no, 'timer_no')]
@@ -244,19 +226,18 @@ bot.action('timer_yes', (ctx) => {
     ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].prompt_time_input);
 });
 
-bot.action('timer_no', (ctx) => {
-    ctx.answerCbQuery();
-    userSessions[ctx.chat.id].countdown = null;
-    askThemeSelection(ctx);
+bot.action('timer_no', (ctx) => { 
+    ctx.answerCbQuery(); 
+    userSessions[ctx.chat.id].countdown = null; 
+    askThemeSelection(ctx); 
 });
 
 function askThemeSelection(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    const keyboard = Markup.inlineKeyboard([
+    ctx.reply(locale[lang].prompt_theme, Markup.inlineKeyboard([
         [Markup.button.callback('✨ Classic Pink', 'set_theme_classic'), Markup.button.callback('🌌 Neon Magic', 'set_theme_neon')],
         [Markup.button.callback('🎈 Birthday Gold', 'set_theme_gold'), Markup.button.callback('❤️ Dark Romance', 'set_theme_dark')]
-    ]);
-    ctx.reply(locale[lang].prompt_theme, keyboard);
+    ]));
 }
 
 bot.action(/^set_theme_/, (ctx) => {
@@ -264,7 +245,8 @@ bot.action(/^set_theme_/, (ctx) => {
     userSessions[ctx.chat.id].theme = ctx.match.input.replace('set_theme_', '');
     const lang = userLanguages[ctx.chat.id] || 'bn';
     ctx.reply(locale[lang].prompt_music, Markup.inlineKeyboard([
-        [Markup.button.callback('🎵 Romantic Flute Trance', 'set_music_romantic'), Markup.button.callback('🔇 Completely Silent', 'set_music_none')]
+        [Markup.button.callback('🎵 Romantic Flute', 'set_music_romantic'), Markup.button.callback('🎵 Soft Piano', 'set_music_piano')],
+        [Markup.button.callback('🎵 Birthday Beats', 'set_music_birthday'), Markup.button.callback('🔇 No Music', 'set_music_none')]
     ]));
 });
 
@@ -275,159 +257,120 @@ bot.action(/^set_music_/, (ctx) => {
     ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].session_started(userSessions[ctx.chat.id].type));
 });
 
-// 🖼️ Premium Wish Card Infrastructure
-bot.action('menu_cardgen', (ctx) => {
-    ctx.answerCbQuery();
-    userSessions[ctx.chat.id] = { step: 'AWAITING_CARD_NAME' };
-    const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.reply(locale[lang].prompt_card_name);
+// Card & Demos & Stats Infrastructure
+bot.action('menu_cardgen', (ctx) => { 
+    ctx.answerCbQuery(); 
+    userSessions[ctx.chat.id] = { step: 'AWAITING_CARD_NAME' }; 
+    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].prompt_card_name); 
 });
 
-// 👀 Intelligent Web Engine Interactive Demos
-bot.action('menu_demo', (ctx) => {
-    ctx.answerCbQuery();
+bot.action('menu_demo', (ctx) => { 
+    ctx.answerCbQuery(); 
     const lang = userLanguages[ctx.chat.id] || 'bn';
     ctx.reply(locale[lang].demo_title, Markup.inlineKeyboard([
-        [Markup.button.callback("🔗 Love Theme Demo", "view_demo_love"), Markup.button.callback("🔗 Gold Birthday Demo", "view_demo_gold")],
-        [Markup.button.callback(locale[lang].btn_back, 'go_to_main_menu')]
-    ]));
+        [Markup.button.callback("❤️ Love Demo", "view_demo_love"), Markup.button.callback("🎂 Birthday Demo", "view_demo_birthday")],
+        [Markup.button.callback("💖 Crush Demo", "view_demo_crush"), Markup.button.callback("🔙 Main Menu", "go_to_main_menu")]
+    ])); 
 });
 
-bot.action(/^view_demo_/, (ctx) => {
-    ctx.answerCbQuery();
+bot.action(/^view_demo_/, (ctx) => { 
+    ctx.answerCbQuery(); 
     const type = ctx.match.input.replace('view_demo_', '');
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.reply(locale[lang].demo_ready(type, `${SERVER_URL}/love/demo-preview`));
+    ctx.reply(locale[lang].demo_ready(type, `${SERVER_URL}/love/demo-preview?type=${type}`)); 
 });
 
-// 📊 Profile & Account Engine Metrics
 bot.action('menu_stats', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const lang = userLanguages[userId] || 'bn';
     const userLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].userId === userId && linkDatabase[k].isActive);
-    
-    let linkListText = "";
-    if (userLinks.length === 0) {
-        linkListText = locale[lang].no_links;
-    } else {
-        userLinks.forEach((id, index) => {
-            linkListText += `${index + 1}. \`${SERVER_URL}/love/${id}\` [${linkDatabase[id].type.toUpperCase()}]\n`;
-        });
-    }
-    ctx.reply(locale[lang].profile_report(ctx.from.first_name || "User", linkListText));
+    let listText = userLinks.length === 0 ? locale[lang].no_links : userLinks.map((id, i) => `${i+1}. \`${SERVER_URL}/love/${id}\` [${linkDatabase[id].type.toUpperCase()}]`).join('\n');
+    ctx.reply(locale[lang].profile_report(ctx.from.first_name || "User", listText));
 });
 
-// 🔒 Remote Link Deactivation Dashboard
 bot.action('menu_off', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const lang = userLanguages[userId] || 'bn';
     const userLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].userId === userId && linkDatabase[k].isActive);
-
-    if (userLinks.length === 0) {
-        return ctx.reply(locale[lang].no_links);
-    }
-
-    const buttons = userLinks.map(id => [Markup.button.callback(`❌ Lock: ${id} (${linkDatabase[id].type})`, `deactivate_${id}`)]);
+    if (userLinks.length === 0) return ctx.reply(locale[lang].no_links);
+    const buttons = userLinks.map(id => [Markup.button.callback(`❌ Off: ${id}`, `deactivate_${id}`)]);
     buttons.push([Markup.button.callback(locale[lang].off_all_links, "deactivate_all_links")]);
-    buttons.push([Markup.button.callback(locale[lang].btn_back, "go_to_main_menu")]);
-
     ctx.reply(locale[lang].off_link_title, Markup.inlineKeyboard(buttons));
 });
 
 bot.action('deactivate_all_links', (ctx) => {
     ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const lang = userLanguages[userId] || 'bn';
-    const userLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].userId === userId && linkDatabase[k].isActive);
-    
+    const userLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].userId === ctx.chat.id && linkDatabase[k].isActive);
     userLinks.forEach(id => { linkDatabase[id].isActive = false; });
-    ctx.reply(locale[lang].deactivate_success_all(userLinks.length));
+    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].deactivate_success_all(userLinks.length));
     sendMainMenu(ctx, false);
 });
 
 bot.action(/^deactivate_/, (ctx) => {
     ctx.answerCbQuery();
     const id = ctx.match.input.replace('deactivate_', '');
-    const lang = userLanguages[ctx.chat.id] || 'bn';
     if (linkDatabase[id] && linkDatabase[id].userId === ctx.chat.id) {
         linkDatabase[id].isActive = false;
-        ctx.reply(locale[lang].deactivate_success_single(id));
-    } else {
-        ctx.reply(locale[lang].link_not_found);
+        ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].deactivate_success_single(id));
     }
     sendMainMenu(ctx, false);
 });
 
-// 📝 Dynamic User Feedback Module
-bot.action('menu_feedback', (ctx) => {
-    ctx.answerCbQuery();
-    userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' };
-    const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.reply(locale[lang].feedback_prompt);
+bot.action('menu_feedback', (ctx) => { 
+    ctx.answerCbQuery(); 
+    userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; 
+    ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].feedback_prompt); 
 });
 
-// 🎯 Complex State Machine & Text Input Validation
+bot.action('menu_help', (ctx) => {
+    ctx.answerCbQuery();
+    const lang = userLanguages[ctx.chat.id] || 'bn';
+    ctx.reply(locale[lang].help_text);
+});
+
+// 🎯 State Machine & Complex Validation Router
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
     const text = ctx.message.text.trim();
     const lang = userLanguages[userId] || 'bn';
 
-    // Global Command Overrides inside states
     if (text.startsWith('/')) return;
     if (!session) return;
 
-    // Admin Session Protocols
+    // Admin Processors
     if (String(userId) === String(ADMIN_CHAT_ID)) {
         if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
-            let transmissionCount = 0;
-            registeredUsers.forEach(id => {
-                bot.telegram.sendMessage(id, `📢 **[Global Server Announcement]**\n\n${text}`, { parse_mode: 'Markdown' })
-                    .then(() => transmissionCount++)
-                    .catch(() => {});
-            });
-            ctx.reply(`📡 Broadcast parsing sequence finished. Sent to \`${transmissionCount}\` terminal sockets.`);
-            delete userSessions[userId];
-            return;
+            registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
+            ctx.reply("📡 Broadcast distribution cycle finished.");
+            delete userSessions[userId]; return;
         }
         if (session.step === 'AWAITING_BAN_USER_ID') {
             const targetId = parseInt(text, 10);
-            if (isNaN(targetId)) return ctx.reply("❌ Provide a valid numeric Chat ID.");
-            if (bannedUsers.has(targetId)) {
-                bannedUsers.delete(targetId);
-                ctx.reply(`🟢 User account \`${targetId}\` has been successfully UNBANNED.`);
-            } else {
-                bannedUsers.add(targetId);
-                ctx.reply(`🚫 User account \`${targetId}\` has been permanently BANNED.`);
-            }
-            delete userSessions[userId];
-            return;
+            if (bannedUsers.has(targetId)) { bannedUsers.delete(targetId); ctx.reply("🟢 Target Unbanned successfully."); }
+            else { bannedUsers.add(targetId); ctx.reply("🚫 Target Banned successfully."); }
+            delete userSessions[userId]; return;
         }
     }
 
-    // Standard Client Pipeline Engine
     if (session.step === 'AWAITING_USER_FEEDBACK') {
         if (text.length < 5) return ctx.reply(locale[lang].feedback_short);
         totalFeedbacksReceived++;
-        bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 **New Feedback Broadcast:**\nUser ID: \`${userId}\`\nName: ${ctx.from.first_name}\n\nText: ${text}`).catch(()=>{});
+        bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback from User ${userId}:\n\n${text}`).catch(()=>{});
         ctx.reply(locale[lang].feedback_success);
-        delete userSessions[userId];
-        sendMainMenu(ctx, false);
-        return;
+        delete userSessions[userId]; sendMainMenu(ctx, false); return;
     }
 
     if (session.step === 'AWAITING_CARD_NAME') {
-        totalCardsGenerated++;
+        totalCardsGenerated++; 
         ctx.reply(locale[lang].card_ready);
         ctx.replyWithPhoto({ url: `https://dummyimage.com/600x400/ff4b72/fff.png&text=${encodeURIComponent(text)}` }).catch(()=>{});
-        delete userSessions[userId];
-        sendMainMenu(ctx, false);
-        return;
+        delete userSessions[userId]; sendMainMenu(ctx, false); return;
     }
 
-    // 🕒 বটের টাইম ইনপুট এবং ২ ঘণ্টার নিখুঁত ভ্যালিডেশন ইঞ্জিন
+    // 🕒 শুধু সময় (`12:10 PM`) ইনপুট নেওয়ার নিখুঁত ও সিকিউর লজিক
     if (session.step === 'AWAITING_COUNTDOWN_TIME') {
         const timeRegex = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i;
         const match = text.match(timeRegex);
@@ -445,7 +388,7 @@ bot.on('text', (ctx) => {
             return ctx.reply(locale[lang].invalid_time);
         }
 
-        // বর্তমান বাংলাদেশ সময় অবজেক্ট জেনারেট করা
+        // বর্তমান সার্ভার টাইম হিসাব করা
         const now = new Date();
         const targetDate = new Date(now);
 
@@ -455,20 +398,20 @@ bot.on('text', (ctx) => {
 
         targetDate.setHours(targetHours, minutes, 0, 0);
 
-        // অতীতের টাইম ইনপুট দিলে স্বয়ংক্রিয়ভাবে আগামীকালের জন্য শিডিউলড করা
+        // ইউজার পেছনের সময় দিলে সেটাকে অটোমেটিক আগামীকালের সময় হিসেবে ধরা হবে
         if (targetDate < now) {
             targetDate.setDate(targetDate.getDate() + 1);
         }
 
-        // ⚠️ ২ ঘণ্টার স্ট্রিক্ট লিমিট ক্যালকুলেশন (Difference Checker)
+        // ⚠️ ২ ঘণ্টার সর্বোচ্চ সীমার কন্ডিশন চেক
         const diffMs = targetDate.getTime() - now.getTime();
-        const maxLimitMs = 2 * 60 * 60 * 1000; // ২ ঘণ্টা = ৭,২০০,০০০ মিলিসেকেন্ড
+        const maxLimitMs = 2 * 60 * 60 * 1000; 
 
         if (diffMs > maxLimitMs) {
             return ctx.reply(locale[lang].max_time_exceeded);
         }
 
-        session.countdown = targetDate.toISOString(); // সার্ভার ড্যাশবোর্ডে স্টোর
+        session.countdown = targetDate.toISOString(); 
         askThemeSelection(ctx);
         return;
     }
@@ -483,26 +426,17 @@ bot.on('text', (ctx) => {
     if (session.step === 'AWAITING_LETTER_TEXT') {
         totalLinksCreated++;
         const uniqueId = Math.random().toString(36).substring(2, 9);
-        
         linkDatabase[uniqueId] = {
-            userId: userId,
-            name: session.name,
-            type: session.type,
-            theme: session.theme,
-            music: session.music,
-            countdown: session.countdown, // এই টাইম অবজেক্টটি দিয়ে ফ্রন্টএন্ডে সেকেন্ডসহ লাইভ উল্টো গণনা হবে
-            animations: session.animations,
-            letter: text,
-            isActive: true
+            userId: userId, name: session.name, type: session.type,
+            theme: session.theme, music: session.music, countdown: session.countdown,
+            animations: session.animations, letter: text, isActive: true
         };
-        
         ctx.reply(locale[lang].link_ready(`${SERVER_URL}/love/${uniqueId}`));
         delete userSessions[userId];
         return;
     }
 });
 
-// Helper Interface Dispatcher
 function sendMainMenu(ctx, isEdit = false) {
     const userId = ctx.chat.id;
     const lang = userLanguages[userId] || 'bn';
@@ -517,45 +451,28 @@ function sendMainMenu(ctx, isEdit = false) {
     return ctx.reply(text, keyboard);
 }
 
-// 🌐 High-Performance REST API Middleware & Routing
-app.get('/love/:id', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+// 🌐 Web UI Engine API Integration
+app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
-// API endpoint to serve content dynamically to HTML Frontend
 app.post('/api/get-content', (req, res) => {
     const { id } = req.body;
+    if (id.startsWith('demo-preview')) return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is a placeholder demo preview message body." });
     
-    // Preview Dummy Route handler
-    if (id === 'demo-preview') {
-        return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is a working demo profile." });
-    }
-
     const data = linkDatabase[id];
     if (!data || !data.isActive) return res.json({ success: false });
 
-    // Dynamic Time System validation layer
+    // লাইভ ট্র্যাক নোটিফিকেশন সিস্টেম
+    const lang = userLanguages[data.userId] || 'bn';
+    const formattedTime = new Date().toLocaleTimeString();
+    bot.telegram.sendMessage(data.userId, locale[lang].someone_opened(data.type, formattedTime)).catch(()=>{});
+
     if (data.countdown) {
         const now = new Date();
-        const lockTime = new Date(data.countdown);
-        if (lockTime > now) {
-            // লক হয়ে থাকলে ফায়ারফক্স/ক্রোম ফ্রন্টএন্ডের জন্য ISO টাইম পাস করা হচ্ছে লাইভ সেকেন্ডের কাউন্টডাউনের জন্য
+        if (new Date(data.countdown) > now) {
             return res.json({ success: true, isLocked: true, countdownTime: data.countdown, theme: data.theme });
         }
     }
-
-    // Send real-time client analytics to owner before delivery
-    const accessTime = new Date().toLocaleTimeString();
-    bot.telegram.sendMessage(data.userId, locale[userLanguages[data.userId] || 'bn'].someone_opened(data.type, accessTime)).catch(()=>{});
-
-    res.json({
-        success: true,
-        isLocked: false,
-        theme: data.theme,
-        music: data.music,
-        animations: data.animations,
-        letter: data.letter
-    });
+    res.json({ success: true, isLocked: false, theme: data.theme, music: data.music, animations: data.animations, letter: data.letter });
 });
 
 app.post('/api/respond', (req, res) => {
@@ -569,9 +486,5 @@ app.post('/api/respond', (req, res) => {
     res.json({ success: false });
 });
 
-// ⚡ Application Initialization Core
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    bot.launch();
-    console.log(`Wishing Core Network Running Smoothly on Port Terminal: ${PORT}`);
-});
+app.listen(PORT, () => { bot.launch(); console.log(`Core Bot System operational on port: ${PORT}`); });
