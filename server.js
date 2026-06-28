@@ -10,7 +10,7 @@ app.use(express.json());
 // ⚙️ Configurations & Environment Variables
 const TELEGRAM_TOKEN = "8922778423:AAGbdZfdUDol_5w3dPbeBH0aucf9qkgtPTA"; 
 const SERVER_URL = "https://love-bb7p.onrender.com"; 
-const ADMIN_CHAT_ID = 6719885052; // Number ফরম্যাটে ফিক্স করা হয়েছে যেন এডমিন কমান্ড কাজ করে
+const ADMIN_CHAT_ID = 6719885052; 
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
@@ -30,21 +30,21 @@ let totalFeedbacksReceived = 0;
 // 🌐 Multi-Language Messages Comprehensive Dictionary
 const locale = {
     bn: {
-        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে स्वागतম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম লক করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
+        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম লক করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
         btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_card: "🖼️ উইশ কার্ড বানান", btn_demo: "👀 ডেমো দেখুন", btn_stats: "📊 স্ট্যাটাস", btn_off: "🔒 লিঙ্ক বন্ধ করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_lang: "🌐 ভাষা পরিবর্তন", btn_back: "🔙 মেইন মেনু",
         choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান?**",
-        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনфেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
+        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
-        prompt_time_input: "⏳ অনুগ্রহ করে লিঙ্কটি খোলার সময়টি নিচের নিয়মে লিখে পাঠান:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` অথবা \`08:15 PM\`\n\n⚠️ **শর্ত:** আপনি বর্তমান সময় থেকে সর্বোচ্চ আগামী **২ ঘণ্টার মধ্যে** যেকোনো সময় সেট করতে পারবেন।",
-        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে এভাবে লিখুন: \`12:10 PM\` বা \`08:05 AM\`\n\n⚠️ মিনিট ১ ডিজিটের হলে আগে ০ দিন (যেমন: \`12:8 PM\` না লিখে \`12:08 PM\` লিখুন)। AM/PM দেওয়া বাধ্যতামূলক।",
-        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি বর্তমান সময় থেকে ২ ঘণ্টার বেশি দূরের সময় সেট করতে পারবেন না। অনুগ্রহ করে আপনার দেশের ঘড়ি অনুযায়ী আগামী ২ ঘণ্টার ভেতরের কোনো সময় দিন।",
-        time_past: "❌ আপনি অতীতের কোনো সময় সেট করতে পারবেন না। বর্তমান বা ভবিষ্যৎ সময় দিন।",
+        prompt_time_input: "⏳ লিঙ্কটি কত সময় পর খুলবে তা লিখে পাঠান।\n\n**উদাহরন (Examples):**\n• শুধু মিনিটের জন্য: \`10\` অথবা \`10m\`\n• ঘণ্টা ও মিনিটের জন্য: \`1h 20m\` অথবা \`1:20\`\n\n⚠️ **শর্ত:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **২ ঘণ্টা** (১২০ মিনিট) এর মধ্যে যেকোনো সময় দিতে পারবেন। সেকেন্ড গ্রহণযোগ্য নয়।",
+        invalid_time: "❌ **ভুল ফরম্যাট বা সময়!**\n\nঅনুগ্রহ করে সঠিক সময় দিন। যেমন: \`20\` (২০ মিনিট) অথবা \`1h 30m\` (১ ঘণ্টা ৩০ মিনিট)।",
+        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ ২ ঘণ্টা (১২০ মিনিট) পর্যন্ত টাইম লক সেট করতে পারবেন।",
+        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেটিভ সময় গ্রহণযোগ্য নয়।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? নামটি লিখে পাঠান:",
         card_ready: "✨ **আপনার প্রিমিয়াম উইশ কার্ডটি তৈরি হয়ে গেছে!** 👇",
-        help_text: `❓ **সাহায্য গাইড:**\n\n১. **লিঙ্ক তৈরি:** প্রথমে '🚀 লিঙ্ক তৈরি করুন' বাটনে ক্লিক করে আপনার পছন্দমতো ক্যাটাগরি বেছে নিন। এরপর ২ ঘণ্টার লিমিটের মধ্যে যেকোনো সময় (যেমন: 12:10 PM) ইনপুট দিন।\n২. **ডাইনামিক কাউন্টডাউন:** আপনি বটের ভেতর নরমাল টাইম সেট করলেও, ইউজার যখন লিঙ্কে ঢুকবে সে সেখানে লাইভ সেকেন্ডসহ রিয়েল-টাইম কাউন্টডাউন দেখতে পাবে।\n৩. **লিঙ্ক বন্ধ করা:** যেকোনো সময় আপনার তৈরি করা লিঙ্ক নিষ্ক্রিয় করতে '🔒 লিঙ্ক বন্ধ করুন' অপশনটি ব্যবহার করুন।\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
+        help_text: `❓ **সাহায্য গাইড:**\n\n১. **লিঙ্ক তৈরি:** '🚀 লিঙ্ক তৈরি করুন' বাটনে ক্লিক করে ক্যাটাগরি বেছে নিন। এরপর কত মিনিট লিঙ্ক লক রাখতে চান তা লিখে দিন (যেমন: 10m বা 1:15)।\n২. **ডাইনামিক কাউন্টডাউন:** ইউজার যখন লিঙ্কে ঢুকবে সে সেখানে লাইভ সেকেন্ডসহ রিয়েল-টাইম কাউন্টডাউন দেখতে পাবে।\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
         feedback_prompt: "📝 অনুগ্রহ করে আপনার মতামত বা পরামর্শ এখানে লিখে পাঠান:",
         feedback_short: "❌ মতামত একটু বড় করে লিখুন (কমপক্ষে ৫টি অক্ষর)।",
         feedback_success: "✅ আপনার মূল্যবান মতামত সফলভাবে জমা হয়েছে। ধন্যবাদ!",
@@ -59,7 +59,7 @@ const locale = {
         deactivate_success_all: (count) => `✅ আপনার সবকটি (\`${count}\`) লিঙ্ক সফলভাবে বন্ধ করা হয়েছে!`,
         deactivate_success_single: (id) => `✅ আপনার লিঙ্কটি (\`${id}\`) সফলভাবে বন্ধ করা হয়েছে।`,
         link_not_found: "❌ লিঙ্কটি পাওয়া যায়নি।",
-        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 প্রথমে অ্যানিমেশন টেক্সটগুলো পাঠান (একের অধিক লাইন হলে প্রতি লাইনের পর এন্টার বা নতুন লাইন ব্যবহার করুন)।`,
+        session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 প্রথমে অ্যানিমেশন টেক্সটগুলো পাঠান (একের অধিক লাইন হলে প্রতি লাইনের পর নতুন লাইন ব্যবহার করুন)।`,
         demo_title: "👀 **আপনি কোন ডেমো পেজটি দেখতে চান? নিচে সিলেক্ট করুন:**",
         demo_ready: (type, url) => `✨ **আপনার অনুরোধ করা ডেমো লিঙ্কটি তৈরি!**\n\n🔗 ডেমো লিঙ্ক: ${url}`,
         input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান:`,
@@ -73,23 +73,23 @@ const locale = {
         btn_make: "🚀 Make Link", btn_card: "🖼️ Wish Card Generator", btn_demo: "👀 Demo", btn_stats: "📊 Stats", btn_off: "🔒 Off Link", btn_feedback: "📝 Feedback", btn_help: "❓ Help", btn_lang: "🌐 Change Language", btn_back: "🔙 Main Menu",
         choose_cat: "✨ **Select Category:**",
         cat_love: "❤️ Love Letter", cat_crush: "💖 Crush Confession", cat_birthday: "🎂 Birthday Wish", cat_anniversary: "💍 Anniversary Wish", cat_newyear: "🎉 New Year Wish", cat_boishakh: "🌾 Pohela Boishakh", cat_friend: "🫂 Best Friend", cat_eid: "🌙 Eid Wish", cat_sorry: "🥺 Sorry Letter",
-        prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**\n\n(If set, no one can view the inner content before the specified time.)",
+        prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**",
         btn_yes: "✅ Yes", btn_no: "❌ No",
-        prompt_time_input: "⏳ Send the lock release time in this exact format:\n\nFormat: \`HH:MM AM/PM\`\nExample: \`12:10 PM\` or \`08:15 PM\`\n\n⚠️ **Rule:** Max limit is within **2 hours** from current time.",
-        invalid_time: "❌ **Invalid Format or Time!**\n\nPlease follow: \`12:10 PM\` or \`08:05 AM\`\n\n⚠️ If minutes are single digit, add a leading zero (e.g., write \`12:08 PM\` instead of \`12:8 PM\`). AM/PM is mandatory.",
-        max_time_exceeded: "⚠️ **Limit Exceeded!**\n\nYou cannot set a time further than 2 hours from now. Please provide a time within the next 2 hours based on your device clock.",
-        time_past: "❌ You cannot set a past time.",
-        prompt_theme: "🎨 **Select a Premium Web Theme (Free):**",
-        prompt_music: "🎵 **Select a Background Music (Free):**",
+        prompt_time_input: "⏳ Send the lock duration.\n\nExamples:\n• Minutes only: \`10\` or \`10m\`\n• Hours & Minutes: \`1h 20m\` or \`1:20\`\n\n⚠️ Limits: Min 1 min, Max 2 hours (120 mins).",
+        invalid_time: "❌ **Invalid format!** Please use formats like \`20\` or \`1h 30m\`.",
+        max_time_exceeded: "⚠️ **Limit Exceeded!** Max lock time is 2 hours (120 minutes).",
+        time_past: "❌ Minimum lock duration is 1 minute.",
+        prompt_theme: "🎨 **Select a Premium Web Theme:**",
+        prompt_music: "🎵 **Select a Background Music:**",
         prompt_card_name: "🖼️ Enter the name you want to print on the Wish Card:",
         card_ready: "✨ **Your premium Wish Card is ready!** 👇",
-        help_text: `❓ **Help Guide:**\n\n1. **Link Creation:** Click '🚀 Make Link', pick a category, and enter a time within a 2-hour limit (e.g., 12:10 PM).\n2. **Dynamic Countdown:** Even though you input standard time, users visiting the link will see a real-time countdown with seconds.\n3. **Deactivation:** Turn off any link anytime using '🔒 Off Link'.\n\n💡 Contact admin for support.`,
+        help_text: `❓ **Help Guide:** Contact admin for support.`,
         feedback_prompt: "📝 Please send your feedback:",
         feedback_short: "❌ Please write more details (min 5 characters).",
         feedback_success: "✅ Feedback submitted! Thank you.",
         session_cancelled: "❌ Your active session has been cancelled.",
         no_session: "💡 You don't have any active session.",
-        invalid_cmd: (cmd) => `❌ **Invalid input:** \`${cmd}\` is not recognized. Please use the menu below or send /cancel to stop current session.`,
+        invalid_cmd: (cmd) => `❌ **Invalid input:** \`${cmd}\` is not recognized.`,
         maint_msg: "🚧 **Bot is under maintenance!** We will be back shortly.",
         no_links: "❌ You haven't created any links yet.",
         profile_report: (name, list) => `📊 **Your Profile:**\n\n👤 Name: ${name}\n🎫 Your Active Links:\n${list}`,
@@ -98,16 +98,52 @@ const locale = {
         deactivate_success_all: (count) => `✅ Deactivated all (\`${count}\`) links!`,
         deactivate_success_single: (id) => `✅ Deactivated link (\`${id}\`).`,
         link_not_found: "❌ Link not found.",
-        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started! Send animation texts (use new lines for multiple lines):`,
+        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started!`,
         demo_title: "👀 **Select demo page:**",
         demo_ready: (type, url) => `✨ **Demo Link:** ${url}`,
         input_anim_success: (count) => `✅ Added ${count} lines. Send main letter:`,
-        link_ready: (url) => `💝 Link Ready:\n\n${url}\n\n👉 Share this link with your loved one.`,
-        someone_opened: (type, time) => `👀 **Notification:** Someone opened your ${type.toUpperCase()} link!\n⏰ **Time:** ${time}`,
-        new_response: (type, res) => `💌 New response on your ${type.toUpperCase()} link!\n\nAnswer: ${res}`,
-        general_error: "⚠️ Sorry, an internal error occurred. Please try again or type /cancel to restart."
+        link_ready: (url) => `💝 Link Ready:\n\n${url}`,
+        someone_opened: (type, time) => `👀 **Notification:** Someone opened your ${type.toUpperCase()} link!`,
+        new_response: (type, res) => `💌 New response on your ${type.toUpperCase()} link!`,
+        general_error: "⚠️ Sorry, an internal error occurred."
     }
 };
+
+// Flexible duration parser function
+function parseDurationToMinutes(input) {
+    const cleanInput = input.toLowerCase().replace(/\s+/g, '');
+    
+    // Pattern 1: HH:MM or H:M (e.g., 1:20, 01:05, 1:2)
+    const colonMatch = cleanInput.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (colonMatch) {
+        const hrs = parseInt(colonMatch[1], 10);
+        const mins = parseInt(colonMatch[2], 10);
+        return (hrs * 60) + mins;
+    }
+
+    // Pattern 2: Pure digits only (e.g., 10, 5, 120)
+    if (/^\d+$/.test(cleanInput)) {
+        return parseInt(cleanInput, 10);
+    }
+
+    // Pattern 3: Dynamic extraction of hours and minutes (e.g., 1h30m, 45m, 1hour2minute)
+    let totalMinutes = 0;
+    let foundMatch = false;
+
+    const hourMatch = cleanInput.match(/(\d+)\s*(h|hour|ghonta)/);
+    const minMatch = cleanInput.match(/(\d+)\s*(m|min|mini|minute|mili)/);
+
+    if (hourMatch) {
+        totalMinutes += parseInt(hourMatch[1], 10) * 60;
+        foundMatch = true;
+    }
+    if (minMatch) {
+        totalMinutes += parseInt(minMatch[1], 10);
+        foundMatch = true;
+    }
+
+    return foundMatch ? totalMinutes : null;
+}
 
 // 🛡️ Security Middlewares & Multi-User Layer
 bot.use((ctx, next) => {
@@ -148,15 +184,17 @@ bot.command('cancel', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-// 👑 Admin Panel Infrastructure (ফিক্সড)
-bot.command('admin', (ctx) => {
+// 👑 Admin Panel Console (Handles both /admin and /adm shortcut)
+const handleAdminConsole = (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return;
     ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
         [Markup.button.callback("📊 System Status", "admin_stats"), Markup.button.callback("📢 Global Broadcast", "admin_broadcast")],
         [Markup.button.callback(isMaintenanceMode ? "🟢 Live Mode" : "🚧 Maint Mode", "admin_toggle_maint")],
         [Markup.button.callback("🚫 Ban Management", "admin_ban_menu"), Markup.button.callback("📜 View Logs", "admin_view_logs")]
     ]));
-});
+};
+bot.command('admin', handleAdminConsole);
+bot.command('adm', handleAdminConsole);
 
 bot.action('admin_stats', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
@@ -340,7 +378,7 @@ bot.action('menu_help', (ctx) => {
     ctx.reply(locale[lang].help_text);
 });
 
-// 🎯 State Machine & Universal Validation Router (স্মার্ট এরর রিপ্লাই সহ)
+// 🎯 State Machine & Universal Validation Router
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
@@ -349,7 +387,6 @@ bot.on('text', (ctx) => {
 
     if (text.startsWith('/')) return;
 
-    // 🛑 যদি ইউজারের কোনো সেশন না থাকে এবং সে ভুলভাল টেক্সট লেখে
     if (!session) {
         ctx.reply(locale[lang].invalid_cmd(text), { parse_mode: 'Markdown' });
         sendMainMenu(ctx, false);
@@ -357,7 +394,7 @@ bot.on('text', (ctx) => {
     }
 
     try {
-        // Admin Processors
+        // Admin Command Interceptors
         if (Number(userId) === Number(ADMIN_CHAT_ID)) {
             if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
                 registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
@@ -388,52 +425,27 @@ bot.on('text', (ctx) => {
             delete userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
-        // 🕒 সম্পূর্ণ গ্লোবাল এবং ডায়নামিক "ইউজার টাইমজোন" প্রুফ ইঞ্জিন (ফিক্সড RegEx)
+        // 🕒 Duration-based CountDown Engine Layer
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
-            // RegEx মডিফাই করা হয়েছে যাতে স্পেস এবং ছোট/বড় হাতের অক্ষরের কোনো সমস্যা না হয় (যেমন: 12:25am)
-            const timeRegex = /^(\d{1,2})\s*:\s*(\d{1,2})\s*(AM|PM)$/i;
-            const match = text.match(timeRegex);
+            const parsedMinutes = parseDurationToMinutes(text);
 
-            if (!match) {
+            if (parsedMinutes === null || isNaN(parsedMinutes)) {
                 return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
             }
 
-            let [_, hours, minutes, ampm] = match;
-            hours = parseInt(hours, 10);
-            minutes = parseInt(minutes, 10);
-            ampm = ampm.toUpperCase();
-
-            if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
-                return ctx.reply(locale[lang].invalid_time, { parse_mode: 'Markdown' });
+            if (parsedMinutes < 1) {
+                return ctx.reply(locale[lang].time_past, { parse_mode: 'Markdown' });
             }
 
-            const msgDateSeconds = ctx.message.date; 
-            const serverNow = new Date();
-            const userNow = new Date(msgDateSeconds * 1000); 
-
-            const targetDate = new Date(userNow);
-            let targetHours = hours;
-            if (ampm === 'PM' && hours !== 12) targetHours += 12;
-            if (ampm === 'AM' && hours === 12) targetHours = 0;
-
-            targetDate.setHours(targetHours, minutes, 0, 0);
-
-            // ৫ মিনিটের বাফার রাখা হয়েছে টাইপিং সময়ের সুবিধার জন্য
-            if (targetDate.getTime() < userNow.getTime() - (5 * 60 * 1000)) { 
-                targetDate.setDate(targetDate.getDate() + 1);
-            }
-
-            const diffMs = targetDate.getTime() - userNow.getTime();
-            const maxLimitMs = 2 * 60 * 60 * 1000; 
-
-            if (diffMs > maxLimitMs) {
+            if (parsedMinutes > 120) { // Limit to maximum of 2 hours (120 minutes)
                 return ctx.reply(locale[lang].max_time_exceeded, { parse_mode: 'Markdown' });
             }
 
-            const timeDifferenceWithServer = serverNow.getTime() - userNow.getTime();
-            const finalServerTargetDate = new Date(targetDate.getTime() + timeDifferenceWithServer);
+            // Calculations based on instant addition to the link generation execution time
+            const targetDate = new Date();
+            targetDate.setMinutes(targetDate.getMinutes() + parsedMinutes);
 
-            session.countdown = finalServerTargetDate.toISOString(); 
+            session.countdown = targetDate.toISOString(); 
             
             askThemeSelection(ctx);
             return;
@@ -462,7 +474,6 @@ bot.on('text', (ctx) => {
             return;
         }
 
-        // সেশন রানিং থাকা অবস্থায় যদি অন্য কোনো অদ্ভুত টেক্সট আসে
         ctx.reply(locale[lang].invalid_cmd(text), { parse_mode: 'Markdown' });
 
     } catch (error) {
