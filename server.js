@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const axios = require('axios');
 const { Telegraf, Markup } = require('telegraf');
-const fs = require('fs');
 
 const app = express();
 app.use(express.json());
@@ -16,11 +15,9 @@ const bot = new Telegraf(TELEGRAM_TOKEN);
 const linkDatabase = {}; 
 const userSessions = {}; 
 const registeredUsers = new Set(); 
-const bannedUsers = new Set(); 
 const userLanguages = {}; 
-let isMaintenanceMode = false; 
 
-// 🌐 মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি
+// 🌐 মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি (সব আগের অপশন সহ)
 const locale = {
     bn: {
         welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nঅল-ইন-ওয়ান উইшением বটের পক্ষ থেকে স্বাগতম। নিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
@@ -34,7 +31,7 @@ const locale = {
         btn_lang: "🌐 Change Language",
         btn_back: "🔙 মেইন মেনু",
         choose_cat: "✨ **কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান? সিলেক্ট করুন:**",
-        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফession", cat_birthday: "🎂 জন্মদিন",
+        cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিন",
         cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ",
         cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন (সম্পূর্ণ ফ্রি):**",
@@ -47,24 +44,9 @@ const locale = {
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? তার নামটি লিখে পাঠান:",
         card_ready: "✨ **আপনার প্রিমিয়াম উইশ কার্ডটি তৈরি হয়ে গেছে!** 👇",
         invalid_cmd: (cmd) => `❌ **ভুল কমান্ড:** \`${cmd}\` গ্রহণযোগ্য নয়!`,
-        btn_open_help: "❓ সাহায্য মেনু",
-        maint_msg: "🚧 Bot is under maintenance!",
-        no_links: "❌ আপনি এখনো কোনো লিঙ্ক তৈরি করেননি।",
-        profile_report: (name, list) => `📊 **আপনার প্রোফাইল রিপোর্ট:**\n\n👤 নাম: ${name}\n🎫 আপনার লিঙ্কসমূহ:\n${list}`,
-        btn_want_deactivate: "🔒 লিঙ্ক বন্ধ করতে চান?",
-        no_active_links: "💡 কোনো সক্রিয় লিঙ্ক নেই।",
-        off_link_title: "🔒 **কোন লিঙ্কটি বন্ধ করতে চান?**",
-        off_all_links: "❌ সব লিঙ্ক বন্ধ করুন",
-        deactivate_success_single: (id) => `✅ লিঙ্ক (\`${id}\`) সফলভাবে বন্ধ করা হয়েছে।`,
-        link_not_found: "❌ লিঙ্কটি পাওয়া যায়নি।",
         session_started: (cat) => `✨ কাস্টম লিঙ্ক সেশন শুরু হয়েছে!\n\n👉 প্রথমে অ্যানিমেশন টেক্সটগুলো পাঠান (প্রতি লাইনের পর এন্টার দিন):`,
-        demo_title: "👀 **কোন ডেমো পেজটি দেখতে চান?**",
-        demo_ready: (type, url) => `✨ **ডেমো লিঙ্ক রেডি:**\n🔗 ${url}`,
         input_anim_success: (count) => `✅ ${count} লাইনের অ্যানিমেশন যোগ হয়েছে।\n\n💌 এবার খামের ভেতরের মূল চিঠিটি লিখে পাঠান:`,
-        link_ready: (url) => `💝 অভিনন্দন! আপনার প্রিমিয়াম মাল্টি-ফিচার লিঙ্ক রেডি:\n\n🔗 ${url}\n\nএটি শেয়ার করুন, ওপেন করলেই নোটিফিকেশন পাবেন!`,
-        btn_rate_feedback: "📝 মতামত দিন",
-        someone_opened: (type, time) => `👀 **বিজ্ঞপ্তি:** কেউ আপনার \`${type.toUpperCase()}\` লিঙ্কটি ওপেন করেছে!\n⏰ **সময়:** ${time}`,
-        new_response: (type, res) => `💌 আপনার \`${type.toUpperCase()}\` লিঙ্কে নতুন উত্তর এসেছে:\n\nAnswer: ${res}`
+        link_ready: (url) => `💝 অভিনন্দন! আপনার প্রিমিয়াম মাল্টি-ফিচার লিঙ্ক রেডি:\n\n🔗 ${url}\n\nএটি শেয়ার করুন, ওপেন করলেই নোটিফিকেশন পাবেন!`
     },
     en: {
         welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to Wishing Bot. Choose an option:`,
@@ -87,32 +69,17 @@ const locale = {
         btn_yes: "✅ Yes", btn_no: "❌ No",
         prompt_time_input: "⏳ Send Countdown end date & time in this format:\n\nFormat: `YYYY-MM-DD HH:MM`\nExample: `2026-12-31 23:59`",
         invalid_time: "❌ Invalid format! Please follow: `2026-06-30 18:00`",
-        help_text: `❓ **How to use?**\n\n1. Click 🚀 **Make Link**, choose free theme, music, and countdown setup.\n2. Paste your letter.\n3. Use 🖼️ **Wish Card** to generate custom card graphics.\n\n❌ Type /cancel to stop.`,
+        help_text: `❓ **How to use?**\n\n1. Click 🚀 **Make Link**, choose category, theme, music, and countdown.\n2. Send animation and main letter.\n\n❌ Type /cancel to stop.`,
         prompt_card_name: "🖼️ Enter the name you want to print on the Wish Card:",
         card_ready: "✨ **Your premium Wish Card is ready!** 👇",
         invalid_cmd: (cmd) => `❌ **Invalid Command:** \`${cmd}\``,
-        btn_open_help: "❓ Help Menu",
-        maint_msg: "🚧 Bot is under maintenance!",
-        no_links: "❌ You haven't created any links yet.",
-        profile_report: (name, list) => `📊 **Profile:** ${name}\n🎫 Your Links:\n${list}`,
-        btn_want_deactivate: "🔒 Deactivate a link?",
-        no_active_links: "💡 No active links found.",
-        off_link_title: "🔒 **Select link to turn off:**",
-        off_all_links: "❌ Off All Links",
-        deactivate_success_single: (id) => `✅ Link (\`${id}\`) deactivated successfully.`,
-        link_not_found: "❌ Link not found.",
-        session_started: (cat) => `✨ Custom ${cat.toUpperCase()} Link started!\n\n👉 Send animation texts line by line:`,
-        demo_title: "👀 **Select Demo Page:**",
-        demo_ready: (type, url) => `✨ **Demo Link Ready:**\n🔗 ${url}`,
+        session_started: (cat) => `✨ Custom Link started!\n\n👉 Send animation texts line by line:`,
         input_anim_success: (count) => `✅ Added ${count} lines.\n\n💌 Now send the main letter text:`,
-        link_ready: (url) => `💝 Customized Link Ready:\n\n🔗 ${url}`,
-        btn_rate_feedback: "📝 Feedback",
-        someone_opened: (type, time) => `👀 **Notification:** Someone opened your \`${type.toUpperCase()}\` link!\n⏰ **Time:** ${time}`,
-        new_response: (type, res) => `💌 New response on your \`${type.toUpperCase()}\` link:\n\nAnswer: ${res}`
+        link_ready: (url) => `💝 Customized Link Ready:\n\n🔗 ${url}`
     }
 };
 
-// 🔄 মূল মেনু (Wish Card বাটন পাশাপাশি সেট করা হয়েছে)
+// 🔄 মেইন মেনু
 function sendMainMenu(ctx, isEdit = false) {
     const userId = ctx.chat.id;
     const lang = userLanguages[userId] || 'bn';
@@ -131,25 +98,13 @@ function sendMainMenu(ctx, isEdit = false) {
     return ctx.reply(text, keyboard);
 }
 
-// 👑 অ্যাডমিন ড্যাশবোর্ড ফাংশন (English)
-function sendAdminDashboard(ctx, isEdit = false) {
-    const text = `👑 **Welcome Boss! Your Complete Admin Dashboard:**`;
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback('📊 Bot Live Stats', 'adm_stats'), Markup.button.callback('📋 All Links List', 'adm_alllinks_main')],
-        [Markup.button.callback('⚙️ Maintenance (On/Off)', 'adm_toggle_maint'), Markup.button.callback('📢 Broadcast Message', 'adm_prompt_broadcast')],
-        [Markup.button.callback('🔙 Back to User Menu', 'go_to_main_menu')]
-    ]);
-    if (isEdit) return ctx.editMessageText(text, keyboard).catch(e => {});
-    return ctx.reply(text, keyboard);
-}
-
 // 🎯 স্টার্ট কম্যান্ড
 bot.command('start', (ctx) => {
     registeredUsers.add(ctx.chat.id);
     sendMainMenu(ctx, false);
 });
 
-// 🌐 ল্যাঙ্গুয়েজ টগল বাটন ও ব্যাক অ্যাকশন
+// 🌐 ল্যাঙ্গুয়েজ পরিবর্তন
 bot.action('menu_lang', (ctx) => {
     const current = userLanguages[ctx.chat.id] || 'bn';
     userLanguages[ctx.chat.id] = current === 'bn' ? 'en' : 'bn';
@@ -158,14 +113,8 @@ bot.action('menu_lang', (ctx) => {
 });
 
 bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
-bot.action('go_to_admin_dashboard', (ctx) => { ctx.answerCbQuery(); sendAdminDashboard(ctx, true); });
 
-bot.command('adm', (ctx) => {
-    if (String(ctx.chat.id) !== String(ADMIN_CHAT_ID)) return ctx.reply("⚠️ Access Denied!");
-    sendAdminDashboard(ctx, false);
-});
-
-// 🖼️ ১. WISH CARD GENERATOR অপশন লজিক
+// 🖼️ ১. উইশ কার্ড জেনারেটর
 bot.action('menu_cardgen', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -173,14 +122,15 @@ bot.action('menu_cardgen', (ctx) => {
     ctx.reply(locale[lang].prompt_card_name);
 });
 
-// 🚀 ২. লিঙ্ক জেনারেটর ফ্লো (ক্যাটাগরি -> প্রিমিয়াম থিম -> মিউজিক -> টাইমার)
+// 🚀 ২. লিঙ্ক জেনারেটর ফ্লো (সবগুলো আগের ক্যাটাগরি সহ)
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
     ctx.editMessageText(locale[lang].choose_cat, 
         Markup.inlineKeyboard([
-            [Markup.button.callback(locale[lang].cat_love, 'make_love'), Markup.button.callback(locale[lang].cat_crush, 'make_crush')],
-            [Markup.button.callback(locale[lang].cat_birthday, 'make_birthday'), Markup.button.callback(locale[lang].cat_anniversary, 'make_anniversary')],
+            [Markup.button.callback(locale[lang].cat_love, 'make_love'), Markup.button.callback(locale[lang].cat_crush, 'make_crush'), Markup.button.callback(locale[lang].cat_birthday, 'make_birthday')],
+            [Markup.button.callback(locale[lang].cat_anniversary, 'make_anniversary'), Markup.button.callback(locale[lang].cat_newyear, 'make_newyear'), Markup.button.callback(locale[lang].cat_boishakh, 'make_boishakh')],
+            [Markup.button.callback(locale[lang].cat_friend, 'make_friend'), Markup.button.callback(locale[lang].cat_eid, 'make_eid'), Markup.button.callback(locale[lang].cat_sorry, 'make_sorry')],
             [Markup.button.callback(locale[lang].btn_back, 'go_to_main_menu')]
         ])
     );
@@ -207,7 +157,7 @@ bot.action(/^set_theme_/, (ctx) => {
     const lang = userLanguages[ctx.chat.id] || 'bn';
     userSessions[ctx.chat.id].theme = theme;
 
-    // মিউজিক সিলেকشن প্রম্পট
+    // মিউজিক সিলেকশন প্রম্পট
     ctx.editMessageText(locale[lang].prompt_music,
         Markup.inlineKeyboard([
             [Markup.button.callback('🎵 Romantic Flute', 'set_music_romantic'), Markup.button.callback('🎂 Happy Birthday Tune', 'set_music_birthday')],
@@ -245,7 +195,7 @@ bot.action('timer_no', (ctx) => {
     ctx.reply(locale[lang].session_started(userSessions[ctx.chat.id].type));
 });
 
-// 🎯 টেক্সট প্রসেসিং অ্যান্ড ইনপুট রাউটার
+// 🎯 টেক্সট প্রসেসিং
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = userSessions[userId];
@@ -260,7 +210,6 @@ bot.on('text', (ctx) => {
     // উইশ কার্ডের নাম প্রসেসিং
     if (session.step === 'AWAITING_CARD_NAME') {
         ctx.reply(locale[lang].card_ready);
-        // ডায়নামিক্যালি প্রফেশনাল গ্রাফিক্স কার্ড ইমেজ জেনারেট ইউআরএল
         const cardUrl = `https://dummyimage.com/800x500/ff4b72/fff.png&text=Best+Wishes+To+${encodeURIComponent(text)}!+✨`;
         ctx.replyWithPhoto(cardUrl).then(() => { delete userSessions[userId]; });
         return;
@@ -317,12 +266,10 @@ app.post('/api/get-content', (req, res) => {
         const targetTime = new Date(data.countdown.replace(' ', 'T') + ':00');
         const now = new Date();
         if (targetTime > now) {
-            // যদি সময় এখনও বাকি থাকে, শুধু টাইমারের ডাটা ফ্রন্টএন্ডে যাবে
             return res.json({ success: true, isLocked: true, targetTime: data.countdown, theme: data.theme });
         }
     }
 
-    // টাইম শেষ বা টাইমার না থাকলে ফুল উইশিং পেজ আনলক হবে
     res.json({ 
         success: true, isLocked: false, type: data.type, theme: data.theme,
         music: data.music, animations: data.animations, letter: data.letter 
