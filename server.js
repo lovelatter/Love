@@ -48,15 +48,15 @@ const locale = {
         cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
         prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে কাউন্টডাউন টাইমার (Time Countdown) সেট করতে চান?**\n\n(টাইমার সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের মূল মেসেজ দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
-        prompt_time_input: "⏳ অনুগ্রহ করে আজ কোন সময়ে কাউন্টডাউন শেষ হবে তা লিখে পাঠান।\n\nFormat: \`12:02pm\` বা \`4:30am\` বা \`12:2pm\`\n\n⚠️ **সর্বোচ্চ ২ ঘণ্টা পর্যন্ত সময় দিতে পারবেন।**",
-        invalid_time: "❌ ভুল ফরম্যাট! অনুগ্রহ করে সঠিক ফরম্যাটে লিখুন। উদাহরণ: \`12:02pm\` অথবা \`4:30am\`",
-        max_time_exceeded: "⚠️ দুঃখিত! আপনি বর্তমান সময় থেকে সর্বোচ্চ ২ ঘণ্টার বেশি কাউন্টডাউন টাইম সেট করতে পারবেন না।",
-        time_past: "❌ আপনি অতীতের কোনো সময় সেট করতে পারবেন না। সঠিক সময় দিন।",
+        prompt_time_input: "⏳ অনুগ্রহ করে কাউন্টডাউন শেষ হওয়ার তারিখ এবং সময় নিচের ফরম্যাটে লিখে পাঠান:\n\nFormat: \`YYYY-MM-DD HH:MM\`\nExample: \`2026-12-31 23:59\` (২৪ ঘণ্টার ফরম্যাটে লিখবেন)",
+        invalid_time: "❌ ভুল ফরম্যাট! অনুগ্রহ করে সঠিক ফরম্যাটে লিখুন। উদাহরণ: \`2026-12-31 23:59\`",
+        max_time_exceeded: "⚠️ দুঃখিত! আপনি অনেক দীর্ঘ সময়ের জন্য টাইম সেট করছেন, অনুগ্রহ করে সঠিক বর্তমান বা ভবিষ্যৎ সময় দিন।",
+        time_past: "❌ আপনি অতীতের কোনো সময় সেট করতে পারবেন না। সঠিক ভবিষ্যৎ সময় দিন।",
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন (সম্পূর্ণ ফ্রি):**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন (সম্পূর্ণ ফ্রি):**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? তার নামটি লিখে পাঠান:",
         card_ready: "✨ **আপনার প্রিমিয়াম উইশ কার্ডটি তৈরি হয়ে গেছে!** 👇",
-        help_text: `❓ **কিভাবে ব্যবহার করবেন?**\n\n১. প্রথমে 🚀 **লিঙ্ক তৈরি করুন** বাটনে ক্লিক করুন।\n২. ক্যাটাগরি বেছে নেওয়ার পরেই কাউন্টডাউন সেট করার অপশন আসবে। সর্বোচ্চ ২ ঘণ্টার জন্য টাইম সেট করতে পারবেন।\n৩. থিম ও মিউজিক সিলেক্ট করে আপনার টেক্সটগুলো পাঠিয়ে লিঙ্ক তৈরি করে নিন।`,
+        help_text: `❓ **কিভাবে ব্যবহার করবেন?**\n\n১. প্রথমে 🚀 **লিঙ্ক তৈরি করুন** বাটনে ক্লিক করুন।\n২. ক্যাটাগরি বেছে নেওয়ার পরেই কাউন্টডাউন সেট করার অপশন আসবে।\n৩. থিম ও মিউজিক সিলেক্ট করে আপনার টেক্সটগুলো পাঠিয়ে লিঙ্ক তৈরি করে নিন।`,
         feedback_prompt: "📝 অনুগ্রহ করে আপনার মতামত বা পরামর্শ এখানে মেসেজ আকারে লিখে পাঠান:",
         feedback_short: "❌ মতামত একটু বড় করে লিখুন (কমপক্ষে ৫টি অক্ষর)।",
         feedback_success: "✅ আপনার মূল্যবান মতামত সফলভাবে জমা হয়েছে। ধন্যবাদ!",
@@ -90,15 +90,15 @@ const locale = {
         cat_love: "❤️ Love Letter", cat_crush: "💖 Crush Confession", cat_birthday: "🎂 Birthday Wish", cat_anniversary: "💍 Anniversary Wish", cat_newyear: "🎉 New Year Wish", cat_boishakh: "🌾 Pohela Boishakh", cat_friend: "🫂 Best Friend", cat_eid: "🌙 Eid Wish", cat_sorry: "🥺 Sorry Letter",
         prompt_countdown_ask: "⏰ **Do you want to set a Time Countdown Timer for this link?**\n\n(If enabled, users cannot view the main message until the countdown expires.)",
         btn_yes: "✅ Yes", btn_no: "❌ No",
-        prompt_time_input: "⏳ Send the time for countdown to end today.\n\nFormat: \`12:02pm\` or \`4:30am\`\n\n⚠️ **Maximum limit is 2 hours from now.**",
-        invalid_time: "❌ Invalid format! Please follow: \`12:02pm\` or \`4:30am\`",
-        max_time_exceeded: "⚠️ Sorry! You cannot set countdown time for more than 2 hours from current time.",
+        prompt_time_input: "⏳ Send the time for countdown to end in this format:\n\nFormat: \`YYYY-MM-DD HH:MM\`\nExample: \`2026-12-31 23:59\` (24-hour format)",
+        invalid_time: "❌ Invalid format! Please follow: \`2026-12-31 23:59\`",
+        max_time_exceeded: "⚠️ Invalid range, please provide a valid future date and time.",
         time_past: "❌ You cannot set a past time.",
         prompt_theme: "🎨 **Select a Premium Web Theme (Free):**",
         prompt_music: "🎵 **Select a Background Music (Free):**",
         prompt_card_name: "🖼️ Enter the name you want to print on the Wish Card:",
         card_ready: "✨ **Your premium Wish Card is ready!** 👇",
-        help_text: `❓ **How to use?**\n\n1. Click 🚀 **Make Link**.\n2. Right after choosing category, you can set a countdown timer for up to 2 hours.\n3. Choose theme, music, send text lines and generate your link.`,
+        help_text: `❓ **How to use?**\n\n1. Click 🚀 **Make Link**.\n2. Right after choosing category, you can set a countdown timer.\n3. Choose theme, music, send text lines and generate your link.`,
         feedback_prompt: "📝 Please send your feedback:",
         feedback_short: "❌ Please write more details (at least 5 characters).",
         feedback_success: "✅ Feedback submitted! Thank you.",
@@ -479,40 +479,30 @@ bot.on('text', (ctx) => {
         return;
     }
 
-    // ⏱️ Countdown live processing validation (FIXED)
+    // ⏱️ নতুন স্ক্রিনশট অনুসারী ২৪ ঘণ্টার YYYY-MM-DD HH:MM ফরম্যাট পার্সিং এবং প্রসেসিং
     if (session.step === 'AWAITING_COUNTDOWN_TIME') {
-        const inputStr = text.trim().toLowerCase().replace(/\s+/g, '');
-        const match = inputStr.match(/^(\d{1,2}):(\d{2})(am|pm)$/);
+        const inputStr = text.trim();
+        // Regex checking YYYY-MM-DD HH:MM format
+        const match = inputStr.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
         
         if (!match) return ctx.reply(locale[lang].invalid_time);
 
-        let hours = parseInt(match[1]);
-        const minutes = parseInt(match[2]);
-        const ampm = match[3];
-
-        if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return ctx.reply(locale[lang].invalid_time);
-
-        const now = new Date();
-        const bdOffset = 6 * 60 * 60 * 1000; 
-        const bdNow = new Date(now.getTime() + bdOffset);
-
-        if (ampm === 'pm' && hours < 12) hours += 12;
-        if (ampm === 'am' && hours === 12) hours = 0;
-
-        const targetTime = new Date(bdNow);
-        targetTime.setUTCHours(hours, minutes, 0, 0);
-
-        if (targetTime < bdNow) return ctx.reply(locale[lang].time_past);
-
-        const diffMs = targetTime - bdNow;
-        const diffMins = diffMs / (1000 * 60);
-
-        if (diffMins > 120) return ctx.reply(locale[lang].max_time_exceeded);
-
-        const finalTargetDate = new Date(now.getTime() + diffMs);
+        const [_, year, month, day, hour, minute] = match;
         
-        // 🛠️ FIX: মিলি-সেকেন্ড পাস না করে সরাসরি স্ট্যান্ডার্ড ISO স্ট্রিং সেভ করা হচ্ছে
-        session.countdown = finalTargetDate.toISOString(); 
+        // বাংলাদেশের লোকাল টাইম অনুযায়ী ডেট অবজেক্ট জেনারেট করা
+        const targetDate = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
+        const now = new Date();
+
+        if (isNaN(targetDate.getTime())) {
+            return ctx.reply(locale[lang].invalid_time);
+        }
+
+        if (targetDate < now) {
+            return ctx.reply(locale[lang].time_past);
+        }
+
+        // সঠিক ISO ফরম্যাট স্ট্রিং আকারে সেভ করা হচ্ছে
+        session.countdown = targetDate.toISOString(); 
         
         askThemeSelection(ctx);
         return;
