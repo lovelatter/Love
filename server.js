@@ -162,11 +162,11 @@ async function generateAiContent(type, category, lang, targetName = "") {
             return answer.replace(/["']/g, "").trim();
         }
 
-        return getDefaultFallback(type, lang, targetName);
+        return "";
 
     } catch (err) {
         console.error("Gemini Error:", err.response?.data || err.message);
-        return getDefaultFallback(type, lang, targetName);
+        return "";
     }
 }
 // 🛡️ Security Middlewares
