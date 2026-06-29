@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 
@@ -10,7 +12,6 @@ app.use(express.json());
 // ⚙️ Configurations & Environment Variables
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const SERVER_URL = "https://love-bb7p.onrender.com";  
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
@@ -113,28 +114,31 @@ const locale = {
 // 🤖 ফ্রি AI টেক্সট জেনারেটর ইঞ্জিন
 async function generateAiContent(type, category, lang, targetName = "") {
     try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
         let prompt = "";
-        const nameContext = targetName ? `The person's name is "${targetName}". Try to naturally include or mention this name inside the content.` : "";
+        const nameContext = targetName ? `The person's name is "${targetName}".` : "";
 
         if (type === 'animation') {
             prompt = lang === 'bn' 
-                ? `Generate 3 to 5 separate short romantic/emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output must be only the lines separated by commas. No numbering, no extra text. Example: line 1, line 2, line 3`
-                : `Generate 3 to 5 separate short emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output only lines separated by commas. No numbering.`;
+                ? `Generate 3-5 short romantic lines for category: "${category}". ${nameContext} Output: comma separated lines only.`
+                : `Generate 3-5 short romantic lines for category: "${category}". ${nameContext} Output: comma separated lines only.`;
         } else {
             prompt = lang === 'bn'
-                ? `Write a short, highly emotional, touchy, beautiful message or letter in Bengali for the category: "${category}". ${nameContext} Keep it under 100 words. Do not use any introductory or extra English text, just give the Bengali text.`
-                : `Write a short, heart-touching, beautiful message or letter in English for the category: "${category}". ${nameContext} Keep it under 80 words. Give only the core letter.`;
+                ? `Write a touching Bengali letter for: "${category}". ${nameContext} Under 100 words. No intro text.`
+                : `Write a touching English letter for: "${category}". ${nameContext} Under 80 words. No intro text.`;
         }
-        
-        const response = await axios.get(`https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}`);
-        if (response.data && response.data.answer) {
-            return response.data.answer.replace(/["']/g, "").trim();
-        }
-        return getDefaultFallback(type, lang, targetName);
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text().replace(/["']/g, "").trim();
+
     } catch (e) {
+        console.error("Gemini AI Error:", e);
         return getDefaultFallback(type, lang, targetName);
     }
 }
+
 
 function getDefaultFallback(type, lang, targetName = "") {
     const nameStr = targetName ? targetName : (lang === 'bn' ? "প্রিয়" : "Dear");
