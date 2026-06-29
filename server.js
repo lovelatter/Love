@@ -755,10 +755,19 @@ bot.on('text', (ctx) => {
             return;
         }
 
-        if (session.step === 'AWAITING_LETTER_TEXT') {
-            processFinalLinkCreation(ctx, text);
-            return;
-        }
+        if (session && session.step === 'AWAITING_LETTER_TEXT') {
+        // AI থেকে চিঠি জেনারেট করা হচ্ছে
+        ctx.reply("💌 চিঠি লেখা হচ্ছে, দয়া করে অপেক্ষা করুন...");
+        
+        const aiLetter = await generateAiContent('letter', session.category, userLanguages[userId] || 'bn', session.targetName);
+        
+        const uniqueId = Math.random().toString(36).substring(2, 9);
+        linkDatabase[uniqueId] = { userId, type: session.type, letter: aiLetter, isActive: true };
+        
+        // ফাইনাল লিঙ্ক পাঠানো
+        ctx.reply(`💝 অভিনন্দন! আপনার প্রিমিয়াম লিঙ্ক রেডি:\n\n${SERVER_URL}/love/${uniqueId}`);
+        delete userSessions[userId];
+    }
 
         ctx.reply(locale[lang].invalid_cmd(text), { parse_mode: 'Markdown' });
 
