@@ -110,47 +110,65 @@ const locale = {
     }
 };
 
-// 🤖 ফ্রি AI টেক্সট জেনারেটর ইঞ্জিন
+// 🤖 Gemini AI Text Generator
 async function generateAiContent(type, category, lang, targetName = "") {
     try {
         let prompt = "";
-        const nameContext = targetName ? `The person's name is "${targetName}". Try to naturally include or mention this name inside the content.` : "";
+        const nameContext = targetName
+            ? `The person's name is "${targetName}". Try to naturally include this name in the content.`
+            : "";
 
-        if (type === 'animation') {
-            prompt = lang === 'bn' 
-                ? `Generate 3 to 5 separate short romantic/emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output must be only the lines separated by commas. No numbering, no extra text. Example: line 1, line 2, line 3`
-                : `Generate 3 to 5 separate short emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output only lines separated by commas. No numbering.`;
+        if (type === "animation") {
+            prompt =
+                lang === "bn"
+                    ? `Generate 3 to 5 separate short romantic/emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output only the lines separated by commas. No numbering or explanation.`
+                    : `Generate 3 to 5 separate short emotional animation text lines for a web page. Category: "${category}". ${nameContext} Output only comma-separated lines.`;
         } else {
-            prompt = lang === 'bn'
-                ? `Write a short, highly emotional, touchy, beautiful message or letter in Bengali for the category: "${category}". ${nameContext} Keep it under 100 words. Do not use any introductory or extra English text, just give the Bengali text.`
-                : `Write a short, heart-touching, beautiful message or letter in English for the category: "${category}". ${nameContext} Keep it under 80 words. Give only the core letter.`;
+            prompt =
+                lang === "bn"
+                    ? `Write a beautiful emotional Bengali letter for "${category}". ${nameContext} Keep it under 100 words. Return only the letter.`
+                    : `Write a beautiful emotional English letter for "${category}". ${nameContext} Keep it under 80 words. Return only the letter.`;
         }
-        
-        const response = await axios.get(`https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}`);
-        if (response.data && response.data.answer) {
-            return response.data.answer.replace(/["']/g, "").trim();
+
+        const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: prompt
+                            }
+                        ]
+                    }
+                ],
+                generationConfig: {
+                    temperature: 0.9,
+                    topP: 0.95,
+                    maxOutputTokens: 500
+                }
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        const answer =
+            response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (answer) {
+            return answer.replace(/["']/g, "").trim();
         }
+
         return getDefaultFallback(type, lang, targetName);
-    } catch (e) {
+
+    } catch (err) {
+        console.error("Gemini Error:", err.response?.data || err.message);
         return getDefaultFallback(type, lang, targetName);
     }
 }
-
-function getDefaultFallback(type, lang, targetName = "") {
-    const nameStr = targetName ? targetName : (lang === 'bn' ? "প্রিয়" : "Dear");
-    if (type === 'animation') {
-        return lang === 'bn' ? `${nameStr} প্রথম দেখা, মিষ্টি হাসি, তোমায় ভালোবাসি` : `Hey ${nameStr}, first sight, sweet smile, love you forever`;
-    }
-    return lang === 'bn' ? `আমি তোমাকে অনেক ভালোবাসি ${nameStr}। তুমি আমার জীবনের সেরা পাওয়া।` : `I love you so much ${nameStr}. You are the best part of my life.`;
-}
-
-function extractMinutes(input) {
-    const cleanInput = input.trim().toLowerCase();
-    const matches = cleanInput.match(/\d+/);
-    if (!matches) return null;
-    return parseInt(matches[0], 10);
-}
-
 // 🛡️ Security Middlewares
 bot.use((ctx, next) => {
     try {
