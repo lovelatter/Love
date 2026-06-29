@@ -438,7 +438,7 @@ bot.action('ask_ai_anim_name', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
     ctx.editMessageText(
-        lang === 'bn' ? "👤 **আপনি কি অ্যানিমেশন টেক্সটে নির্দিষ্ট কারো নাম যুক্ত করতে চান?**" : "👤 **Do you want to include someone's name in the animations?**",
+        lang === 'bn' ? "👤 **আপনি কি... অ্যানিমেশন টেক্সটে নির্দিষ্ট কারো নাম যুক্ত করতে চান?**" : "👤 **Do you want to include someone's name in the animations?**",
         Markup.inlineKeyboard([
             [Markup.button.callback(lang === 'bn' ? "✍️ হ্যাঁ, নাম দিব" : "✍️ Yes, provide name", "ai_anim_provide_name")],
             [Markup.button.callback(lang === 'bn' ? "❌ না, নাম ছাড়া বানান" : "❌ No, without name", "execute_ai_animation_raw")],
@@ -489,7 +489,7 @@ async function triggerAiAnimationGeneration(ctx) {
         : `🤖 **AI Generated Animations (Version: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **Tip:** If you dislike this, you can type your own text below.\n\nDo you like it?`;
 
     const buttons = [
-        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখ করব" : "✅ Keep this", "ai_anim_accept")],
+        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_anim_accept")],
         [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_animation_core")]
     ];
 
