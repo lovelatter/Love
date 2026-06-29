@@ -10,6 +10,7 @@ app.use(express.json());
 // ⚙️ Configurations & Environment Variables
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const SERVER_URL = "https://love-bb7p.onrender.com";  
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
