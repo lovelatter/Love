@@ -11,6 +11,10 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const SERVER_URL = "https://love-bb7p.onrender.com";
 const DB_FILE = path.join(__dirname, 'db.json');
+const userLanguages = {}; 
+const registeredUsers = new Set();
+const bannedUsers = new Set();
+let isMaintenanceMode = false;
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
@@ -855,36 +859,6 @@ function sendMainMenu(ctx, isEdit = false) {
     } catch (err) { console.error(err); }
 }
 
-// 🌐 Web Content Distribution Routing API 
-app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
-
-app.post('/api/get-content', (req, res) => {
-    try {
-        const { id } = req.body;
-        if (!id) return res.json({ success: false });
-        if (id.startsWith('demo-preview')) return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is placeholder preview letter." });
-        
-        const data = db.linkDatabase[id];
-        if (!data || !data.isActive) return res.json({ success: false });
-
-        const lang = userLanguages[data.userId] || 'bn';
-        const formattedTime = new Date().toLocaleTimeString();
-        bot.telegram.sendMessage(data.userId, locale[lang].someone_opened(data.type, formattedTime)).catch(()=>{});
-
-        if (data.countdown) {
-            const now = new Date();
-            const lockTime = new Date(data.countdown);
-            if (lockTime > now) {
-                return res.json({ success: true, isLocked: true, countdownTime: data.countdown, theme: data.theme });
-            }
-        }
-        
-        return res.json({ success: true, isLocked: false, theme: data.theme, music: data.music, animations: data.animations, letter: data.letter });
-    } catch (err) {
-        console.error("Get Content API Error:", err);
-        res.json({ success: false });
-    }
-});
 
 // API Route (Time Lock Support included)
 app.post('/api/get-content', async (req, res) => {
@@ -901,7 +875,7 @@ app.post('/api/get-content', async (req, res) => {
             const lockTime = new Date(data.countdown);
             if (lockTime > now) {
                 return res.json({ success: true, isLocked: true, countdownTime: data.countdown, theme: data.theme });
-            }
+            }w
         }
 
         return res.json({ 
@@ -916,38 +890,6 @@ app.post('/api/get-content', async (req, res) => {
         res.json({ success: false });
     }
 });
-
-// Final Link Creation (Modified to use 'db')
-function processFinalLinkCreation(ctx, letterText) {
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    const uniqueId = Math.random().toString(36).substring(2, 9);
-    
-    // Time logic
-    let finalCountdownIso = null;
-    if (session.pendingMinutes) {
-        const targetDate = new Date();
-        targetDate.setMinutes(targetDate.getMinutes() + session.pendingMinutes);
-        finalCountdownIso = targetDate.toISOString();
-    }
-    
-    db.linkDatabase[uniqueId] = {
-        userId, 
-        type: session.type,
-        theme: session.theme, 
-        animations: session.animations, 
-        letter: letterText, 
-        countdown: finalCountdownIso,
-        isActive: true
-    };
-    
-    db.totalLinksCreated++;
-    saveDB(); 
-    
-    ctx.reply(esc(`✅ Link ready: ${SERVER_URL}/love/${uniqueId}`));
-    delete db.userSessions[userId];
-    saveDB();
-}
 
 app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
