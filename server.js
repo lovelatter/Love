@@ -155,7 +155,7 @@ async function generateAiContent(type, category, lang, targetName = "") {
                 : `Write a short, heart-touching, beautiful message or letter in English for the category: "${category}". ${nameContext} Keep it under 80 words. Give only the core letter.`;
         }
         
-        const response = await axios.get(`https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}`);
+        const response = await axios.get(`https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}&t=${Date.now()}`);
         if (response.data && response.data.answer) {
             return response.data.answer.replace(/["']/g, "").trim();
         }
