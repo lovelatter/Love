@@ -7,47 +7,67 @@ const fs = require('fs');
 const app = express();
 app.use(express.json());
 
-// ⚙️ Configurations & Environment Variables
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
-const SERVER_URL = "https://love-bb7p.onrender.com";  
+const SERVER_URL = "https://love-bb7p.onrender.com";
+const DB_FILE = path.join(__dirname, 'db.json');
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
-// 🗄️ In-Memory Databases & Core States
-const linkDatabase = {}; 
-const userSessions = {}; 
-const registeredUsers = new Set(); 
-const bannedUsers = new Set(); 
-const userLanguages = {}; 
-let isMaintenanceMode = false; 
+// 🗄️ Database Load & Save
+let db = {
+    linkDatabase: {},
+    userSessions: {},
+    totalLinksCreated: 0,
+    isMaintenanceMode: false,
+    bannedUsers: []
+};
 
+if (fs.existsSync(DB_FILE)) {
+    db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+}
+
+function saveDB() {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+}
+
+// 🛡️ Markdown Escaping
+function esc(text) {
+    return text.toString().replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
+
+// 🤖 Core Engine (Start, Menus, Actions, and Logic)
 // 📊 Global Stats Counters
 let totalLinksCreated = 0;
 let totalCardsGenerated = 0;
 let totalFeedbacksReceived = 0;
-
 // 🌐 Multi-Language Messages Dictionary
 const locale = {
     bn: {
-        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম লক করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
+        welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম কাউন্টডাউন করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
         btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_card: "🖼️ উইশ কার্ড বানান", btn_demo: "👀 ডেমো দেখুন", btn_stats: "📊 স্ট্যাটাস", btn_off: "🔒 লিঙ্ক বন্ধ করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_lang: "🌐 ভাষা পরিবর্তন", btn_back: "🔙 মেইন মেনু",
         choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান?**",
         cat_love: "❤️ প্রেমের চিঠি", cat_crush: "💖 ক্রাশ কনফেশন", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা", cat_anniversary: "💍 বিবাহবার্ষিকী", cat_newyear: "🎉 নতুন বছর", cat_boishakh: "🌾 পহেলা বৈশাখ", cat_friend: "🫂 সেরা বন্ধু", cat_eid: "🌙 ঈদ মোবারক", cat_sorry: "🥺 দুঃখ প্রকাশ",
-        prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম লক (Time Lock) সেট করতে চান?**\n\n(টাইম সেট করলে আপনার দেওয়া সময়ের আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
+        
+        // 🔄 Time Countdown Updates (Bangla)
+        prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম কাউন্টডাউন (Time Countdown) সেট করতে চান?**\n\n(কাউন্টডাউন সেট করলে আপনার দেওয়া সময় শেষ হওয়ার আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
         btn_yes: "✅ হ্যাঁ, চাই", btn_no: "❌ না, লাগবে না",
         prompt_time_input: "⏳ লিঙ্কটি কত মিনিট পর খুলবে তা নিচের বাটন চেপে সিলেক্ট করুন অথবা শুধু সংখ্যায় লিখে পাঠান।\n\n**সহীহ উদাহরণ (Examples):**\n• \`15\` অথবা \`15m\`\n• \`90 minute\`\n\n⚠️ **সীমা:** সর্বনিম্ন **১ মিনিট** এবং সর্বোচ্চ **১০০ মিনিট**।",
         invalid_time: "❌ **ভুল ইনপুট বা ফরম্যাট!**\n\nঅনুগ্রহ করে শুধু মিনিট উল্লেখ করুন বা বাটন ব্যবহার করুন। অন্য কোনো লেখা বা ঘণ্টা গ্রহণযোগ্য নয়।",
-        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ **১০০ মিনিট** পর্যন্ত টাইম লক সেট করতে পারবেন। দয়া করে ১ থেকে ১০০ এর মধ্যে সংখ্যা দিন।",
-        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম লক দিতে হবে। ০ বা নেগেтивное সময় গ্রহণযোগ্য নয়।",
+        max_time_exceeded: "⚠️ **সীমা বহির্ভূত সময়!**\n\nআপনি সর্বোচ্চ **১০০ মিনিট** পর্যন্ত টাইম কাউন্টডাউন সেট করতে পারবেন। দয়া করে ১ থেকে ১০০ এর মধ্যে সংখ্যা দিন।",
+        time_past: "❌ সর্বনিম্ন ১ মিনিটের টাইম কাউন্টডাউন দিতে হবে। ০ বা নেগেটিভ সময় গ্রহণযোগ্য নয়।",
+        
         prompt_theme: "🎨 **একটি প্রিমিয়াম ওয়েব থিম সিলেক্ট করুন:**",
         prompt_music: "🎵 **একটি ব্যাকগ্রাউন্ড মিউজিক সিলেক্ট করুন:**",
         prompt_card_name: "🖼️ উইশ কার্ডে কার নাম লিখতে চান? নামটি লিখে পাঠান:",
         card_ready: "✨ **আপনার প্রিমিয়াম উইশ কার্ডটি তৈরি হয়ে গেছে!** 👇",
         help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
-        feedback_prompt: "📝 অনুগ্রহ করে আপনার মতামত বা পরামর্শ এখানে লিখে পাঠান:",
-        feedback_short: "❌ মতামত একটু বড় করে লিখুন (কমপক্ষে ৫টি অক্ষর)।",
-        feedback_success: "✅ আপনার মূল্যবান মতামত সফলভাবে জমা হয়েছে। ধন্যবাদ!",
+        
+        // 🔄 Feedback Prompt Update (Bangla)
+        feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+        feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
+        feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
+        
         session_cancelled: "❌ আপনার চলমান লিঙ্ক তৈরির সেশনটি বাতিল করা হয়েছে।",
         no_session: "💡 আপনার কোনো একটিভ সেশন নেই।",
         invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়। অনুগ্রহ করে নিচের মেইন মেনু ব্যবহার করুন অথবা সেশনটি বাতিল করতে /cancel লিখুন।`,
@@ -69,24 +89,30 @@ const locale = {
         general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন বা /cancel লিখে নতুন সেশন শুরু করুন।"
     },
     en: {
-        welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to Wishing Bot. Create premium links with customized time locks for free.\n\nPlease select an option below:`,
+        welcome: (name) => `💝 **Hello ${name}!** 💝\n\nWelcome to Wishing Bot. Create premium links with customized time countdowns for free.\n\nPlease select an option below:`,
         btn_make: "🚀 Make Link", btn_card: "🖼️ Wish Card Generator", btn_demo: "👀 Demo", btn_stats: "📊 Stats", btn_off: "🔒 Off Link", btn_feedback: "📝 Feedback", btn_help: "❓ Help", btn_lang: "🌐 Change Language", btn_back: "🔙 Main Menu",
         choose_cat: "✨ **Select Category:**",
         cat_love: "❤️ Love Letter", cat_crush: "💖 Crush Confession", cat_birthday: "🎂 Birthday Wish", cat_anniversary: "💍 Anniversary Wish", cat_newyear: "🎉 New Year Wish", cat_boishakh: "🌾 Pohela Boishakh", cat_friend: "🫂 Best Friend", cat_eid: "🌙 Eid Wish", cat_sorry: "🥺 Sorry Letter",
-        prompt_countdown_ask: "⏰ **Do you want to set a Time Lock for this link?**",
+        
+        // 🔄 Time Countdown Updates (English)
+        prompt_countdown_ask: "⏰ **Do you want to set a Time Countdown for this link?**",
         btn_yes: "✅ Yes", btn_no: "❌ No",
-        prompt_time_input: "⏳ Select lock duration using buttons below or send minutes as text.\n\n⚠️ Limits: Min 1 min, Max 100 mins.",
+        prompt_time_input: "⏳ Select countdown duration using buttons below or send minutes as text.\n\n⚠️ Limits: Min 1 min, Max 100 mins.",
         invalid_time: "❌ **Invalid format!** Please send minutes only.",
-        max_time_exceeded: "⚠️ **Limit Exceeded!** Max lock time is 100 minutes.",
-        time_past: "❌ Minimum lock duration is 1 minute.",
+        max_time_exceeded: "⚠️ **Limit Exceeded!** Max countdown time is 100 minutes.",
+        time_past: "❌ Minimum countdown duration is 1 minute.",
+        
         prompt_theme: "🎨 **Select a Premium Web Theme:**",
         prompt_music: "🎵 **Select a Background Music:**",
         prompt_card_name: "🖼️ Enter the name you want to print on the Wish Card:",
         card_ready: "✨ **Your premium Wish Card is ready!** 👇",
         help_text: `❓ **Help Guide:** Contact admin for support.`,
-        feedback_prompt: "📝 Please send your feedback:",
+        
+        // 🔄 Feedback Prompt Update (English)
+        feedback_prompt: "📝 **Feedback & Report:**\n\nIf you have any report, update ideas, or anything to say to the admin, please write and send your message here:",
         feedback_short: "❌ Please write more details (min 5 characters).",
-        feedback_success: "✅ Feedback submitted! Thank you.",
+        feedback_success: "✅ Your message has been successfully sent to the admin. Thank you!",
+        
         session_cancelled: "❌ Your active session has been cancelled.",
         no_session: "💡 You don't have any active session.",
         invalid_cmd: (cmd) => `❌ **Invalid input:** \`${cmd}\` is not recognized.`,
@@ -179,8 +205,8 @@ bot.command('cancel', (ctx) => {
     try {
         const userId = ctx.chat.id;
         const lang = userLanguages[userId] || 'bn';
-        if (userSessions[userId]) {
-            delete userSessions[userId];
+        if (db.userSessions[userId]) {
+            delete db.userSessions[userId];
             ctx.reply(locale[lang].session_cancelled);
             sendMainMenu(ctx, false);
         } else { 
@@ -204,8 +230,8 @@ bot.command('adm', handleAdminConsole);
 bot.action('admin_stats', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
-    const activeLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].isActive).length;
-    ctx.reply(`📊 **Metrics:**\n\nUsers: \`${registeredUsers.size}\`\nActive Links: \`${activeLinks}\` (Total: \`${totalLinksCreated}\`)\nCards: \`${totalCardsGenerated}\`\nFeedbacks: \`${totalFeedbacksReceived}\``);
+    const activeLinks = Object.keys(db.linkDatabase).filter(k => db.linkDatabase[k].isActive).length;
+     ctx.reply(`📊 **Metrics:**\n\nUsers: \`${registeredUsers.size}\`\nActive Links: \`${activeLinks}\` (Total: \`${totalLinksCreated}\`)\nCards: \`${totalCardsGenerated}\`\nFeedbacks: \`${totalFeedbacksReceived}\``);
 });
 
 bot.action('admin_toggle_maint', (ctx) => {
@@ -218,14 +244,16 @@ bot.action('admin_toggle_maint', (ctx) => {
 bot.action('admin_broadcast', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
-    userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
+    saveDB();
     ctx.reply("📢 Enter the broadcast transmission message:");
 });
 
 bot.action('admin_ban_menu', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
-    userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_ID' };
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_ID' };
+    saveDB();
     ctx.reply("🚫 Send the Telegram Chat ID to BAN/UNBAN:");
 });
 
@@ -266,9 +294,11 @@ bot.action('menu_makelink', (ctx) => {
 
 bot.action(/^make_/, (ctx) => {
     ctx.answerCbQuery();
-    userSessions[ctx.chat.id] = { type: ctx.match.input.replace('make_', ''), name: ctx.from.first_name || "User" };
+    db.userSessions[ctx.chat.id] = { type: ctx.match.input.replace('make_', ''), name: ctx.from.first_name || "User" };
+    saveDB();
     showCountdownPrompt(ctx);
 });
+
 
 function showCountdownPrompt(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -280,7 +310,8 @@ function showCountdownPrompt(ctx) {
 
 bot.action('timer_yes', (ctx) => {
     ctx.answerCbQuery();
-    userSessions[ctx.chat.id].step = 'AWAITING_COUNTDOWN_TIME';
+    db.userSessions[ctx.chat.id].step = 'AWAITING_COUNTDOWN_TIME';
+    saveDB();
     const lang = userLanguages[ctx.chat.id] || 'bn';
     
     ctx.editMessageText(locale[lang].prompt_time_input, Markup.inlineKeyboard([
@@ -298,7 +329,8 @@ bot.action('back_to_timer_ask', (ctx) => {
 bot.action(/^set_time_/, (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     const minutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
     session.pendingMinutes = minutes;
     askThemeSelection(ctx);
@@ -306,7 +338,8 @@ bot.action(/^set_time_/, (ctx) => {
 
 bot.action('timer_no', (ctx) => { 
     ctx.answerCbQuery(); 
-    userSessions[ctx.chat.id].pendingMinutes = null; 
+    db.userSessions[ctx.chat.id].pendingMinutes = null; 
+    saveDB();
     askThemeSelection(ctx); 
 });
 
@@ -321,7 +354,8 @@ function askThemeSelection(ctx) {
 
 bot.action(/^set_theme_/, (ctx) => {
     ctx.answerCbQuery();
-    userSessions[ctx.chat.id].theme = ctx.match.input.replace('set_theme_', '');
+    db.userSessions[ctx.chat.id].theme = ctx.match.input.replace('set_theme_', '');
+    saveDB();
     askMusicSelection(ctx);
 });
 
@@ -341,14 +375,16 @@ bot.action('back_to_theme', (ctx) => {
 
 bot.action(/^set_music_/, (ctx) => {
     ctx.answerCbQuery();
-    userSessions[ctx.chat.id].music = ctx.match.input.replace('set_music_', '');
+    db.userSessions[ctx.chat.id].music = ctx.match.input.replace('set_music_', '');
+    saveDB();
     showAnimationIntro(ctx);
 });
 
 function showAnimationIntro(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    ctx.editMessageText(locale[lang].session_started(userSessions[ctx.chat.id].type), Markup.inlineKeyboard([
+    db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
+   saveDB();
+    ctx.editMessageText(locale[lang].session_started(db.userSessions[ctx.chat.id].type), Markup.inlineKeyboard([
         [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে অ্যানিমেশন লিখুন" : "🤖 Write Animations with AI", "ask_ai_anim_name")],
         [Markup.button.callback(lang === 'bn' ? "🔙 পেছনে যান" : "🔙 Go Back", 'back_to_music')]
     ]), { parse_mode: 'Markdown' }).catch(()=>{});
@@ -362,7 +398,8 @@ bot.action('back_to_music', (ctx) => {
 // Card & Demos & Stats Infrastructure
 bot.action('menu_cardgen', (ctx) => { 
     ctx.answerCbQuery(); 
-    userSessions[ctx.chat.id] = { step: 'AWAITING_CARD_NAME' }; 
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_CARD_NAME' }; 
+   saveDB();
     ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].prompt_card_name); 
 });
 
@@ -386,8 +423,8 @@ bot.action('menu_stats', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const lang = userLanguages[userId] || 'bn';
-    const userLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].userId === userId && linkDatabase[k].isActive);
-    let listText = userLinks.length === 0 ? locale[lang].no_links : userLinks.map((id, i) => `${i+1}. \`${SERVER_URL}/love/${id}\` [${linkDatabase[id].type.toUpperCase()}]`).join('\n');
+    const userLinks = Object.keys(db.linkDatabase).filter(k => db.linkDatabase[k].userId === userId && db.linkDatabase[k].isActive);
+    let listText = userLinks.length === 0 ? locale[lang].no_links : userLinks.map((id, i) => `${i+1}. \`${SERVER_URL}/love/${id}\` [${db.linkDatabase[id].type.toUpperCase()}]`).join('\n');
     ctx.reply(locale[lang].profile_report(ctx.from.first_name || "User", listText));
 });
 
@@ -395,7 +432,7 @@ bot.action('menu_off', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const lang = userLanguages[userId] || 'bn';
-    const userLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].userId === userId && linkDatabase[k].isActive);
+    const userLinks = Object.keys(db.linkDatabase).filter(k => db.linkDatabase[k].userId === userId && db.linkDatabase[k].isActive);
     if (userLinks.length === 0) return ctx.reply(locale[lang].no_links);
     const buttons = userLinks.map(id => [Markup.button.callback(`❌ Off: ${id}`, `deactivate_${id}`)]);
     buttons.push([Markup.button.callback(locale[lang].off_all_links, "deactivate_all_links")]);
@@ -404,8 +441,8 @@ bot.action('menu_off', (ctx) => {
 
 bot.action('deactivate_all_links', (ctx) => {
     ctx.answerCbQuery();
-    const userLinks = Object.keys(linkDatabase).filter(k => linkDatabase[k].userId === ctx.chat.id && linkDatabase[k].isActive);
-    userLinks.forEach(id => { linkDatabase[id].isActive = false; });
+    const userLinks = Object.keys(db.linkDatabase).filter(k => db.linkDatabase[k].userId === ctx.chat.id && db.linkDatabase[k].isActive);
+    userLinks.forEach(id => { db.linkDatabase[id].isActive = false; });
     ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].deactivate_success_all(userLinks.length));
     sendMainMenu(ctx, false);
 });
@@ -413,8 +450,9 @@ bot.action('deactivate_all_links', (ctx) => {
 bot.action(/^deactivate_/, (ctx) => {
     ctx.answerCbQuery();
     const id = ctx.match.input.replace('deactivate_', '');
-    if (linkDatabase[id] && linkDatabase[id].userId === ctx.chat.id) {
-        linkDatabase[id].isActive = false;
+    if (db.linkDatabase[id] && db.linkDatabase[id].userId === ctx.chat.id) {
+        db.linkDatabase[id].isActive = false;
+     saveDB();
         ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].deactivate_success_single(id));
     }
     sendMainMenu(ctx, false);
@@ -422,7 +460,8 @@ bot.action(/^deactivate_/, (ctx) => {
 
 bot.action('menu_feedback', (ctx) => { 
     ctx.answerCbQuery(); 
-    userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; 
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; 
+   saveDB();
     ctx.reply(locale[userLanguages[ctx.chat.id] || 'bn'].feedback_prompt); 
 });
 
@@ -455,18 +494,21 @@ bot.action('back_to_anim_intro', (ctx) => {
 bot.action('ai_anim_provide_name', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    userSessions[ctx.chat.id].step = 'AWAITING_AI_ANIM_NAME';
+    db.userSessions[ctx.chat.id].step = 'AWAITING_AI_ANIM_NAME';
+    saveDB();
     ctx.reply(lang === 'bn' ? "📝 যার নাম দিতে চান, তার নামটি শুধু লিখে পাঠান:" : "📝 Enter the name you want to include:");
 });
 
 bot.action('execute_ai_animation_raw', (ctx) => {
-    userSessions[ctx.chat.id].targetName = "";
+    db.userSessions[ctx.chat.id].targetName = "";
+    saveDB();
     triggerAiAnimationGeneration(ctx);
 });
 
 async function triggerAiAnimationGeneration(ctx) {
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     if (!session) return;
     const lang = userLanguages[userId] || 'bn';
 
@@ -510,7 +552,8 @@ bot.action('regenerate_ai_animation_core', async (ctx) => {
 
 bot.action('ai_anim_previous', async (ctx) => {
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     if (!session || !session.animHistory || session.currentAnimIndex <= 0) return ctx.answerCbQuery();
 
     ctx.answerCbQuery();
@@ -540,7 +583,8 @@ bot.action('ai_anim_previous', async (ctx) => {
 bot.action('ai_anim_accept', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     if (!session || !session.tempAnimations) return;
 
     session.animations = session.tempAnimations; 
@@ -550,7 +594,7 @@ bot.action('ai_anim_accept', (ctx) => {
 
 function showLetterIntro(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    ctx.editMessageText(locale[lang].input_anim_success(userSessions[ctx.chat.id].animations.length), Markup.inlineKeyboard([
+    ctx.editMessageText(locale[lang].input_anim_success(db.userSessions[ctx.chat.id].animations.length), Markup.inlineKeyboard([
         [Markup.button.callback(lang === 'bn' ? "🤖 AI দিয়ে চিঠি লিখুন" : "🤖 Write Letter with AI", "ask_ai_letter_name")]
     ])).catch(()=>{});
 }
@@ -578,18 +622,21 @@ bot.action('back_to_letter_intro', (ctx) => {
 bot.action('ai_letter_provide_name', (ctx) => {
     ctx.answerCbQuery();
     const lang = userLanguages[ctx.chat.id] || 'bn';
-    userSessions[ctx.chat.id].step = 'AWAITING_AI_LETTER_NAME';
+    db.userSessions[ctx.chat.id].step = 'AWAITING_AI_LETTER_NAME';
+    saveDB();
     ctx.reply(lang === 'bn' ? "📝 যার নাম দিতে চান, তার নামটি শুধু লিখে পাঠান:" : "📝 Enter the name you want to include inside the letter:");
 });
 
 bot.action('execute_ai_letter_raw', (ctx) => {
-    userSessions[ctx.chat.id].letterTargetName = "";
+    db.userSessions[ctx.chat.id].letterTargetName = "";
+    saveDB();
     triggerAiLetterGeneration(ctx);
 });
 
 async function triggerAiLetterGeneration(ctx) {
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     if (!session) return;
     const lang = userLanguages[userId] || 'bn';
 
@@ -630,7 +677,8 @@ bot.action('regenerate_ai_letter_core', async (ctx) => {
 
 bot.action('ai_letter_previous', async (ctx) => {
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     if (!session || !session.aiLettersHistory || session.currentHistoryIndex <= 0) return ctx.answerCbQuery();
 
     ctx.answerCbQuery();
@@ -660,7 +708,8 @@ bot.action('ai_letter_previous', async (ctx) => {
 bot.action('ai_letter_accept', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     if (!session || !session.tempAiLetter) return;
 
     processFinalLinkCreation(ctx, session.tempAiLetter);
@@ -670,7 +719,8 @@ bot.action('ai_letter_accept', (ctx) => {
 // 🎯 State Machine & Text Processing Engine
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     const text = ctx.message.text.trim();
     const lang = userLanguages[userId] || 'bn';
 
@@ -687,14 +737,14 @@ bot.on('text', (ctx) => {
             if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
                 registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
                 ctx.reply("📡 Broadcast distribution cycle finished.");
-                delete userSessions[userId]; return;
+                delete db.userSessions[userId]; return;
             }
             if (session.step === 'AWAITING_BAN_USER_ID') {
                 const targetId = parseInt(text, 10);
                 if (isNaN(targetId)) return ctx.reply("❌ Invalid Chat ID. Please send a numeric ID.");
                 if (bannedUsers.has(targetId)) { bannedUsers.delete(targetId); ctx.reply("🟢 Target Unbanned successfully."); }
                 else { bannedUsers.add(targetId); ctx.reply("🚫 Target Banned successfully."); }
-                delete userSessions[userId]; return;
+                delete db.userSessions[userId]; return;
             }
         }
 
@@ -703,14 +753,14 @@ bot.on('text', (ctx) => {
             totalFeedbacksReceived++;
             bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback from User ${userId}:\n\n${text}`).catch(()=>{});
             ctx.reply(locale[lang].feedback_success);
-            delete userSessions[userId]; sendMainMenu(ctx, false); return;
+            delete db.userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
         if (session.step === 'AWAITING_CARD_NAME') {
             totalCardsGenerated++; 
             ctx.reply(locale[lang].card_ready);
             ctx.replyWithPhoto({ url: `https://dummyimage.com/600x400/ff4b72/fff.png&text=${encodeURIComponent(text)}` }).catch(()=>{});
-            delete userSessions[userId]; sendMainMenu(ctx, false); return;
+            delete db.userSessions[userId]; sendMainMenu(ctx, false); return;
         }
 
         if (session.step === 'AWAITING_COUNTDOWN_TIME') {
@@ -764,7 +814,8 @@ bot.on('text', (ctx) => {
 
 function processFinalLinkCreation(ctx, letterText) {
     const userId = ctx.chat.id;
-    const session = userSessions[userId];
+    const session = db.userSessions[userId];
+    saveDB();
     const lang = userLanguages[userId] || 'bn';
 
     totalLinksCreated++;
@@ -777,14 +828,15 @@ function processFinalLinkCreation(ctx, letterText) {
     }
 
     const uniqueId = Math.random().toString(36).substring(2, 9);
-    linkDatabase[uniqueId] = {
+    db.linkDatabase[uniqueId] = {
         userId: userId, name: session.name, type: session.type,
         theme: session.theme, music: session.music, countdown: finalCountdownIso,
         animations: session.animations, letter: letterText, isActive: true
     };
+    saveDB();
     
     ctx.reply(locale[lang].link_ready(`${SERVER_URL}/love/${uniqueId}`));
-    delete userSessions[userId];
+    delete db.userSessions[userId];
 }
 
 function sendMainMenu(ctx, isEdit = false) {
@@ -812,7 +864,7 @@ app.post('/api/get-content', (req, res) => {
         if (!id) return res.json({ success: false });
         if (id.startsWith('demo-preview')) return res.json({ success: true, isLocked: false, theme: 'neon', music: 'none', animations: ["Demo Line 1", "Demo Line 2"], letter: "This is placeholder preview letter." });
         
-        const data = linkDatabase[id];
+        const data = db.linkDatabase[id];
         if (!data || !data.isActive) return res.json({ success: false });
 
         const lang = userLanguages[data.userId] || 'bn';
@@ -834,20 +886,73 @@ app.post('/api/get-content', (req, res) => {
     }
 });
 
-app.post('/api/respond', (req, res) => {
+// API Route (Time Lock Support included)
+app.post('/api/get-content', async (req, res) => {
     try {
-        const { response, id } = req.body;
-        const data = linkDatabase[id];
-        if (data && data.isActive) {
-            const lang = userLanguages[data.userId] || 'bn';
-            bot.telegram.sendMessage(data.userId, locale[lang].new_response(data.type, response)).catch(()=>{});
-            return res.json({ success: true });
+        const { id } = req.body;
+        const data = db.linkDatabase[id];
+        if (!data || !data.isActive) return res.json({ success: false });
+
+        bot.telegram.sendMessage(data.userId, esc(`👀 Link opened!`)).catch(e => console.error(e));
+
+        // Time Lock Check
+        if (data.countdown) {
+            const now = new Date();
+            const lockTime = new Date(data.countdown);
+            if (lockTime > now) {
+                return res.json({ success: true, isLocked: true, countdownTime: data.countdown, theme: data.theme });
+            }
         }
-        res.json({ success: false });
+
+        return res.json({ 
+            success: true, 
+            isLocked: false,
+            theme: data.theme, 
+            music: data.music, 
+            animations: data.animations, 
+            letter: data.letter 
+        });
     } catch (err) {
         res.json({ success: false });
     }
 });
 
+// Final Link Creation (Modified to use 'db')
+function processFinalLinkCreation(ctx, letterText) {
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    const uniqueId = Math.random().toString(36).substring(2, 9);
+    
+    // Time logic
+    let finalCountdownIso = null;
+    if (session.pendingMinutes) {
+        const targetDate = new Date();
+        targetDate.setMinutes(targetDate.getMinutes() + session.pendingMinutes);
+        finalCountdownIso = targetDate.toISOString();
+    }
+    
+    db.linkDatabase[uniqueId] = {
+        userId, 
+        type: session.type,
+        theme: session.theme, 
+        animations: session.animations, 
+        letter: letterText, 
+        countdown: finalCountdownIso,
+        isActive: true
+    };
+    
+    db.totalLinksCreated++;
+    saveDB(); 
+    
+    ctx.reply(esc(`✅ Link ready: ${SERVER_URL}/love/${uniqueId}`));
+    delete db.userSessions[userId];
+    saveDB();
+}
+
+app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => { bot.launch(); console.log(`Engines configured. Port: ${PORT}`); });
+app.listen(PORT, () => {
+    bot.launch();
+    console.log(`Server & Bot running on port ${PORT}`);
+});
