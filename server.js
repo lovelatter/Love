@@ -512,42 +512,41 @@ bot.action('execute_ai_animation_raw', (ctx) => {
 async function triggerAiAnimationGeneration(ctx) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
-    saveDB();
     if (!session) return;
     const lang = userLanguages[userId] || 'bn';
 
-    if (!session.animHistory) {
-        session.animHistory = [];
-        session.currentAnimIndex = -1;
-    }
+    // ইউনিক টাইমস্ট্যাম্প যোগ করে ক্যাশ সমস্যা সমাধান করা হয়েছে
+    const prompt = `Write an animation text for ${session.targetName || 'someone'}`;
+    const url = `https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}&t=${Date.now()}`;
 
-    const rawAnimText = await generateAiContent('animation', session.type, lang, session.targetName);
-    const parsedAnims = rawAnimText.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
+    try {
+        const response = await axios.get(url);
+        const rawText = (response.data.answer || response.data).replace(/["']/g, "").trim();
+        const parsedAnims = rawText.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
 
-    session.animHistory.push(parsedAnims);
-    session.currentAnimIndex = session.animHistory.length - 1;
-    session.tempAnimations = parsedAnims;
+        if (!session.animHistory) session.animHistory = [];
+        session.animHistory.push(parsedAnims);
+        session.currentAnimIndex = session.animHistory.length - 1;
+        session.tempAnimations = parsedAnims;
+        saveDB(); // ডাটা আপডেট নিশ্চিত করা হয়েছে
 
-    const showText = parsedAnims.map((t, idx) => `লাইন ${idx + 1}: ${t}`).join('\n');
+        const showText = parsedAnims.map((t, idx) => `লাইন ${idx + 1}: ${t}`).join('\n');
+        const promptMsg = lang === 'bn' 
+            ? `🤖 **AI এর লেখা অ্যানিমেশন টেক্সট (সংস্করণ: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n\nআপনার কি এটি পছন্দ হয়েছে?`
+            : `🤖 **AI Generated Animations (Version: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n\nDo you like it?`;
 
-    const promptMsg = lang === 'bn'
-        ? `🤖 **AI এর লেখা অ্যানিমেশন টেক্সট (সংস্করণ: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **পরামর্শ:** পছন্দ না হলে নিচে নিজের মতো করে নতুন টেক্সট লিখে পাঠাতে পারেন।\n\nআপনার কি এটি পছন্দ হয়েছে?`
-        : `🤖 **AI Generated Animations (Version: ${session.currentAnimIndex + 1}):**\n\n\`\`\`\n${showText}\n\`\`\`\n💡 **Tip:** If you dislike this, you can type your own text below.\n\nDo you like it?`;
+        const buttons = [
+            [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_anim_accept")],
+            [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_animation_core")]
+        ];
 
-    const buttons = [
-        [Markup.button.callback(lang === 'bn' ? "✅ এটিই রাখব" : "✅ Keep this", "ai_anim_accept")],
-        [Markup.button.callback(lang === 'bn' ? "🔄 পরিবর্তন করুন" : "🔄 Change/Regenerate", "regenerate_ai_animation_core")]
-    ];
-
-    if (session.animHistory.length > 1) {
-        buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 আগের লেখা" : "🔙 Previous Text", "ai_anim_previous")]);
-    }
-    buttons.push([Markup.button.callback(lang === 'bn' ? "🔙 মূল অপশনে যান" : "🔙 Main Option", "ask_ai_anim_name")]);
-
-    try { ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' }); } catch(e){
-        ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'MarkdownV2' });
+        try { ctx.editMessageText(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' }); } 
+        catch(e) { ctx.reply(promptMsg, Markup.inlineKeyboard(buttons), { parse_mode: 'Markdown' }); }
+    } catch (error) {
+        ctx.reply(lang === 'bn' ? "দুঃখিত, এআই সার্ভার ডাউন আছে।" : "Sorry, AI server is down.");
     }
 }
+
 
 bot.action('regenerate_ai_animation_core', async (ctx) => {
     ctx.answerCbQuery("🤖 নতুন করে তৈরি হচ্ছে...");
