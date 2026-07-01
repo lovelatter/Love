@@ -170,9 +170,10 @@ async function generateAiContent(type, category, lang, targetName = "") {
         }
         return getDefaultFallback(type, lang, targetName);
     } catch (e) {
-        console.error("Gemini Error:", e);
-        return getDefaultFallback(type, lang, targetName);
-    }
+    console.error("Gemini Error:", e);
+    // Eta bosele bot-er chat-e ashbe ki bhul hochhe
+    ctx.reply(`AI Error somossa: ${e.message}`); 
+    return getDefaultFallback(type, lang, targetName);
 }
 
 function getDefaultFallback(type, lang, targetName = "") {
