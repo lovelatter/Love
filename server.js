@@ -588,13 +588,18 @@ bot.action('ai_anim_accept', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
-    saveDB();
+
+    // নিশ্চিত করুন সেশনে টেম্পোরারি অ্যানিমেশন ডাটা আছে[span_1](start_span)[span_1](end_span)
     if (!session || !session.tempAnimations) return;
 
+    // সেশনে ডাটা সেভ করুন এবং পরবর্তী স্টেপ সেট করুন[span_2](start_span)[span_2](end_span)
     session.animations = session.tempAnimations; 
     session.step = 'AWAITING_LETTER_TEXT'; 
+    
+    saveDB(); // ডাটাবেসে স্থায়ীভাবে সেভ করুন[span_3](start_span)[span_3](end_span)
     showLetterIntro(ctx);
 });
+
 
 function showLetterIntro(ctx) {
     const lang = userLanguages[ctx.chat.id] || 'bn';
@@ -713,11 +718,15 @@ bot.action('ai_letter_accept', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
-    saveDB();
+
+    // নিশ্চিত করুন সেশনে টেম্পোরারি লেটার ডাটা আছে[span_4](start_span)[span_4](end_span)
     if (!session || !session.tempAiLetter) return;
 
+    // সেশন ডাটা আপডেট করে প্রসেসিং ফাংশন কল করুন[span_5](start_span)[span_5](end_span)
+    saveDB(); // ডাটা আপডেট হওয়ার আগেই সেভ নিশ্চিত করুন[span_6](start_span)[span_6](end_span)
     processFinalLinkCreation(ctx, session.tempAiLetter);
 });
+
 
 
 // 🎯 State Machine & Text Processing Engine
