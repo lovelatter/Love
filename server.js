@@ -3,6 +3,10 @@ const path = require('path');
 const axios = require('axios');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+// আপনার API Key কনফিগারেশন (আপনার টেলিগ্রাম টোকেনের মতোই সেট করুন)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const app = express();
 app.use(express.json());
@@ -155,12 +159,18 @@ async function generateAiContent(type, category, lang, targetName = "") {
                 : `Write a short, heart-touching, beautiful message or letter in English for the category: "${category}". ${nameContext} Keep it under 80 words. Give only the core letter.`;
         }
         
-        const response = await axios.get(`https://sandipbaruwal.onrender.com/gpt?prompt=${encodeURIComponent(prompt)}&t=${Date.now()}`);
-        if (response.data && response.data.answer) {
-            return response.data.answer.replace(/["']/g, "").trim();
+        // Gemini API কল
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        if (text) {
+            return text.replace(/["']/g, "").trim();
         }
         return getDefaultFallback(type, lang, targetName);
     } catch (e) {
+        console.error("Gemini Error:", e);
         return getDefaultFallback(type, lang, targetName);
     }
 }
