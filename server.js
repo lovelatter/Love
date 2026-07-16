@@ -89,7 +89,6 @@ bot.start(async (ctx) => {
             userId,
             name: firstName,
             username,
-            phone: '',
             banned: false,
             joinedAt: Date.now()
         });
@@ -150,15 +149,7 @@ bot.action('menu_contact', async (ctx) => {
 });
 
 bot.action('menu_generate', async (ctx) => {
-    const userId = ctx.from.id;
-    const user = await db.users.findOne({ userId: String(userId) });
-
-    if (!user || !user.phone) {
-        userSessions[userId] = { state: 'ASK_PHONE' };
-        await ctx.editMessageText("লিংক তৈরি করতে দয়া করে আপনার ফোন নম্বরটি লিখুন।");
-    } else {
-        await askTopic(ctx);
-    }
+    await askTopic(ctx);
 });
 
 async function askTopic(ctx) {
@@ -236,8 +227,7 @@ bot.on('text', async (ctx) => {
     if (!session) return;
 
     if (session.state === 'CONTACTING_ADMIN') {
-        const user = await db.users.findOne({ userId: String(userId) });
-        const adminMsg = `একজন ইউজার আপনাকে মেসেজ পাঠিয়েছেন।\nName: ${ctx.from.first_name || ''}\nUsername: ${ctx.from.username ? '@' + ctx.from.username : 'নেই'}\nUser ID: ${userId}\nNumber: ${user ? user.phone : 'নেই'}\n\nমেসেজ:\n${text}`;
+        const adminMsg = `একজন ইউজার আপনাকে মেসেজ পাঠিয়েছেন।\nName: ${ctx.from.first_name || ''}\nUsername: ${ctx.from.username ? '@' + ctx.from.username : 'নেই'}\nUser ID: ${userId}\n\nমেসেজ:\n${text}`;
         
         await ctx.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, Markup.inlineKeyboard([
             [Markup.button.callback('Ban', `adm_ban_${userId}`), Markup.button.callback('Contact', `adm_contact_${userId}`)]
@@ -257,13 +247,6 @@ bot.on('text', async (ctx) => {
             await ctx.reply("ইউজারকে মেসেজ পাঠানো যায়নি। হয়তো ইউজার বটটি ব্লক করেছে।");
         }
         delete userSessions[userId];
-        return;
-    }
-
-    if (session.state === 'ASK_PHONE') {
-        await db.users.update({ userId: String(userId) }, { $set: { phone: text } });
-        delete userSessions[userId];
-        await askTopic(ctx);
         return;
     }
 
@@ -317,8 +300,7 @@ bot.on('text', async (ctx) => {
         const fullUrl = `${SERVER_URL}/letter/${linkId}`;
         await ctx.reply(`নিচে আপনার তৈরি করা লিংক দেয়া হলো। আপনি যাকে পাঠাতে চান নিচের লিংক কপি করে পাঠিয়ে দিন。\n\n${fullUrl}`, mainKeyboard(userId));
 
-        const creator = await db.users.findOne({ userId: String(userId) });
-        const adminAlert = `নতুন লিংক তৈরি করা হয়েছে।\nName: ${ctx.from.first_name || ''}\nUsername: ${ctx.from.username ? '@' + ctx.from.username : 'নেই'}\nUser ID: ${userId}\nNumber: ${creator ? creator.phone : 'নেই'}`;
+        const adminAlert = `নতুন লিংক তৈরি করা হয়েছে।\nName: ${ctx.from.first_name || ''}\nUsername: ${ctx.from.username ? '@' + ctx.from.username : 'নেই'}\nUser ID: ${userId}`;
         
         await ctx.telegram.sendMessage(ADMIN_CHAT_ID, adminAlert, Markup.inlineKeyboard([
             [Markup.button.callback('Ban User', `adm_ban_${userId}`)]
