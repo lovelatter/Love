@@ -77,6 +77,7 @@ bot.use(async (ctx, next) => {
         const kb = Markup.inlineKeyboard([[Markup.button.callback('Contact with Admin', 'menu_contact_now')]]);
 
         if (ctx.callbackQuery) {
+            try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
             try { await ctx.editMessageText(msgText, kb); } catch (e) { await ctx.reply(msgText, kb); }
         } else {
             await ctx.reply(msgText, kb);
@@ -128,6 +129,7 @@ async function sendAdminDashboard(ctx, edit = false) {
 }
 
 bot.action('menu_main', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const userId = ctx.from.id;
     await deleteSession(userId);
     const welcomeMsg = `হ্যালো ${ctx.from.first_name || ''}। বটের পক্ষ থেকে স্বাগতম। আপনার টপিক সিলেক্ট করুন।`;
@@ -135,24 +137,30 @@ bot.action('menu_main', async (ctx) => {
 });
 
 bot.action('menu_help', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const txt = "সাহায্যঃ\nএই বট দিয়ে আপনি সুন্দর ওয়েবসাইট লিংক তৈরি করতে পারেন। প্রথমে 'লিংক তৈরি করুন' বাটনে চাপ দিন, তারপর একে একে টপিক, কাউন্টডাউন সময়, অ্যানিমেশন টেক্সট এবং আপনার চিঠিটি ইনপুট দিন। শেষে আপনি একটি লিংক পাবেন যা প্রিয় মানুষকে পাঠাতে পারেন।";
     const kb = Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'menu_main')]]);
     await ctx.editMessageText(txt, kb);
 });
 
 bot.action('menu_contact_now', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const userId = ctx.from.id;
     await saveSession(userId, { state: 'CONTACTING_ADMIN' });
     await ctx.editMessageText("এডমিন কে যা বলতে চান এখানে লিখে সেন্ট করুন আমি আপনার মতামত এডমিনের কাছে পৌঁছে দেবো।", Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'menu_main')]]));
 });
 
 bot.action('menu_contact', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const userId = ctx.from.id;
     await saveSession(userId, { state: 'CONTACTING_ADMIN' });
     await ctx.editMessageText("এডমিন কে যা বলতে চান এখানে লিখে সেন্ট করুন আমি আপনার মতামত এডমিনের কাছে পৌঁছে দেবো।", Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'menu_main')]]));
 });
 
-bot.action('menu_generate', async (ctx) => { await askTopic(ctx); });
+bot.action('menu_generate', async (ctx) => { 
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
+    await askTopic(ctx); 
+});
 
 async function askTopic(ctx) {
     const txt = "apni kun topic er jonno link banate chan seta select korun";
@@ -174,6 +182,7 @@ const musicAndTitles = {
 };
 
 bot.action(/^topic_(.+)$/, async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const topic = ctx.match[1];
     const userId = ctx.from.id;
     await saveSession(userId, {
@@ -193,16 +202,30 @@ bot.action(/^topic_(.+)$/, async (ctx) => {
 });
 
 bot.action(/^cd_(.+)$/, async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const minutes = parseInt(ctx.match[1], 10);
     const userId = ctx.from.id;
-    const session = await getSession(userId);
-    if (!session) return;
+    let session = await getSession(userId);
+    
+    // সেশন না থাকলে একটি ডিফল্ট সেশন তৈরি করে নেওয়া হচ্ছে ক্র্যাশ এড়াতে
+    if (!session) {
+        session = {
+            topic: 'crush',
+            music: musicAndTitles['crush'].src,
+            title: musicAndTitles['crush'].title
+        };
+    }
 
-    await saveSession(userId, { countdown: minutes });
-    await askAnimationTexts(ctx, true); // true পাঠানো হলো কারণ বাটন ক্লিক করা হয়েছে
+    await saveSession(userId, { 
+        state: 'ASK_ANIMATION_TEXTS',
+        countdown: minutes,
+        topic: session.topic,
+        music: session.music,
+        title: session.title
+    });
+    await askAnimationTexts(ctx, true); 
 });
 
-// edit প্যারামিটার দিয়ে ফিক্স করা হলো
 async function askAnimationTexts(ctx, edit = false) {
     const userId = ctx.from.id;
     const session = await getSession(userId);
@@ -217,7 +240,6 @@ async function askAnimationTexts(ctx, edit = false) {
     }
 }
 
-// এখানেও edit প্যারামিটার দিয়ে ক্র্যাশ এড়ানো হলো
 async function askLetter(ctx, edit = false) {
     const userId = ctx.from.id;
     await saveSession(userId, { state: 'ASK_LETTER' });
@@ -231,7 +253,10 @@ async function askLetter(ctx, edit = false) {
     }
 }
 
-bot.action('back_to_animation_prompt', async (ctx) => { await askAnimationTexts(ctx, true); });
+bot.action('back_to_animation_prompt', async (ctx) => { 
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
+    await askAnimationTexts(ctx, true); 
+});
 
 bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
@@ -269,7 +294,7 @@ bot.on('text', async (ctx) => {
             return;
         }
         await saveSession(userId, { countdown: minutes });
-        await askAnimationTexts(ctx, false); // টেক্সট ইনপুট এসেছে, তাই edit = false
+        await askAnimationTexts(ctx, false); 
         return;
     }
 
@@ -283,7 +308,7 @@ bot.on('text', async (ctx) => {
         }
 
         await saveSession(userId, { animations: list });
-        await askLetter(ctx, false); // টেক্সট ইনপুট এসেছে, তাই edit = false
+        await askLetter(ctx, false); 
         return;
     }
 
@@ -294,11 +319,11 @@ bot.on('text', async (ctx) => {
         const newLink = {
             linkId,
             userId: String(userId),
-            topic: updatedSession.topic,
-            music: updatedSession.music,
-            title: updatedSession.title,
-            countdown: updatedSession.countdown,
-            animations: updatedSession.animations,
+            topic: updatedSession.topic || 'crush',
+            music: updatedSession.music || musicAndTitles['crush'].src,
+            title: updatedSession.title || musicAndTitles['crush'].title,
+            countdown: updatedSession.countdown || 3,
+            animations: updatedSession.animations || [],
             letter: text,
             createdAt: Date.now()
         };
@@ -344,6 +369,7 @@ bot.on('text', async (ctx) => {
 });
 
 bot.action('adm_toggle_m', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     let config = await db.settings.findOne({ key: 'config' });
     if (!config) { config = { key: 'config', maintenance: false }; await db.settings.insert(config); }
     const newStatus = !config.maintenance;
@@ -352,26 +378,31 @@ bot.action('adm_toggle_m', async (ctx) => {
 });
 
 bot.action('adm_announce', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     await saveSession(ctx.from.id, { state: 'ADMIN_ASK_ANNOUNCEMENT' });
     await ctx.editMessageText("অ্যানাউন্সমেন্ট মেসেজটি লিখুন:");
 });
 
 bot.action('adm_ban_unban_prompt', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     await saveSession(ctx.from.id, { state: 'ADMIN_ASK_BAN_UNBAN' });
     await ctx.editMessageText("ব্যান বা আনব্যান করার জন্য ইউজার আইডিটি লিখুন:");
 });
 
 bot.action(/^adm_ban_(.+)$/, async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     await db.users.update({ userId: ctx.match[1] }, { $set: { banned: true } });
     await ctx.reply(`${ctx.match[1]} কে ব্যান করা হলো`);
 });
 
 bot.action(/^adm_contact_(.+)$/, async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     await saveSession(ctx.from.id, { state: 'ADMIN_REPLY_INBOX', targetUser: ctx.match[1] });
     await ctx.reply(`ইউজার ${ctx.match[1]} এর কাছে রিপ্লাই পাঠানোর জন্য টেক্সট লিখুন:`);
 });
 
 bot.action('adm_user_list', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const allUsers = await db.users.find({});
     let txt = `মোট ইউজার সংখ্যা: ${allUsers.length}\n\n`;
     const kbRows = [];
@@ -384,6 +415,7 @@ bot.action('adm_user_list', async (ctx) => {
 });
 
 bot.action('adm_ban_list', async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     const bannedUsers = await db.users.find({ banned: true });
     let txt = `মোট ব্যান সংখ্যা: ${bannedUsers.length}\n\n`;
     const kbRows = [];
@@ -396,11 +428,15 @@ bot.action('adm_ban_list', async (ctx) => {
 });
 
 bot.action(/^adm_unban_(.+)$/, async (ctx) => {
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
     await db.users.update({ userId: ctx.match[1] }, { $set: { banned: false } });
     await ctx.reply(`${ctx.match[1]} কে আনব্যান করা হলো`);
 });
 
-bot.action('adm_back', async (ctx) => { await sendAdminDashboard(ctx, true); });
+bot.action('adm_back', async (ctx) => { 
+    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
+    await sendAdminDashboard(ctx, true); 
+});
 
 // Webhook endpoint (টেলিগ্রাম সরাসরি এখানে মেসেজ পুশ করবে)
 app.use(bot.webhookCallback('/telegram-webhook'));
