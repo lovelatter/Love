@@ -32,7 +32,6 @@ async function isBanned(userId) {
     return user ? user.banned : false;
 }
 
-// ⚠️ এখানে আইডি সবসময় String করা হলো যাতে NeDB সঠিকভাবে খুঁজে পায়
 async function getSession(userId) {
     return await db.sessions.findOne({ userId: String(userId) });
 }
@@ -200,27 +199,39 @@ bot.action(/^cd_(.+)$/, async (ctx) => {
     if (!session) return;
 
     await saveSession(userId, { countdown: minutes });
-    await askAnimationTexts(ctx);
+    await askAnimationTexts(ctx, true); // true পাঠানো হলো কারণ বাটন ক্লিক করা হয়েছে
 });
 
-async function askAnimationTexts(ctx) {
+// edit প্যারামিটার দিয়ে ফিক্স করা হলো
+async function askAnimationTexts(ctx, edit = false) {
     const userId = ctx.from.id;
     const session = await getSession(userId);
     await saveSession(userId, { state: 'ASK_ANIMATION_TEXTS' });
     const txt = "আপনার ইচ্ছামত কয়েকটি এনিমেশন টেক্সট দিন। এনিমেশন টেক্সট কমা (,) বা ইন্টার দিয়ে দিয়ে আলাদা এনিমেশন দিন। (যেমন হ্যালো, আমার প্রিয়, তোমাকে কিছু বলতে চাই)";
     const kb = Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', `topic_${session ? session.topic : 'crush'}`)]]);
-    await ctx.editMessageText(txt, kb);
+    
+    if (edit && ctx.callbackQuery) {
+        await ctx.editMessageText(txt, kb);
+    } else {
+        await ctx.reply(txt, kb);
+    }
 }
 
-async function askLetter(ctx) {
+// এখানেও edit প্যারামিটার দিয়ে ক্র্যাশ এড়ানো হলো
+async function askLetter(ctx, edit = false) {
     const userId = ctx.from.id;
     await saveSession(userId, { state: 'ASK_LETTER' });
     const txt = "এখন মূল চিঠিটি (Letter) লিখুন যা এনিমেশন শেষ হওয়ার পর দেখা যাবে।";
     const kb = Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'back_to_animation_prompt')]]);
-    await ctx.editMessageText(txt, kb);
+    
+    if (edit && ctx.callbackQuery) {
+        await ctx.editMessageText(txt, kb);
+    } else {
+        await ctx.reply(txt, kb);
+    }
 }
 
-bot.action('back_to_animation_prompt', async (ctx) => { await askAnimationTexts(ctx); });
+bot.action('back_to_animation_prompt', async (ctx) => { await askAnimationTexts(ctx, true); });
 
 bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
@@ -258,7 +269,7 @@ bot.on('text', async (ctx) => {
             return;
         }
         await saveSession(userId, { countdown: minutes });
-        await askAnimationTexts(ctx);
+        await askAnimationTexts(ctx, false); // টেক্সট ইনপুট এসেছে, তাই edit = false
         return;
     }
 
@@ -272,7 +283,7 @@ bot.on('text', async (ctx) => {
         }
 
         await saveSession(userId, { animations: list });
-        await askLetter(ctx);
+        await askLetter(ctx, false); // টেক্সট ইনপুট এসেছে, তাই edit = false
         return;
     }
 
