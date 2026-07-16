@@ -32,6 +32,7 @@ async function isBanned(userId) {
     return user ? user.banned : false;
 }
 
+// ⚠️ এখানে আইডি সবসময় String করা হলো যাতে NeDB সঠিকভাবে খুঁজে পায়
 async function getSession(userId) {
     return await db.sessions.findOne({ userId: String(userId) });
 }
@@ -229,7 +230,7 @@ bot.on('text', async (ctx) => {
     if (!session) return;
 
     if (session.state === 'CONTACTING_ADMIN') {
-        const adminMsg = `একজন ইউজার আপনাকে মেসেজ পাঠিয়েছেন。\nName: ${ctx.from.first_name || ''}\nUsername: ${ctx.from.username ? '@' + ctx.from.username : 'নেই'}\nUser ID: ${userId}\n\nমেসেজ:\n${text}`;
+        const adminMsg = `একজন ইউজার আপনাকে মেসেজ পাঠিয়েছেন।\nName: ${ctx.from.first_name || ''}\nUsername: ${ctx.from.username ? '@' + ctx.from.username : 'নেই'}\nUser ID: ${userId}\n\nমেসেজ:\n${text}`;
         await ctx.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, Markup.inlineKeyboard([
             [Markup.button.callback('Ban', `adm_ban_${userId}`), Markup.button.callback('Contact', `adm_contact_${userId}`)]
         ]));
@@ -430,7 +431,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`Server listening on port ${PORT}`);
     try {
-        // রেন্ডার চালু হওয়ার সাথে সাথে টেলিগ্রামে ওয়েবহুক রেজিস্টার করে নেবে
         await bot.telegram.setWebhook(`${SERVER_URL}/telegram-webhook`);
         console.log('Webhook successfully registered!');
     } catch (e) {
