@@ -85,7 +85,6 @@ const locale = {
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
 
-// Middleware Logic (Maintenance Security Handle)
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
     if (!userId) return;
@@ -94,27 +93,20 @@ bot.use(async (ctx, next) => {
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
     saveDB();
 
-    // Admin is fully bypassed
     if (Number(userId) === Number(ADMIN_CHAT_ID)) return next();
-    
-    // Banned users are completely ignored
     if (db.bannedUsers.includes(userId)) return;
     
-    // Maintenance Mode handling
     if (db.isMaintenanceMode) {
         const session = db.userSessions[userId];
         
-        // If user is currently typing feedback, allow them to complete it
         if (session?.step === 'AWAITING_USER_FEEDBACK') {
             return next();
         }
         
-        // If user clicked the feedback button during maintenance
         if (ctx.callbackQuery?.data === 'menu_feedback') {
             return next();
         }
 
-        // Send maintenance message with only the feedback button
         const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
         
         if (ctx.callbackQuery) {
@@ -448,9 +440,9 @@ bot.on('text', async (ctx) => {
         delete db.userSessions[userId];
         saveDB();
         
-        // Custom reply if feedback is submitted during Maintenance Mode
+        // If maintenance mode is active, send only the success text without any bottom buttons
         if (db.isMaintenanceMode) {
-            return ctx.reply("✅ আপনার মতামত সফলভাবে অ্যাডমিনের কাছে পাঠানো হয়েছে। ধন্যবাদ!", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]));
+            return ctx.reply("✅ আপনার মতামত সফলভাবে অ্যাডমিনের কাছে পাঠানো হয়েছে। ধন্যবাদ!");
         }
         
         return ctx.reply(locale.feedback_success, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
