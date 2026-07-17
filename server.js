@@ -94,14 +94,12 @@ const locale = {
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     
-    session_cancelled: "❌ আপনার চলমান লিঙ্ক তৈরির সেশনটি বাতিল করা হয়েছে।",
-    no_session: "💡 আপনার কোনো একটিভ সেশন নেই।",
-    invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়। অনুগ্রহ করে নিচের মেইন মেনু ব্যবহার করুন অথবা সেশনটি বাতিল করতে /cancel লিখুন।`,
-    maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে ასছি।",
+    invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়। অনুগ্রহ করে নিচের মেইন মেনু ব্যবহার করুন।`,
+    maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে আসছি।",
     session_started: () => `✨ **অ্যানিমেশন মেসেজ লিখুন।**\n\n💡**লেখার নিয়ম:**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     link_ready: (url) => `💝 অভিনন্দন! আপনার কাস্টমাইজড প্রিমিয়াম লিঙ্ক সম্পূর্ণ রেডি:\n\n${url}\n\n👉 এই লিঙ্কটি আপনার প্রিয়জনের সাথে শেয়ার করুন।`,
-    general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন বা /cancel লিখে নতুন সেশন শুরু করুন।"
+    general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
 
 // 🛡️ Security Middlewares
@@ -128,19 +126,6 @@ bot.command('start', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-bot.command('cancel', (ctx) => {
-    try {
-        const userId = ctx.chat.id;
-        if (db.userSessions[userId]) {
-            delete db.userSessions[userId];
-            ctx.reply(locale.session_cancelled);
-            sendMainMenu(ctx, false);
-        } else { 
-            ctx.reply(locale.no_session); 
-        }
-    } catch (err) { console.error(err); }
-});
-
 // Admin Core & Check Answer Action Handler
 bot.action(/^chk_ans_(.+)$/, (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
@@ -148,7 +133,7 @@ bot.action(/^chk_ans_(.+)$/, (ctx) => {
     const data = db.linkDatabase[linkId];
     
     if (!data) {
-        return ctx.answerCbQuery("❌ লিঙ্কটি খুঁজে পাওয়া যায়নি।", { show_alert: true });
+        return ctx.answerCbQuery("❌ লিঙ্কটি অলরেডি রিমুভ করা হয়েছে বা খুঁজে পাওয়া যায়নি।", { show_alert: true });
     }
 
     if (!data.answer) {
@@ -157,6 +142,30 @@ bot.action(/^chk_ans_(.+)$/, (ctx) => {
 
     ctx.answerCbQuery();
     ctx.reply(`📊 **ইউজারের উত্তরের বিবরণ:**\n\nName: ${data.name}\nCategory: ${data.type.toUpperCase()}\nAns: ${data.answer}`);
+});
+
+// ইউজার কর্তৃক লিংক রিমুভ করার অ্যাকশন হ্যান্ডলার
+bot.action(/^delete_link_(.+)$/, (ctx) => {
+    const linkId = ctx.match[1];
+    const data = db.linkDatabase[linkId];
+
+    if (!data) {
+        return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
+    }
+
+    // নিরাপত্তা যাচাই: যে তৈরি করেছে শুধু সেই ডিলিট করতে পারবে
+    if (Number(data.userId) !== Number(ctx.chat.id)) {
+        return ctx.answerCbQuery("❌ এই লিঙ্কটি ডিলিট করার পারমিশন আপনার নেই।", { show_alert: true });
+    }
+
+    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
+    
+    // ডাটাবেজ থেকে একেবারে ডিলিট
+    delete db.linkDatabase[linkId];
+    saveDB();
+
+    ctx.editMessageText("❌ **আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।**");
+    sendMainMenu(ctx, false);
 });
 
 // Rest of Admin controls
@@ -174,7 +183,7 @@ bot.command('adm', handleAdminConsole);
 bot.action('admin_stats', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
-    const activeLinks = Object.keys(db.linkDatabase).filter(k => db.linkDatabase[k].isActive).length;
+    const activeLinks = Object.keys(db.linkDatabase).length;
     ctx.reply(`📊 **Metrics:**\n\nUsers: \`${registeredUsers.size}\`\nActive Links: \`${activeLinks}\` (Total: \`${totalLinksCreated}\`)\nFeedbacks: \`${totalFeedbacksReceived}\``);
 });
 
@@ -366,11 +375,14 @@ function processFinalLinkCreation(ctx, letterText) {
     db.linkDatabase[uniqueId] = {
         userId: userId, name: session.name, username: session.username, type: session.type,
         music: session.music, countdown: finalCountdownIso,
-        animations: session.animations, letter: letterText, isActive: true, answer: null
+        animations: session.animations, letter: letterText, answer: null
     };
     saveDB();
     
-    ctx.reply(locale.link_ready(`${SERVER_URL}/love/${uniqueId}`));
+    // ইউজারকে লিঙ্ক রেডি মেসেজ পাঠানো এবং সাথে Link Off করার বাটন দেওয়া
+    ctx.reply(locale.link_ready(`${SERVER_URL}/love/${uniqueId}`), Markup.inlineKeyboard([
+        [Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]
+    ]));
 
     // অ্যাডমিন নোটিফিকেশন ইঞ্জিন প্রেরণ
     const adminMsg = `নতুন লিংক তৈরি করা হয়েছে।\nName: ${session.name}\nID: ${userId}\nUsername: ${session.username}\nCategory: ${session.type.toUpperCase()}`;
@@ -400,9 +412,11 @@ app.post('/api/get-content', async (req, res) => {
     try {
         const { id } = req.body;
         const data = db.linkDatabase[id];
-        if (!data || !data.isActive) return res.json({ success: false });
+        
+        // লিঙ্কটি যদি রিমুভড হয়ে যায় বা না থাকে
+        if (!data) return res.json({ success: false });
 
-        // ইউজার নোটিফিকেশন: কেউ লিঙ্কটি প্রথমবার বা পুনরায় ওপেন করেছে[span_1](start_span)[span_1](end_span)
+        // ইউজার নোটিফিকেশন: কেউ লিঙ্ক ওপেন করেছে
         bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(e => console.error(e));
 
         if (data.countdown) {
@@ -422,7 +436,6 @@ app.post('/api/get-content', async (req, res) => {
             music: data.music, 
             animations: data.animations, 
             letter: data.letter,
-            // নতুন ফ্রন্টএন্ড ইমোজি ও প্রশ্ন ডেটা পাঠানো হচ্ছে
             emojis: currentConfig.emojis,
             question: currentConfig.question,
             buttons: currentConfig.buttons
@@ -437,7 +450,7 @@ app.post('/api/submit-answer', async (req, res) => {
     try {
         const { id, answer } = req.body;
         const data = db.linkDatabase[id];
-        if (!data || !data.isActive) return res.json({ success: false });
+        if (!data) return res.json({ success: false });
 
         data.answer = answer;
         saveDB();
