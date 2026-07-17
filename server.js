@@ -88,7 +88,7 @@ const locale = {
     
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)।\n4️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     
-    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     
@@ -154,7 +154,7 @@ function showAdminDashboard(ctx, isEdit = false) {
 function handleAdminSecureAccess(ctx) {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) {
         ctx.reply(locale.invalid_cmd(ctx.message.text), { parse_mode: 'Markdown' });
-        ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
+        ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' });
         return;
     }
     showAdminDashboard(ctx, false);
@@ -336,7 +336,7 @@ bot.action('menu_feedback', (ctx) => {
 
 bot.action('menu_help', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
+    ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' });
 });
 
 bot.action(/^delete_link_(.+)$/, (ctx) => {
@@ -383,10 +383,13 @@ bot.on('text', (ctx) => {
         const formattedFeedback = `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`;
         
         bot.telegram.sendMessage(ADMIN_CHAT_ID, formattedFeedback).catch(e => console.error(e));
-        ctx.reply(locale.feedback_success);
+        
         delete db.userSessions[userId]; 
         saveDB();
-        sendMainMenu(ctx, false); 
+        
+        ctx.reply(locale.feedback_success, Markup.inlineKeyboard([
+            [Markup.button.callback(locale.btn_back, 'go_to_main_menu')]
+        ])); 
         return;
     }
 
@@ -432,7 +435,7 @@ bot.on('text', (ctx) => {
 
     if (!session || !session.step) {
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
-        ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
+        ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' });
         return;
     }
 
@@ -454,7 +457,7 @@ bot.on('text', (ctx) => {
         }
 
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
-        ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
+        ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' });
 
     } catch (error) {
         console.error("Critical Runtime Error:", error);
