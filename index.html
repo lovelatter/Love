@@ -96,13 +96,14 @@
     </div>
     
     <div id="loveLetter" class="love-letter">
-        <h2 id="letterTitle">আমার হৃদয়ের কথা...</h2>
+        <!-- ডিফল্ট হিসেবে একটি টাইটেল দেওয়া রইলো, যা নিচে জাভাস্ক্রিপ্ট দিয়ে আপডেট হবে -->
+        <h2 id="letterTitle">আমার মনের কথা!</h2>
         <p id="letterContent">লোডিং...</p>
         
         <div class="question-box" id="questionBox">
             <h3 id="displayQuestion">Do you love me? 🥺</h3>
             <div class="btn-group" id="btnGroup">
-                <!-- বাটনগুলো জাভাস্ক্রিপ্ট দিয়ে ডাইনামিক্যালি তৈরি হবে -->
+                <!-- বাটনগুলো জাভাস্ক্রিপ্ট দিয়ে তৈরি হবে -->
             </div>
         </div>
     </div>
@@ -112,14 +113,14 @@
         
         let textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
         let arrayIndex = 0, audioCtx = null;
-        let flyingEmojis = ['❤️', '💖', '💘', '💕', '💗']; // ডিফল্ট লাভ ইমোজি
+        let flyingEmojis = ['❤️', '💖', '💘', '💕', '💗']; 
 
-        // ক্যাটাগরি অনুযায়ী টাইটেল ম্যাপ
+        // 🌟 আপনার রিকোয়ারমেন্ট অনুযায়ী নতুন টাইটেল ম্যাপিং
         const titleMapping = {
-            love: "আমার হৃদয়ের কথা...",
-            birthday: "শুভ জন্মদিন ✨",
-            sorry: "ক্ষমা চেয়ে কিছু কথা...",
-            eid: "ঈদের শুভেচ্ছা 🌙"
+            love: "আমার মনের কথা!",
+            birthday: "শুভ জন্মদিন!",
+            sorry: "দুঃখিত প্রিয়!",
+            eid: "ঈদ মোবারক"
         };
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -139,7 +140,6 @@
                         document.body.classList.add(`theme-${data.theme}`);
                     }
 
-                    // ব্যাকএন্ড থেকে আসা মিউজিক ডিরেক্ট সেট করা
                     if (data.music) {
                         bgMusic.src = data.music;
                     }
@@ -149,40 +149,35 @@
                         return; 
                     }
 
-                    // 🎈 ডাইনামিক ক্যাটাগরি ও ইমোজি সেটআপ
                     if(data.emojis && data.emojis.length > 0) {
                         flyingEmojis = data.emojis;
                         if(envelopeHeart) envelopeHeart.innerText = data.emojis[0];
                     }
 
-                    // টাইটেল ম্যাপ করা
+                    // 🌟 এখানে ক্যাটাগরি অনুযায়ী নতুন টাইটেল ডাইনামিক্যালি সেট হচ্ছে
                     if (data.type && titleMapping[data.type]) {
                         letterTitle.innerText = titleMapping[data.type];
                     }
 
-                    // প্রশ্ন সেট করা
                     if(data.question) {
                         displayQuestion.innerText = data.question;
                     }
 
-                    // বাটন জেনারেট করা (১টি বা ২টি বাটনের জন্য ডাইনামিক হ্যান্ডলার)
                     if(data.buttons && data.buttons.length > 0) {
-                        btnGroup.innerHTML = ''; // ক্লিয়ার করুন
+                        btnGroup.innerHTML = ''; 
                         data.buttons.forEach((btnText, idx) => {
                             const btn = document.createElement('button');
                             btn.innerText = btnText;
                             btn.classList.add('ask-btn');
                             
                             if(idx === 0) {
-                                // প্রথম বাটন (যেমন: Yes বা Eid Mubarak)
                                 btn.classList.add('btn-yes');
                                 btn.onclick = () => sendResponse(`${btnText} ❤️`);
                             } else {
-                                // দ্বিতীয় বাটন (যেমন: No) যা মাউস নিলে দূরে সরে যাবে
                                 btn.classList.add('btn-no');
                                 btn.id = 'noBtn';
                                 btn.onmouseover = moveNoButton;
-                                btn.ontouchstart = moveNoButton; // মোবাইলের জন্যও
+                                btn.ontouchstart = moveNoButton; 
                                 btn.onclick = () => sendResponse(`${btnText} 💔`);
                             }
                             btnGroup.appendChild(btn);
@@ -283,7 +278,6 @@
             }, 550);
         });
         
-        // 🎈 ডাইনামিক ইমোজি অ্যানিমেশন মেকার
         function createHeart() {
             const heart = document.createElement('div'); heart.classList.add('heart');
             heart.innerText = flyingEmojis[Math.floor(Math.random() * flyingEmojis.length)];
