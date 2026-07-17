@@ -79,12 +79,13 @@ const locale = {
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
-    maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।",
+    maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
     session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n\n💡লেখার নিয়ম:\n• প্রতি লাইনের পর কীবোর্ডের Enter চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
 
+// Middleware Logic (Maintenance Security Handle)
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
     if (!userId) return;
@@ -93,9 +94,35 @@ bot.use(async (ctx, next) => {
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
     saveDB();
 
+    // Admin is fully bypassed
     if (Number(userId) === Number(ADMIN_CHAT_ID)) return next();
+    
+    // Banned users are completely ignored
     if (db.bannedUsers.includes(userId)) return;
-    if (db.isMaintenanceMode) return ctx.reply(locale.maint_msg).catch(() => {});
+    
+    // Maintenance Mode handling
+    if (db.isMaintenanceMode) {
+        const session = db.userSessions[userId];
+        
+        // If user is currently typing feedback, allow them to complete it
+        if (session?.step === 'AWAITING_USER_FEEDBACK') {
+            return next();
+        }
+        
+        // If user clicked the feedback button during maintenance
+        if (ctx.callbackQuery?.data === 'menu_feedback') {
+            return next();
+        }
+
+        // Send maintenance message with only the feedback button
+        const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
+        
+        if (ctx.callbackQuery) {
+            ctx.answerCbQuery().catch(() => {});
+            return ctx.editMessageText(locale.maint_msg, maintKeyboard).catch(() => {});
+        }
+        return ctx.reply(locale.maint_msg, maintKeyboard).catch(() => {});
+    }
 
     return next();
 });
@@ -320,7 +347,13 @@ function showAnimationIntro(ctx) {
     });
 }
 
-bot.action('menu_feedback', (ctx) => { ctx.answerCbQuery(); db.userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; saveDB(); ctx.reply(locale.feedback_prompt); });
+bot.action('menu_feedback', (ctx) => { 
+    ctx.answerCbQuery(); 
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; 
+    saveDB(); 
+    ctx.reply(locale.feedback_prompt); 
+});
+
 bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
 
 bot.action(/^delete_link_(.+)$/, (ctx) => {
@@ -415,6 +448,11 @@ bot.on('text', async (ctx) => {
         delete db.userSessions[userId];
         saveDB();
         
+        // Custom reply if feedback is submitted during Maintenance Mode
+        if (db.isMaintenanceMode) {
+            return ctx.reply("✅ আপনার মতামত সফলভাবে অ্যাডমিনের কাছে পাঠানো হয়েছে। ধন্যবাদ!", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]));
+        }
+        
         return ctx.reply(locale.feedback_success, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
     }
 
@@ -500,7 +538,6 @@ function processFinalLinkCreation(ctx, letterText) {
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
 
-    // অ্যাডমিনকে পাঠানোর নোটিফিকেশন মেসেজ ফরম্যাট (অনুরোধ অনুযায়ী পরিমার্জিত)
     const adminNotificationText = `নতুন লিংক তৈরি করা হয়েছে।
 Name: ${session.name || "User"}
 ID: ${userId}
