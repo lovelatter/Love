@@ -25,23 +25,28 @@ const AUTOMATIC_MUSIC_MAPPING = {
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
 };
 
+// 🎯 প্রতিটি ক্যাটাগরির জন্য আলাদা টাইটেল সেট করা হলো
 const CATEGORY_CONFIGS = {
     love: {
+        title: "আমার মনের কিছু কথা",
         emojis: ["❤️", "💖", "💕"],
         question: "Do you love me? 🥺",
         buttons: ["Yes", "No"]
     },
     birthday: {
+        title: "Happy Birthday",
         emojis: ["🎈", "🎉", "🎊"],
         question: "Are you happy? 😊",
         buttons: ["Yes", "No"]
     },
     sorry: {
+        title: "I'm Sorry",
         emojis: ["😭", "😞", "😥"],
         question: "Do you forgive me? 🥺",
         buttons: ["Yes", "No"]
     },
     eid: {
+        title: "Eid Mubarak",
         emojis: ["🤝", "🎇", "🫂"],
         question: "EID Mubarak 🌙",
         buttons: ["EID Mubarak"]
@@ -283,7 +288,6 @@ bot.action('menu_help', (ctx) => {
     ctx.reply(locale.help_text);
 });
 
-// ফিক্সড টেক্সট হ্যান্ডলার সেকশন
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
@@ -406,7 +410,7 @@ function sendMainMenu(ctx, isEdit = false) {
     } catch (err) { console.error(err); }
 }
 
-// 🌐 API Routes
+// 🌐 ফিক্সড API Routes
 app.post('/api/get-content', async (req, res) => {
     try {
         const { id } = req.body;
@@ -429,6 +433,7 @@ app.post('/api/get-content', async (req, res) => {
         return res.json({ 
             success: true, 
             isLocked: false,
+            title: currentConfig.title, // 👈 টাইটেল ডেটা ফ্রন্টএন্ডে পাঠানো হচ্ছে
             music: data.music, 
             animations: data.animations, 
             letter: data.letter,
