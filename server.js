@@ -73,9 +73,9 @@ const locale = {
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
     choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
     cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
-    prompt_countdown_ask: "⏰ টাইম কাউন্টডাউন সেট করুন।",
+    prompt_countdown_ask: "⏰ টাইম কাউন্টডাউন সেট করুন।\n\n👉 নিচের বাটনগুলো চেপে যেকোনো একটি সময় বেছে নিন।",
     btn_no_countdown: "❌ No Countdown",
-    prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
+    prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip বাটন চাপুন।",
     btn_skip_image: "⏭️ Skip করুন",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন。\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
@@ -83,8 +83,8 @@ const locale = {
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
     maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।",
-    session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n\n💡লেখার নিয়ম:\n• প্রতি লাইনের পর কীবোর্ডের Enter চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
-    input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
+    session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n\n💡 লেখার নিয়ম:\n• প্রতি লাইনের পর কীবোর্ডের Enter চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন। যেমন: হ্যালো, প্রিয়, কেমন আছো।`,
+    input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
 
@@ -122,125 +122,7 @@ bot.command('start', (ctx) => {
     sendMainMenu(ctx, false); 
 });
 
-// অ্যাডমিন কন্ট্রোল প্যানেল
-const showAdminDashboard = (ctx, isEdit = false) => {
-    const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
-        [Markup.button.callback("📢 Announcement (Broadcast)", "adm_broadcast")],
-        [Markup.button.callback("🔗 All Links Management", "adm_all_links_menu")],
-        [Markup.button.callback("🚫 Ban / Unban System", "adm_ban_menu")]
-    ]);
-    const text = `👑 Welcome to the Master Admin Core Console:`;
-
-    if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
-    return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
-};
-
-const handleAdminSecureAccess = (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) {
-        ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
-        return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
-    }
-    showAdminDashboard(ctx, false);
-};
-
-bot.command(['admin', 'adm'], handleAdminSecureAccess);
-
-bot.action('adm_toggle_maint', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    db.isMaintenanceMode = !db.isMaintenanceMode;
-    saveDB();
-    ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`);
-    showAdminDashboard(ctx, true);
-});
-
-bot.action('adm_broadcast', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
-    saveDB();
-    ctx.reply("📢 Announcement মেসেজটি পাঠান:\n\nবটের সকল ইউজারের কাছে চলে যাবে।", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
-});
-
-bot.action('adm_all_links_menu', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    ctx.editMessageText("🔗 All Links Management Sub-Menu:", Markup.inlineKeyboard([
-        [Markup.button.callback("📜 View All Links List", "adm_view_links_list")],
-        [Markup.button.callback("💥 Turn Off & Delete All Links", "adm_delete_all_links_confirm")],
-        [Markup.button.callback("🔙 ব্যাক টু ড্যাশবোর্ড", "adm_back_to_dashboard")]
-    ]));
-});
-
-bot.action('adm_view_links_list', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    
-    const keys = Object.keys(db.linkDatabase);
-    if (!keys.length) {
-        return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক তৈরি করা নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]]));
-    }
-
-    ctx.reply("📜 চলতি সকল লিংকের তালিকা (বন্ধ করতে লিংকে ক্লিক করুন):");
-    keys.forEach(key => {
-        const data = db.linkDatabase[key];
-        ctx.reply(`👤 Creator: ${data.name}\n📂 Cat: ${data.type}\n🔗 Link ID: ${key}`, Markup.inlineKeyboard([[Markup.button.callback(`❌ Delete/Off: ${key}`, `adm_instant_del_${key}`)]])).catch(() => {});
-    });
-});
-
-bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    const targetKey = ctx.match[1];
-    if (db.linkDatabase[targetKey]) {
-        // যদি ছবি থাকে তা ডিলিট করা
-        if (db.linkDatabase[targetKey].imagePath) {
-            const fullImgPath = path.join(__dirname, db.linkDatabase[targetKey].imagePath);
-            if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
-        }
-        delete db.linkDatabase[targetKey];
-        saveDB();
-        ctx.answerCbQuery("✅ লিংকটি রিমুভ করা হয়েছে।");
-        ctx.editMessageText("❌ এই লিংকটি অ্যাডমিন প্যানেল থেকে চিরতরে অফ এবং ডিলিট করা হয়েছে।").catch(() => {});
-    } else {
-        ctx.answerCbQuery("⚠️ লিংকটি ইতিমধ্যে ডিলিট হয়ে গেছে!");
-    }
-});
-
-bot.action('adm_delete_all_links_confirm', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    // সব ছবি ডিলিট করা
-    Object.keys(db.linkDatabase).forEach(key => {
-        if (db.linkDatabase[key].imagePath) {
-            const fullImgPath = path.join(__dirname, db.linkDatabase[key].imagePath);
-            if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
-        }
-    });
-    db.linkDatabase = {};
-    saveDB();
-    ctx.editMessageText("💥 সিস্টেমের সমস্ত একটিভ লিংক এক ক্লিকে চিরতরে ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]]));
-});
-
-bot.action('adm_ban_menu', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
-    saveDB();
-    ctx.reply(`🚫 Ban / Unban System\n\n📊 মোট ইউজার: ${db.registeredUsers.length}\n• ব্যান ইউজার: ${db.bannedUsers.length}\n\n👉 অনুগ্রহ করে ইউজারের ID অথবা Username লিখে পাঠান:`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
-});
-
-bot.action('adm_back_to_dashboard', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    ctx.answerCbQuery();
-    delete db.userSessions[ctx.chat.id];
-    saveDB();
-    showAdminDashboard(ctx, true);
-});
-
-bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
-
-// লিঙ্ক মেকিং লজিক
+// লিঙ্ক মেকিং লজিক শুরু
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
@@ -267,18 +149,23 @@ bot.action(/^make_/, (ctx) => {
     showCountdownPrompt(ctx);
 });
 
-function showCountdownPrompt(ctx) {
-    ctx.editMessageText(locale.prompt_countdown_ask, Markup.inlineKeyboard([
+function showCountdownPrompt(ctx, isEdit = true) {
+    const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(locale.btn_no_countdown, 'timer_no')],
         [Markup.button.callback('🕒 ৩ মিনিট', 'set_time_3'), Markup.button.callback('🕒 ৫ মিনিট', 'set_time_5')],
         [Markup.button.callback('🕒 ১০ মিনিট', 'set_time_10')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ]), { parse_mode: 'Markdown' }).catch(() => {});
+    ]);
+    if (isEdit) {
+        ctx.editMessageText(locale.prompt_countdown_ask, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    } else {
+        ctx.reply(locale.prompt_countdown_ask, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    }
 }
 
 bot.action('timer_no', (ctx) => { 
     ctx.answerCbQuery(); 
-    if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
+    if (!db.userSessions[ctx.chat.id]) return sendMainMenu(ctx, true);
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
     saveDB();
     showImageUploadPrompt(ctx); 
@@ -287,48 +174,73 @@ bot.action('timer_no', (ctx) => {
 bot.action(/^set_time_/, (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    if (!db.userSessions[userId]) return sendMainMenu(ctx, true);
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
     saveDB();
     showImageUploadPrompt(ctx);
 });
 
 // ছবি আপলোড করার প্রম্পট
-function showImageUploadPrompt(ctx) {
+function showImageUploadPrompt(ctx, isEdit = true) {
     const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    if (!db.userSessions[userId]) return sendMainMenu(ctx, true);
     db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
     saveDB();
     
-    ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
+    const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ])).catch(() => {
-        ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
-            [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
-            [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-        ])).catch(() => {});
-    });
+        [Markup.button.callback("🔙 পেছনে যান", 'back_to_countdown')]
+    ]);
+
+    if (isEdit) {
+        ctx.editMessageText(locale.prompt_image_ask, { reply_markup: keyboard.reply_markup }).catch(() => {
+            ctx.reply(locale.prompt_image_ask, keyboard).catch(() => {});
+        });
+    } else {
+        ctx.reply(locale.prompt_image_ask, keyboard).catch(() => {});
+    }
 }
+
+// ব্যাক বাটনের জন্য অ্যাকশন হ্যান্ডলার
+bot.action('back_to_countdown', (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) return sendMainMenu(ctx, true);
+    db.userSessions[userId].step = 'AWAITING_COUNTDOWN_SELECTION';
+    saveDB();
+    showCountdownPrompt(ctx, true);
+});
 
 bot.action('skip_image_upload', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    if (db.userSessions[userId]) {
-        db.userSessions[userId].imageUrl = null;
-    }
+    if (!db.userSessions[userId]) return sendMainMenu(ctx, true);
+    db.userSessions[userId].imageUrl = null;
     showAnimationIntro(ctx);
 });
 
-function showAnimationIntro(ctx) {
-    db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
+function showAnimationIntro(ctx, isEdit = true) {
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) return sendMainMenu(ctx, true);
+    db.userSessions[userId].step = 'AWAITING_ANIMATION_TEXT';
     saveDB();
     
     const text = locale.session_started();
-    ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
-        ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
-    });
+    const keyboard = Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'back_to_image_upload')]]);
+    
+    if (isEdit) {
+        ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {
+            ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+        });
+    } else {
+        ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    }
 }
+
+bot.action('back_to_image_upload', (ctx) => {
+    ctx.answerCbQuery();
+    showImageUploadPrompt(ctx, true);
+});
 
 bot.action('menu_feedback', (ctx) => { ctx.answerCbQuery(); db.userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; saveDB(); ctx.reply(locale.feedback_prompt); });
 bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
@@ -350,12 +262,7 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
     sendMainMenu(ctx, false);
 });
 
-bot.action(/^view_ans_(.+)$/, (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
-    const data = db.linkDatabase[ctx.match[1]];
-    if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-    return ctx.answerCbQuery(data.answer ? `📩 ইউজারের উত্তর: ${data.answer}` : "⏳ ইউজার এখনও উত্তর দেয়নি!", { show_alert: true });
-});
+bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
 
 // ফটো/ছবি হ্যান্ডলার মিডলওয়্যার
 bot.on('photo', async (ctx) => {
@@ -364,28 +271,26 @@ bot.on('photo', async (ctx) => {
 
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
         try {
-            // সবচেয়ে বড় সাইজের ছবি সিলেক্ট করা হচ্ছে কোয়ালিটি ঠিক রাখার জন্য
             const photoArray = ctx.message.photo;
             const fileId = photoArray[photoArray.length - 1].file_id;
             
-            // টেলিগ্রাম থেকে ফাইলের লিংক আনা
             const fileUrlObj = await bot.telegram.getFileLink(fileId);
             const fileUrl = fileUrlObj.href;
 
             const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 5)}.jpg`;
             const localPath = path.join(UPLOADS_DIR, filename);
 
-            // ফাইল ডাউনলোড লজিক
             const fileStream = fs.createWriteStream(localPath);
             https.get(fileUrl, (response) => {
                 response.pipe(fileStream);
                 fileStream.on('finish', () => {
                     fileStream.close();
-                    db.userSessions[userId].imageUrl = `/uploads/${filename}`;
-                    saveDB();
-                    
-                    ctx.reply("📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।");
-                    showAnimationIntro(ctx);
+                    if(db.userSessions[userId]) {
+                        db.userSessions[userId].imageUrl = `/uploads/${filename}`;
+                        saveDB();
+                        ctx.reply("📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।");
+                        showAnimationIntro(ctx, false);
+                    }
                 });
             }).on('error', (err) => {
                 console.error("Image download error:", err);
@@ -396,79 +301,72 @@ bot.on('photo', async (ctx) => {
             console.error("Photo process error:", error);
             ctx.reply("⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
         }
+    } else if (session) {
+        // যদি অন্য কোনো ধাপে ছবি পাঠানো হয় যা প্রত্যাশিত নয়
+        ctx.reply("⚠️ এই ধাপে কোনো ছবি প্রয়োজন নেই। অনুগ্রহ করে বটের নির্দেশনাগুলো অনুসরণ করুন।");
     }
 });
 
-// টেক্সট মেসেজ রিসিভার
+// টেক্সট মেসেজ রিসিভার এবং বুদ্ধিমান ইনপুট ভ্যালিডেশন
 bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
-
-    if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        if (text.length < 5) return ctx.reply(locale.feedback_short);
-        
-        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
-        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-        
-        bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`).catch(() => {});
-        delete db.userSessions[userId];
-        saveDB();
-        
-        return ctx.reply(locale.feedback_success, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
-    }
-
-    if (Number(userId) === Number(ADMIN_CHAT_ID) && session) {
-        if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
-            db.registeredUsers.forEach(id => {
-                bot.telegram.sendMessage(id, `📢 [Announcement]\n\n${text}`, { parse_mode: 'Markdown' }).catch(() => {});
-            });
-            ctx.reply("📡 Broadcast Transmission Completed to All Users.");
-            delete db.userSessions[userId];
-            saveDB();
-            return showAdminDashboard(ctx, false);
-        }
-        
-        if (session.step === 'AWAITING_BAN_USER_INPUT') {
-            let targetId = parseInt(text, 10);
-            if (isNaN(targetId)) targetId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
-            if (!targetId) return ctx.reply("❌ দুঃখিত! এই ইউজারনেম/আইডি ডাটাবেজে পাওয়া যায়নি।");
-            
-            if (db.bannedUsers.includes(targetId)) {
-                db.bannedUsers = db.bannedUsers.filter(id => id !== targetId);
-                ctx.reply(`🟢 ইউজার \`${targetId}\` কে UNBAN করা হয়েছে।`, { parse_mode: 'Markdown' });
-            } else {
-                db.bannedUsers.push(targetId);
-                ctx.reply(`🚫 ইউজার \`${targetId}\` কে BAN করা হয়েছে।`, { parse_mode: 'Markdown' });
-            }
-            delete db.userSessions[userId];
-            saveDB();
-            return showAdminDashboard(ctx, false);
-        }
-    }
 
     if (!session?.step) {
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
 
-    try {
-        if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
-            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
-            
-            db.userSessions[userId].animations = lines;
-            db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-            saveDB();
-            return ctx.reply(locale.input_anim_success(lines.length));
-        }
+    // ১. টাইম কাউন্টডাউন ধাপে ভুল ইনপুট হ্যান্ডলিং
+    if (session.step === 'AWAITING_COUNTDOWN_SELECTION') {
+        return ctx.reply("❌ ভুল ইনপুট! অনুগ্রহ করে নিচে দেওয়া বাটনগুলো চেপে মিনিট চয়েস করুন। কীবোর্ডে কিছু টাইপ করলে তা কাজ করবে না।", 
+            Markup.inlineKeyboard([
+                [Markup.button.callback(locale.btn_no_countdown, 'timer_no')],
+                [Markup.button.callback('🕒 ৩ মিনিট', 'set_time_3'), Markup.button.callback('🕒 ৫ মিনিট', 'set_time_5')],
+                [Markup.button.callback('🕒 ১০ মিনিট', 'set_time_10')],
+                [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+            ])
+        );
+    }
 
-        if (session.step === 'AWAITING_LETTER_TEXT') {
-            return processFinalLinkCreation(ctx, text);
+    // ২. ইমেজ আপলোড ধাপে টেক্সট ইনপুট দিলে হ্যান্ডলিং
+    if (session.step === 'AWAITING_IMAGE_UPLOAD') {
+        return ctx.reply("❌ ভুল ইনপুট! এই ধাপে আপনাকে একটি ছবি আপলোড করতে হবে। যদি ছবি দিতে না চান, তবে নিচের বাটনটি চেপে Skip করুন।", 
+            Markup.inlineKeyboard([
+                [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
+                [Markup.button.callback("🔙 পেছনে যান", 'back_to_countdown')]
+            ])
+        );
+    }
+
+    // ৩. অ্যানিমেশন টেক্সট ধাপে ভুল ইনপুট হ্যান্ডলিং
+    if (session.step === 'AWAITING_ANIMATION_TEXT') {
+        const lines = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
+        if (!lines.length || text.length < 2) {
+            return ctx.reply("❌ ভুল অ্যানিমেশন ফরম্যাট! প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন অথবা কীবোর্ডের Enter চেপে নিচে নতুন লাইনে লিখুন।\n\n💡 উদাহরণ: হ্যালো, প্রিয়, কেমন আছো।\n👉 অনুগ্রহ করে আবার চেষ্টা করুন:");
         }
-    } catch (error) {
-        console.error("Runtime Error:", error);
-        ctx.reply(locale.general_error).catch(() => {});
+        
+        db.userSessions[userId].animations = lines;
+        db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
+        saveDB();
+        return ctx.reply(locale.input_anim_success(lines.length));
+    }
+
+    // ৪. চিঠি লেখার ধাপ (এখানে কোনো রেস্ট্রিকশন নেই, ব্যবহারকারী যা লিখবে হুবহু তাই থাকবে)
+    if (session.step === 'AWAITING_LETTER_TEXT') {
+        return processFinalLinkCreation(ctx, text);
+    }
+
+    if (session.step === 'AWAITING_USER_FEEDBACK') {
+        if (text.length < 5) return ctx.reply(locale.feedback_short);
+        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
+        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
+        
+        bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`).catch(() => {});
+        delete db.userSessions[userId];
+        saveDB();
+        return ctx.reply(locale.feedback_success, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
     }
 });
 
@@ -486,8 +384,6 @@ function processFinalLinkCreation(ctx, letterText) {
 
     const uniqueId = Math.random().toString(36).substring(2, 9);
     const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
-    
-    // ছবির আপলোড পাথ সম্পূর্ণ ইউআরএল-এ কনভার্ট করে ডাটাবেজে রাখা
     const dbImageUrl = session.imageUrl ? `${SERVER_URL}${session.imageUrl}` : null;
 
     db.linkDatabase[uniqueId] = {
@@ -496,12 +392,14 @@ function processFinalLinkCreation(ctx, letterText) {
         answer: null, image: dbImageUrl, imagePath: session.imageUrl || null
     };
     
-    ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
+    ctx.reply(`আপনার لینک তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
 
-    bot.telegram.sendMessage(ADMIN_CHAT_ID, `নতুন লিংক তৈরি করা হয়েছে।\nName: ${session.name}\nID: ${userId}\nCategory: ${session.type.toUpperCase()}\nImage Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`, Markup.inlineKeyboard([[Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`)]])).catch(() => {});
+    // অ্যাডমিনকে নোটিফিকেশন পাঠানো ({ reply_markup } আকারে বাগ ফিক্স সহ)
+    const adminKeyboard = Markup.inlineKeyboard([[Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`)]]);
+    bot.telegram.sendMessage(ADMIN_CHAT_ID, `নতুন লিংক তৈরি করা হয়েছে।\nName: ${session.name}\nID: ${userId}\nCategory: ${session.type.toUpperCase()}\nImage Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`, { reply_markup: adminKeyboard.reply_markup }).catch(() => {});
 
     delete db.userSessions[userId];
     saveDB();
@@ -538,7 +436,8 @@ app.post('/api/submit-answer', async (req, res) => {
         saveDB();
 
         const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-        bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+        const userKeyboard = Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]]);
+        bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, { reply_markup: userKeyboard.reply_markup }).catch(() => {});
 
         return res.json({ success: true });
     } catch (err) { res.json({ success: false }); }
