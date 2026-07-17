@@ -562,4 +562,3 @@ app.listen(PORT, () => {
     bot.launch();
     console.log(`Server running successfully on port ${PORT}`);
 });
-s
