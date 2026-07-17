@@ -1,491 +1,382 @@
-const { Telegraf, Markup } = require('telegraf');
 const express = require('express');
 const path = require('path');
+const axios = require('axios');
+const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
-const https = require('https');
-const Datastore = require('nedb-promises');
+
+const app = express();
+app.use(express.json());
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
-const SERVER_URL = "https://love-bb7p.onrender.com"; // আপনার রেন্ডার ইউআরএল
+const SERVER_URL = "https://love-bb7p.onrender.com";
+const DB_FILE = path.join(__dirname, 'db.json');
+const registeredUsers = new Set();
+const bannedUsers = new Set();
+let isMaintenanceMode = false;
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
-const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// GitHub-এ আপনার আপলোড করা অডিও ফাইলের বেস URL (Raw format)
+const GITHUB_MUSIC_BASE_URL = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
-// ডেটাবেস সেটআপ
-const db = {};
-db.users = Datastore.create({ filename: 'users.db', autoload: true });
-db.links = Datastore.create({ filename: 'links.db', autoload: true });
-db.settings = Datastore.create({ filename: 'settings.db', autoload: true });
-db.sessions = Datastore.create({ filename: 'sessions.db', autoload: true });
-
-async function isMaintenance() {
-    const config = await db.settings.findOne({ key: 'config' });
-    return config ? config.maintenance : false;
-}
-
-async function isBanned(userId) {
-    const user = await db.users.findOne({ userId: String(userId) });
-    return user ? user.banned : false;
-}
-
-async function getSession(userId) {
-    return await db.sessions.findOne({ userId: String(userId) });
-}
-
-async function saveSession(userId, data) {
-    await db.sessions.update({ userId: String(userId) }, { $set: data }, { upsert: true });
-}
-
-async function deleteSession(userId) {
-    await db.sessions.remove({ userId: String(userId) }, {});
-}
-
-const mainKeyboard = (userId) => {
-    return Markup.inlineKeyboard([
-        [Markup.button.callback('🔗 লিংক তৈরি করুন', 'menu_generate')],
-        [Markup.button.callback('📞 এডমিন যোগাযোগ', 'menu_contact'), Markup.button.callback('ℹ️ সাহায্য', 'menu_help')]
-    ]);
+// ক্যাটাগরি অনুযায়ী অটোমেটিক মিউজিক ফাইল ম্যাপিং
+const AUTOMATIC_MUSIC_MAPPING = {
+    love: `${GITHUB_MUSIC_BASE_URL}/love.mp3`,
+    birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
+    sorry: `${GITHUB_MUSIC_BASE_URL}/sorry.mp3`,
+    eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
 };
 
-// মিডলওয়্যার
-bot.use(async (ctx, next) => {
-    if (!ctx.from) return next();
-    const userId = ctx.from.id;
-    const maintenanceMode = await isMaintenance();
-    const banned = await isBanned(userId);
+// 🗄️ Database Load & Save
+let db = {
+    linkDatabase: {},
+    userSessions: {},
+    totalLinksCreated: 0,
+    isMaintenanceMode: false,
+    bannedUsers: []
+};
 
-    if (String(userId) === String(ADMIN_CHAT_ID)) {
+if (fs.existsSync(DB_FILE)) {
+    db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+}
+
+function saveDB() {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+}
+
+// 🛡️ Markdown Escaping
+function esc(text) {
+    return text.toString().replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
+
+// 📊 Global Stats Counters
+let totalLinksCreated = 0;
+let totalFeedbacksReceived = 0;
+
+// 🌐 Messages Dictionary (শুধুমাত্র বাংলা)
+const locale = {
+    welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম কাউন্টডাউন করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
+    btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
+    choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান?**",
+    cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
+    
+    prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম কাউন্টডাউন (Time Countdown) সেট করতে চান?**\n\n(কাউন্টডাউন সেট করলে আপনার দেওয়া সময় শেষ হওয়ার আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
+    btn_no_countdown: "❌ No Countdown (টাইমার ছাড়া)",
+    
+    help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
+    
+    feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
+    feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
+    
+    session_cancelled: "❌ আপনার চলমান লিঙ্ক তৈরির সেশনটি বাতিল করা হয়েছে।",
+    no_session: "💡 আপনার কোনো একটিভ সেশন নেই।",
+    invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়। অনুগ্রহ করে নিচের মেইন মেনু ব্যবহার করুন অথবা সেশনটি বাতিল করতে /cancel লিখুন।`,
+    maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে আসছি।",
+    session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 আপনার প্রিয়জনের জন্য **অ্যানিমেশন টেক্সটগুলো** পাঠান।\n\n💡 **লেখার নিয়ম (How to write):**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন।\n• অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন।`,
+    input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
+    link_ready: (url) => `💝 অভিনন্দন! আপনার কাস্টমাইজড প্রিমিয়াম লিঙ্ক সম্পূর্ণ রেডি:\n\n${url}\n\n👉 এই লিঙ্কটি আপনার প্রিয়জনের সাথে শেয়ার করুন।`,
+    general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন বা /cancel লিখে নতুন সেশন শুরু করুন।"
+};
+
+// 🛡️ Security Middlewares
+bot.use((ctx, next) => {
+    try {
+        const userId = ctx.chat ? ctx.chat.id : null;
+        if (!userId) return next();
+        if (Number(userId) === Number(ADMIN_CHAT_ID)) return next();
+        if (isMaintenanceMode) {
+            return ctx.reply(locale.maint_msg);
+        }
+        if (bannedUsers.has(userId)) return; 
         return next();
+    } catch (err) {
+        console.error("Middleware Error:", err);
     }
+});
 
-    if (banned) return;
+// 📌 Core Command Orchestrations
+bot.command('start', (ctx) => { 
+    try {
+        registeredUsers.add(ctx.chat.id); 
+        sendMainMenu(ctx, false); 
+    } catch (err) { console.error(err); }
+});
 
-    if (maintenanceMode) {
-        if (ctx.callbackQuery && ctx.callbackQuery.data === 'menu_contact_now') {
-            return next();
+bot.command('cancel', (ctx) => {
+    try {
+        const userId = ctx.chat.id;
+        if (db.userSessions[userId]) {
+            delete db.userSessions[userId];
+            ctx.reply(locale.session_cancelled);
+            sendMainMenu(ctx, false);
+        } else { 
+            ctx.reply(locale.no_session); 
         }
-        const session = await getSession(userId);
-        if (session && session.state === 'CONTACTING_ADMIN') {
-            return next();
-        }
-
-        const msgText = "বট এর উন্নতির জন্য কাজ চলছে।";
-        const kb = Markup.inlineKeyboard([[Markup.button.callback('Contact with Admin', 'menu_contact_now')]]);
-
-        if (ctx.callbackQuery) {
-            try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-            try { await ctx.editMessageText(msgText, kb); } catch (e) { await ctx.reply(msgText, kb); }
-        } else {
-            await ctx.reply(msgText, kb);
-        }
-        return;
-    }
-
-    return next();
+    } catch (err) { console.error(err); }
 });
 
-// কমান্ড ও অ্যাকশনসমূহ
-bot.start(async (ctx) => {
-    const userId = String(ctx.from.id);
-    const firstName = ctx.from.first_name || '';
-    const username = ctx.from.username || '';
-
-    let user = await db.users.findOne({ userId });
-    if (!user) {
-        await db.users.insert({
-            userId,
-            name: firstName,
-            username,
-            banned: false,
-            joinedAt: Date.now()
-        });
-    }
-
-    await deleteSession(userId);
-    const welcomeMsg = `হ্যালো ${firstName}। বটের পক্ষ থেকে স্বাগতম। আপনার টপিক সিলেক্ট করুন।`;
-    await ctx.reply(welcomeMsg, mainKeyboard(userId));
-});
-
-bot.command('adm', async (ctx) => {
-    if (String(ctx.from.id) !== String(ADMIN_CHAT_ID)) return ctx.reply("ভুল কমান্ড!");
-    await sendAdminDashboard(ctx);
-});
-
-async function sendAdminDashboard(ctx, edit = false) {
-    const maintenanceMode = await isMaintenance();
-    const txt = `অ্যাডমিন ড্যাশবোর্ড`;
-    const kb = Markup.inlineKeyboard([
-        [Markup.button.callback(`Maintenance: ${maintenanceMode ? 'ON' : 'OFF'}`, 'adm_toggle_m')],
-        [Markup.button.callback('📢 Announcement', 'adm_announce')],
-        [Markup.button.callback('🚫 Ban/Unban', 'adm_ban_unban_prompt')],
-        [Markup.button.callback('👥 User List', 'adm_user_list'), Markup.button.callback('🚷 Ban List', 'adm_ban_list')]
-    ]);
-
-    if (edit) { await ctx.editMessageText(txt, kb); } else { await ctx.reply(txt, kb); }
-}
-
-bot.action('menu_main', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const userId = ctx.from.id;
-    await deleteSession(userId);
-    const welcomeMsg = `হ্যালো ${ctx.from.first_name || ''}। বটের পক্ষ থেকে স্বাগতম। আপনার টপিক সিলেক্ট করুন।`;
-    await ctx.editMessageText(welcomeMsg, mainKeyboard(userId));
-});
-
-bot.action('menu_help', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const txt = "সাহায্যঃ\nএই বট দিয়ে আপনি সুন্দর ওয়েবসাইট লিংক তৈরি করতে পারেন। প্রথমে 'লিংক তৈরি করুন' বাটনে চাপ দিন, তারপর একে একে টপিক, কাউন্টডাউন সময়, অ্যানিমেশন টেক্সট এবং আপনার চিঠিটি ইনপুট দিন। শেষে আপনি একটি লিংক পাবেন যা প্রিয় মানুষকে পাঠাতে পারেন।";
-    const kb = Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'menu_main')]]);
-    await ctx.editMessageText(txt, kb);
-});
-
-bot.action('menu_contact_now', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const userId = ctx.from.id;
-    await saveSession(userId, { state: 'CONTACTING_ADMIN' });
-    await ctx.editMessageText("এডমিন কে যা বলতে চান এখানে লিখে সেন্ট করুন আমি আপনার মতামত এডমিনের কাছে পৌঁছে দেবো।", Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'menu_main')]]));
-});
-
-bot.action('menu_contact', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const userId = ctx.from.id;
-    await saveSession(userId, { state: 'CONTACTING_ADMIN' });
-    await ctx.editMessageText("এডমিন কে যা বলতে চান এখানে লিখে সেন্ট করুন আমি আপনার মতামত এডমিনের কাছে পৌঁছে দেবো।", Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'menu_main')]]));
-});
-
-bot.action('menu_generate', async (ctx) => { 
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await askTopic(ctx); 
-});
-
-async function askTopic(ctx) {
-    const txt = "apni kun topic er jonno link banate chan seta select korun";
-    const kb = Markup.inlineKeyboard([
-        [Markup.button.callback('❤️ Crush', 'topic_crush'), Markup.button.callback('💕 Love', 'topic_love')],
-        [Markup.button.callback('🎂 Birthday', 'topic_birthday'), Markup.button.callback('🥺 Sorry', 'topic_sorry')],
-        [Markup.button.callback('🌙 Eid', 'topic_eid')],
-        [Markup.button.callback('🔙 ফিরে যান', 'menu_main')]
-    ]);
-    await ctx.editMessageText(txt, kb);
-}
-
-const musicAndTitles = {
-    crush: { src: "https://cdn.jsdelivr.net/gh/lovelatter/Love@main/love.mp3", title: "Crush" },
-    love: { src: "https://cdn.jsdelivr.net/gh/lovelatter/Love@main/love.mp3", title: "Love" },
-    birthday: { src: "https://cdn.jsdelivr.net/gh/lovelatter/Love@main/bd.mp3", title: "Birthday" },
-    sorry: { src: "https://cdn.jsdelivr.net/gh/lovelatter/Love@main/sad.mp3", title: "Sorry" },
-    eid: { src: "https://cdn.jsdelivr.net/gh/lovelatter/Love@main/eid.mp3", title: "Eid" }
+// Admin Engine Controls
+const handleAdminConsole = (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return;
+    ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
+        [Markup.button.callback("📊 System Status", "admin_stats"), Markup.button.callback("📢 Global Broadcast", "admin_broadcast")],
+        [Markup.button.callback(isMaintenanceMode ? "🟢 Live Mode" : "🚧 Maint Mode", "admin_toggle_maint")],
+        [Markup.button.callback("🚫 Ban Management", "admin_ban_menu"), Markup.button.callback("📜 View Logs", "admin_view_logs")]
+    ]));
 };
+bot.command('admin', handleAdminConsole);
+bot.command('adm', handleAdminConsole);
 
-bot.action(/^topic_(.+)$/, async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const topic = ctx.match[1];
-    const userId = ctx.from.id;
-    await saveSession(userId, {
-        state: 'SELECTING_COUNTDOWN',
-        topic: topic,
-        music: musicAndTitles[topic].src,
-        title: musicAndTitles[topic].title
-    });
-
-    const txt = "টাইম কাউন্টডাউন সিলেক্ট করুন। অথবা আপনি চাইলে মিনিট লিখে দিতে পারেন। মিনিট লিখলে শুধুমাত্র মিনিট সংখ্যাটাই লিখবেন। (লিমিট:1 মিনিট থেকে 100 মিনিট)";
-    const kb = Markup.inlineKeyboard([
-        [Markup.button.callback('3 Minute', 'cd_3'), Markup.button.callback('5 Minute', 'cd_5')],
-        [Markup.button.callback('10 Minute', 'cd_10'), Markup.button.callback('20 Minute', 'cd_20')],
-        [Markup.button.callback('🔙 ফিরে যান', 'menu_generate')]
-    ]);
-    await ctx.editMessageText(txt, kb);
+bot.action('admin_stats', (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    const activeLinks = Object.keys(db.linkDatabase).filter(k => db.linkDatabase[k].isActive).length;
+    ctx.reply(`📊 **Metrics:**\n\nUsers: \`${registeredUsers.size}\`\nActive Links: \`${activeLinks}\` (Total: \`${totalLinksCreated}\`)\nFeedbacks: \`${totalFeedbacksReceived}\``);
 });
 
-bot.action(/^cd_(.+)$/, async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const minutes = parseInt(ctx.match[1], 10);
-    const userId = ctx.from.id;
-    let session = await getSession(userId);
-    
-    // সেশন না থাকলে একটি ডিফল্ট সেশন তৈরি করে নেওয়া হচ্ছে ক্র্যাশ এড়াতে
-    if (!session) {
-        session = {
-            topic: 'crush',
-            music: musicAndTitles['crush'].src,
-            title: musicAndTitles['crush'].title
-        };
-    }
-
-    await saveSession(userId, { 
-        state: 'ASK_ANIMATION_TEXTS',
-        countdown: minutes,
-        topic: session.topic,
-        music: session.music,
-        title: session.title
-    });
-    await askAnimationTexts(ctx, true); 
+bot.action('admin_toggle_maint', (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    isMaintenanceMode = !isMaintenanceMode;
+    ctx.answerCbQuery();
+    ctx.reply(`⚙️ Maintenance Mode -> ${isMaintenanceMode ? 'ENABLED 🚧' : 'DISABLED 🟢'}`);
 });
 
-async function askAnimationTexts(ctx, edit = false) {
-    const userId = ctx.from.id;
-    const session = await getSession(userId);
-    await saveSession(userId, { state: 'ASK_ANIMATION_TEXTS' });
-    const txt = "আপনার ইচ্ছামত কয়েকটি এনিমেশন টেক্সট দিন। এনিমেশন টেক্সট কমা (,) বা ইন্টার দিয়ে দিয়ে আলাদা এনিমেশন দিন। (যেমন হ্যালো, আমার প্রিয়, তোমাকে কিছু বলতে চাই)";
-    const kb = Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', `topic_${session ? session.topic : 'crush'}`)]]);
-    
-    if (edit && ctx.callbackQuery) {
-        await ctx.editMessageText(txt, kb);
-    } else {
-        await ctx.reply(txt, kb);
-    }
+bot.action('admin_broadcast', (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
+    saveDB();
+    ctx.reply("📢 Enter the broadcast transmission message:");
+});
+
+bot.action('admin_ban_menu', (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_ID' };
+    saveDB();
+    ctx.reply("🚫 Send the Telegram Chat ID to BAN/UNBAN:");
+});
+
+bot.action('admin_view_logs', (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    ctx.answerCbQuery();
+    ctx.reply("📜 Logs: Engines running smoothly.");
+});
+
+bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
+
+// Link Creation Category View (Love, Birthday, Sorry, Eid এবং Back বাটন)
+bot.action('menu_makelink', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
+        [Markup.button.callback(locale.cat_love, 'make_love')],
+        [Markup.button.callback(locale.cat_birthday, 'make_birthday')],
+        [Markup.button.callback(locale.cat_sorry, 'make_sorry')],
+        [Markup.button.callback(locale.cat_eid, 'make_eid')],
+        [Markup.button.callback(locale.btn_back, 'go_to_main_menu')]
+    ]));
+});
+
+bot.action(/^make_/, (ctx) => {
+    ctx.answerCbQuery();
+    const cat = ctx.match.input.replace('make_', '');
+    db.userSessions[ctx.chat.id] = { 
+        type: cat, 
+        name: ctx.from.first_name || "User",
+        music: AUTOMATIC_MUSIC_MAPPING[cat] || "" // ক্যাটাগরি অনুযায়ী অটোমেটিক মিউজিক সেট
+    };
+    saveDB();
+    showCountdownPrompt(ctx);
+});
+
+// টাইম কাউন্টডাউন প্রম্পট (No Countdown, 3, 5, 10 মিনিট এবং Back বাটন)
+function showCountdownPrompt(ctx) {
+    ctx.editMessageText(locale.prompt_countdown_ask, Markup.inlineKeyboard([
+        [Markup.button.callback(locale.btn_no_countdown, 'timer_no')],
+        [Markup.button.callback('🕒 ৩ মিনিট', 'set_time_3'), Markup.button.callback('🕒 ৫ মিনিট', 'set_time_5')],
+        [Markup.button.callback('🕒 ১০ মিনিট', 'set_time_10')],
+        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+    ])).catch(()=>{});
 }
 
-async function askLetter(ctx, edit = false) {
-    const userId = ctx.from.id;
-    await saveSession(userId, { state: 'ASK_LETTER' });
-    const txt = "এখন মূল চিঠিটি (Letter) লিখুন যা এনিমেশন শেষ হওয়ার পর দেখা যাবে।";
-    const kb = Markup.inlineKeyboard([[Markup.button.callback('🔙 ফিরে যান', 'back_to_animation_prompt')]]);
-    
-    if (edit && ctx.callbackQuery) {
-        await ctx.editMessageText(txt, kb);
-    } else {
-        await ctx.reply(txt, kb);
-    }
-}
-
-bot.action('back_to_animation_prompt', async (ctx) => { 
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await askAnimationTexts(ctx, true); 
+bot.action('timer_no', (ctx) => { 
+    ctx.answerCbQuery(); 
+    db.userSessions[ctx.chat.id].pendingMinutes = null; 
+    saveDB();
+    showAnimationIntro(ctx); 
 });
 
-bot.on('text', async (ctx) => {
-    const userId = ctx.from.id;
+bot.action(/^set_time_/, (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    const minutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
+    session.pendingMinutes = minutes;
+    saveDB();
+    showAnimationIntro(ctx);
+});
+
+// অ্যানিমেশন টেক্সট ইনপুট শুরু
+function showAnimationIntro(ctx) {
+    db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
+    saveDB();
+    ctx.editMessageText(locale.session_started(db.userSessions[ctx.chat.id].type), Markup.inlineKeyboard([
+        [Markup.button.callback("🔙 পেছনে যান", 'back_to_timer_ask')]
+    ]), { parse_mode: 'Markdown' }).catch(()=>{});
+}
+
+bot.action('back_to_timer_ask', (ctx) => {
+    ctx.answerCbQuery();
+    showCountdownPrompt(ctx);
+});
+
+bot.action('menu_feedback', (ctx) => { 
+    ctx.answerCbQuery(); 
+    db.userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; 
+    saveDB();
+    ctx.reply(locale.feedback_prompt); 
+});
+
+bot.action('menu_help', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply(locale.help_text);
+});
+
+// 🎯 State Machine & Text Processing Engine
+bot.on('text', (ctx) => {
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    saveDB();
     const text = ctx.message.text.trim();
-    const session = await getSession(userId);
 
-    if (!session) return;
+    if (text.startsWith('/')) return;
 
-    if (session.state === 'CONTACTING_ADMIN') {
-        const adminMsg = `একজন ইউজার আপনাকে মেসেজ পাঠিয়েছেন।\nName: ${ctx.from.first_name || ''}\nUsername: ${ctx.from.username ? '@' + ctx.from.username : 'নেই'}\nUser ID: ${userId}\n\nমেসেজ:\n${text}`;
-        await ctx.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, Markup.inlineKeyboard([
-            [Markup.button.callback('Ban', `adm_ban_${userId}`), Markup.button.callback('Contact', `adm_contact_${userId}`)]
-        ]));
-        await deleteSession(userId);
-        await ctx.reply("আপনার মেসেজটি সফলভাবে এডমিনের কাছে পাঠানো হয়েছে।", mainKeyboard(userId));
+    if (!session) {
+        ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
+        sendMainMenu(ctx, false);
         return;
     }
 
-    if (session.state === 'ADMIN_REPLY_INBOX') {
-        const targetUser = session.targetUser;
-        try {
-            await ctx.telegram.sendMessage(targetUser, `এডমিনের পক্ষ থেকে মেসেজ:\n\n${text}`);
-            await ctx.reply("মেসেজটি ইউজারের ইনবক্সে পাঠানো হয়েছে।");
-        } catch (e) {
-            await ctx.reply("ইউজারকে মেসেজ পাঠানো যায়নি।");
+    try {
+        if (Number(userId) === Number(ADMIN_CHAT_ID)) {
+            if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
+                registeredUsers.forEach(id => bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{}));
+                ctx.reply("📡 Broadcast distribution cycle finished.");
+                delete db.userSessions[userId]; return;
+            }
+            if (session.step === 'AWAITING_BAN_USER_ID') {
+                const targetId = parseInt(text, 10);
+                if (isNaN(targetId)) return ctx.reply("❌ Invalid Chat ID. Please send a numeric ID.");
+                if (bannedUsers.has(targetId)) { bannedUsers.delete(targetId); ctx.reply("🟢 Target Unbanned successfully."); }
+                else { bannedUsers.add(targetId); ctx.reply("🚫 Target Banned successfully."); }
+                delete db.userSessions[userId]; return;
+            }
         }
-        await deleteSession(userId);
-        return;
-    }
 
-    if (session.state === 'SELECTING_COUNTDOWN') {
-        const minutes = parseInt(text, 10);
-        if (isNaN(minutes) || minutes < 1 || minutes > 100) {
-            await ctx.reply("ভুল ইনপুট! দয়া করে শুধুমাত্র ১ থেকে ১০০ এর মধ্যে সংখ্যা লিখে পাঠান।");
-            return;
+        if (session.step === 'AWAITING_USER_FEEDBACK') {
+            if (text.length < 5) return ctx.reply(locale.feedback_short);
+            totalFeedbacksReceived++;
+            bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback from User ${userId}:\n\n${text}`).catch(()=>{});
+            ctx.reply(locale.feedback_success);
+            delete db.userSessions[userId]; sendMainMenu(ctx, false); return;
         }
-        await saveSession(userId, { countdown: minutes });
-        await askAnimationTexts(ctx, false); 
-        return;
-    }
 
-    if (session.state === 'ASK_ANIMATION_TEXTS') {
-        let list = text.includes('\n') ? text.split('\n') : text.split(',');
-        list = list.map(x => x.trim()).filter(x => x.length > 0);
-
-        if (list.length === 0) {
-            await ctx.reply("দয়া করে অন্তত একটি এনিমেশন টেক্সট দিন।");
+        if (session.step === 'AWAITING_ANIMATION_TEXT') {
+            session.animations = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
+            if (session.animations.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
+            
+            session.step = 'AWAITING_LETTER_TEXT';
+            ctx.reply(locale.input_anim_success(session.animations.length));
             return;
         }
 
-        await saveSession(userId, { animations: list });
-        await askLetter(ctx, false); 
-        return;
-    }
-
-    if (session.state === 'ASK_LETTER') {
-        const updatedSession = await getSession(userId);
-        const linkId = Math.random().toString(36).substring(2, 10);
-
-        const newLink = {
-            linkId,
-            userId: String(userId),
-            topic: updatedSession.topic || 'crush',
-            music: updatedSession.music || musicAndTitles['crush'].src,
-            title: updatedSession.title || musicAndTitles['crush'].title,
-            countdown: updatedSession.countdown || 3,
-            animations: updatedSession.animations || [],
-            letter: text,
-            createdAt: Date.now()
-        };
-
-        await db.links.insert(newLink);
-
-        const fullUrl = `${SERVER_URL}/letter/${linkId}`;
-        await ctx.reply(`নিচে আপনার তৈরি করা লিংক দেয়া হলো। আপনি যাকে পাঠাতে চান নিচের লিংক কপি করে পাঠিয়ে দিন。\n\n${fullUrl}`, mainKeyboard(userId));
-
-        const adminAlert = `নতুন লিংক তৈরি করা হয়েছে।\nName: ${ctx.from.first_name || ''}\nUser ID: ${userId}`;
-        await ctx.telegram.sendMessage(ADMIN_CHAT_ID, adminAlert, Markup.inlineKeyboard([[Markup.button.callback('Ban User', `adm_ban_${userId}`)]]));
-        await deleteSession(userId);
-        return;
-    }
-
-    if (session.state === 'ADMIN_ASK_ANNOUNCEMENT') {
-        const allUsers = await db.users.find({});
-        let count = 0;
-        for (const u of allUsers) {
-            try { await ctx.telegram.sendMessage(u.userId, text); count++; } catch (e) {}
-        }
-        await ctx.reply(`অ্যানাউন্সমেন্ট সফলভাবে ${count} জন ইউজারের কাছে পাঠানো হয়েছে।`);
-        await deleteSession(userId);
-        await sendAdminDashboard(ctx);
-        return;
-    }
-
-    if (session.state === 'ADMIN_ASK_BAN_UNBAN') {
-        const targetId = text;
-        const user = await db.users.findOne({ userId: targetId });
-        if (!user) {
-            await ctx.reply("ইউজার আইডিটি ডেটাবেসে খুঁজে পাওয়া যায়নি।");
-            await deleteSession(userId);
-            await sendAdminDashboard(ctx);
+        if (session.step === 'AWAITING_LETTER_TEXT') {
+            processFinalLinkCreation(ctx, text);
             return;
         }
-        const newBanStatus = !user.banned;
-        await db.users.update({ userId: targetId }, { $set: { banned: newBanStatus } });
-        await ctx.reply(`${targetId} কে ${newBanStatus ? 'ব্যান করা হলো' : 'আনব্যান করা হলো'}`);
-        await deleteSession(userId);
-        await sendAdminDashboard(ctx);
+
+        ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
+
+    } catch (error) {
+        console.error("Critical Runtime Error:", error);
+        ctx.reply(locale.general_error);
     }
 });
 
-bot.action('adm_toggle_m', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    let config = await db.settings.findOne({ key: 'config' });
-    if (!config) { config = { key: 'config', maintenance: false }; await db.settings.insert(config); }
-    const newStatus = !config.maintenance;
-    await db.settings.update({ key: 'config' }, { $set: { maintenance: newStatus } });
-    await sendAdminDashboard(ctx, true);
-});
+function processFinalLinkCreation(ctx, letterText) {
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    saveDB();
 
-bot.action('adm_announce', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await saveSession(ctx.from.id, { state: 'ADMIN_ASK_ANNOUNCEMENT' });
-    await ctx.editMessageText("অ্যানাউন্সমেন্ট মেসেজটি লিখুন:");
-});
-
-bot.action('adm_ban_unban_prompt', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await saveSession(ctx.from.id, { state: 'ADMIN_ASK_BAN_UNBAN' });
-    await ctx.editMessageText("ব্যান বা আনব্যান করার জন্য ইউজার আইডিটি লিখুন:");
-});
-
-bot.action(/^adm_ban_(.+)$/, async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await db.users.update({ userId: ctx.match[1] }, { $set: { banned: true } });
-    await ctx.reply(`${ctx.match[1]} কে ব্যান করা হলো`);
-});
-
-bot.action(/^adm_contact_(.+)$/, async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await saveSession(ctx.from.id, { state: 'ADMIN_REPLY_INBOX', targetUser: ctx.match[1] });
-    await ctx.reply(`ইউজার ${ctx.match[1]} এর কাছে রিপ্লাই পাঠানোর জন্য টেক্সট লিখুন:`);
-});
-
-bot.action('adm_user_list', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const allUsers = await db.users.find({});
-    let txt = `মোট ইউজার সংখ্যা: ${allUsers.length}\n\n`;
-    const kbRows = [];
-    allUsers.slice(0, 10).forEach(u => {
-        txt += `• ${u.name} (ID: ${u.userId})\n`;
-        kbRows.push([Markup.button.callback(`🚫 Ban ${u.name}`, `adm_ban_${u.userId}`)]);
-    });
-    kbRows.push([Markup.button.callback('🔙 ফিরে যান', 'adm_back')]);
-    await ctx.editMessageText(txt, Markup.inlineKeyboard(kbRows));
-});
-
-bot.action('adm_ban_list', async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    const bannedUsers = await db.users.find({ banned: true });
-    let txt = `মোট ব্যান সংখ্যা: ${bannedUsers.length}\n\n`;
-    const kbRows = [];
-    bannedUsers.slice(0, 10).forEach(u => {
-        txt += `• ${u.name} (ID: ${u.userId})\n`;
-        kbRows.push([Markup.button.callback(`✅ Unban ${u.name}`, `adm_unban_${u.userId}`)]);
-    });
-    kbRows.push([Markup.button.callback('🔙 ফিরে যান', 'adm_back')]);
-    await ctx.editMessageText(txt, Markup.inlineKeyboard(kbRows));
-});
-
-bot.action(/^adm_unban_(.+)$/, async (ctx) => {
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await db.users.update({ userId: ctx.match[1] }, { $set: { banned: false } });
-    await ctx.reply(`${ctx.match[1]} কে আনব্যান করা হলো`);
-});
-
-bot.action('adm_back', async (ctx) => { 
-    try { await ctx.answerCbQuery().catch(() => {}); } catch(e){}
-    await sendAdminDashboard(ctx, true); 
-});
-
-// Webhook endpoint (টেলিগ্রাম সরাসরি এখানে মেসেজ পুশ করবে)
-app.use(bot.webhookCallback('/telegram-webhook'));
-
-app.post('/api/opened/:linkId', async (req, res) => {
-    const link = await db.links.findOne({ linkId: req.params.linkId });
-    if (link) { try { await bot.telegram.sendMessage(link.userId, "কেউ একজন আপনার লিংক ওপেন করেছেন।"); } catch (e) {} }
-    res.sendStatus(200);
-});
-
-app.post('/api/respond/:linkId', async (req, res) => {
-    const link = await db.links.findOne({ linkId: req.params.linkId });
-    if (link) {
-        try {
-            await bot.telegram.sendMessage(link.userId, `যাকে লিংক পাঠিয়েছেন তার উত্তর: ${req.body.response}`);
-            const user = await db.users.findOne({ userId: link.userId });
-            await bot.telegram.sendMessage(ADMIN_CHAT_ID, `একজন ইউজারের রিপ্লাই এসেছে।\nName: ${user ? user.name : 'অজানা'}\nReply: ${req.body.response}`);
-        } catch (e) {}
+    totalLinksCreated++;
+    
+    let finalCountdownIso = null;
+    if (session.pendingMinutes) {
+        const targetDate = new Date();
+        targetDate.setMinutes(targetDate.getMinutes() + session.pendingMinutes);
+        finalCountdownIso = targetDate.toISOString();
     }
-    res.sendStatus(200);
+
+    const uniqueId = Math.random().toString(36).substring(2, 9);
+    db.linkDatabase[uniqueId] = {
+        userId: userId, name: session.name, type: session.type,
+        music: session.music, countdown: finalCountdownIso,
+        animations: session.animations, letter: letterText, isActive: true
+    };
+    saveDB();
+    
+    ctx.reply(locale.link_ready(`${SERVER_URL}/love/${uniqueId}`));
+    delete db.userSessions[userId];
+}
+
+function sendMainMenu(ctx, isEdit = false) {
+    try {
+        const userId = ctx.chat.id;
+        const text = locale.welcome(ctx.from?.first_name || "User");
+        const keyboard = Markup.inlineKeyboard([
+            [Markup.button.callback(locale.btn_make, 'menu_makelink')],
+            [Markup.button.callback(locale.btn_feedback, 'menu_feedback'), Markup.button.callback(locale.btn_help, 'menu_help')]
+        ]);
+        if (isEdit) return ctx.editMessageText(text, keyboard).catch(()=>{});
+        return ctx.reply(text, keyboard);
+    } catch (err) { console.error(err); }
+}
+
+// API Route
+app.post('/api/get-content', async (req, res) => {
+    try {
+        const { id } = req.body;
+        const data = db.linkDatabase[id];
+        if (!data || !data.isActive) return res.json({ success: false });
+
+        bot.telegram.sendMessage(data.userId, esc(`👀 Link opened!`)).catch(e => console.error(e));
+
+        if (data.countdown) {
+            const now = new Date();
+            const lockTime = new Date(data.countdown);
+            if (lockTime > now) {
+                return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
+            }
+        }
+
+        return res.json({ 
+            success: true, 
+            isLocked: false,
+            music: data.music, 
+            animations: data.animations, 
+            letter: data.letter 
+        });
+    } catch (err) {
+        res.json({ success: false });
+    }
 });
 
-app.get('/letter/:linkId', async (req, res) => {
-    const link = await db.links.findOne({ linkId: req.params.linkId });
-    if (!link) return res.status(404).send("<div style='text-align:center; padding:20px;'><h1>⚠️ Link Expired!</h1></div>");
-
-    const htmlPath = path.join(__dirname, 'public', 'template.html');
-    let html = fs.readFileSync(htmlPath, 'utf8');
-    const lockTime = link.createdAt + (link.countdown * 60 * 1000);
-    const isLocked = lockTime > Date.now() ? "true" : "false";
-
-    html = html.replace('{{TITLE}}', link.title).replace('{{MUSIC_SRC}}', link.music).replace('{{LETTER_TITLE}}', 'আমার হৃদয়ের কথা...').replace('{{LETTER_CONTENT}}', link.letter).replace('{{{ANIMATION_TEXTS}}}', JSON.stringify(link.animations)).replace('{{IS_LOCKED}}', isLocked).replace('{{LOCK_TIME}}', lockTime).replace('{{LINK_ID}}', req.params.linkId);
-    res.send(html);
-});
-
-app.get('/ping', (req, res) => res.send('pong'));
+app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-    console.log(`Server listening on port ${PORT}`);
-    try {
-        await bot.telegram.setWebhook(`${SERVER_URL}/telegram-webhook`);
-        console.log('Webhook successfully registered!');
-    } catch (e) {
-        console.error('Error setting webhook:', e);
-    }
-    
-    // Self-pinging mechanism
-    setInterval(() => {
-        https.get(`${SERVER_URL}/ping`, () => console.log('Keep-alive ping sent')).on('error', () => {});
-    }, 4 * 60 * 1000); 
+app.listen(PORT, () => {
+    bot.launch();
+    console.log(`Server & Bot running on port ${PORT}`);
 });
