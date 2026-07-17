@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Special Letter for You</title>
+    <title>Special Letter</title>
     <style>
-        /* বেসিক রিসেট ও ব্যাকগ্রাউন্ড */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         body {
-            background-color: #0d0d0d;
+            background-color: #1a1a1a;
             font-family: 'Arial', sans-serif;
-            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            overflow: hidden;
             color: #fff;
         }
 
-        /* কাউন্টডাউন ও মেসেজ স্ক্রিন */
+        /* স্ক্রিন ম্যানেজমেন্ট */
         .screen {
             display: none;
             position: absolute;
@@ -31,362 +30,335 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            text-align: center;
-            padding: 20px;
         }
-        .active {
-            display: flex;
-        }
+        .active { display: flex; }
 
-        /* লক/কাউন্টডাউন স্টাইল */
-        #lock-screen h2 {
-            font-size: 24px;
-            color: #ff4d6d;
-            margin-bottom: 20px;
-        }
+        /* লক/কাউন্টডাউন স্ক্রিন */
         #timer {
-            font-size: 40px;
+            font-size: 48px;
             font-weight: bold;
-            letter-spacing: 2px;
-            background: linear-gradient(45deg, #ff4d6d, #ff758f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #ff4d6d;
+            margin-top: 20px;
         }
 
-        /* অ্যানিমেশন টেক্সট স্ক্রিন */
-        #animation-screen h1 {
-            font-size: 28px;
-            transition: all 0.5s ease;
+        /* টাইপিং অ্যানিমেশন টেক্সট */
+        .typing-container {
+            font-size: 24px;
             color: #ff758f;
-            padding: 0 10px;
+            min-height: 40px;
+            text-align: center;
+            padding: 0 20px;
+            border-right: 3px solid #ff758f;
+            white-space: pre-wrap;
+            animation: blink 0.75s step-end infinite;
+        }
+        @keyframes blink {
+            from, to { border-color: transparent }
+            50% { border-color: #ff758f; }
         }
 
-        /* 💌 খাম ও মেইন ইন্টারফেস */
-        .envelope-wrapper {
+        /* 💌 অরিজিনাল খাম ডিজাইন */
+        .envelope-container {
             position: relative;
-            cursor: pointer;
-            width: 300px;
-            height: 200px;
+            width: 320px;
+            height: 220px;
             background-color: #ff4d6d;
-            border-bottom-left-radius: 10px;
-            border-bottom-right-radius: 10px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            cursor: pointer;
             transition: transform 0.3s ease;
         }
-        .envelope-wrapper:hover {
-            transform: scale(1.03);
+        .envelope-container:hover {
+            transform: scale(1.02);
         }
-        /* খামের ওপরের ফ্ল্যাপ */
-        .envelope-wrapper::before {
+        /* খামের ওপরের ফ্ল্যাপ (ত্রিভুজ) */
+        .envelope-container::before {
             content: '';
             position: absolute;
-            top: -100px;
+            top: 0;
             left: 0;
-            border-left: 150px solid transparent;
-            border-right: 150px solid transparent;
-            border-bottom: 100px solid #ff4d6d;
-            transform-origin: bottom;
-            transition: transform 0.5s ease 0.3s;
+            border-left: 160px solid transparent;
+            border-right: 160px solid transparent;
+            border-top: 120px solid #ff758f;
+            transform-origin: top;
+            transition: transform 0.5s ease 0.2s;
             z-index: 3;
         }
-        /* খাম খুললে ফ্ল্যাপ উল্টে যাওয়ার অ্যানিমেশন */
-        .envelope-wrapper.open::before {
-            transform: rotateX(180deg) translateY(100px);
-            border-bottom-color: #ff758f;
+        .envelope-container.open::before {
+            transform: rotateX(180deg) translateY(0);
             z-index: 1;
         }
 
-        /* 📄 চিঠির ভেতরের কার্ড */
+        /* 📄 চিঠির কার্ড */
         .love-letter {
             position: absolute;
-            top: 5px;
-            left: 15px;
-            width: 270px;
-            background: #fff;
-            color: #333;
-            border-radius: 15px;
+            top: 10px;
+            left: 10px;
+            width: 300px;
+            background: #ffffff;
+            color: #333333;
+            border-radius: 8px;
             padding: 20px;
             box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
             transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 2;
             opacity: 0;
             transform: translateY(0);
-            max-height: 380px;
+            max-height: 400px;
             overflow-y: auto;
         }
-        /* খাম খুললে চিঠি ওপরে উঠে আসার অ্যানিমেশন */
-        .envelope-wrapper.open .love-letter {
+        .envelope-container.open .love-letter {
             opacity: 1;
-            transform: translateY(-220px);
+            transform: translateY(-260px);
             z-index: 5;
-            width: 320px;
+            width: 340px;
             left: -10px;
         }
 
-        /* 📸 ডাইনামিক ইমেজ স্টাইল (যা গোল দাগের স্থানে বসবে) */
+        /* 📸 ডাইনামিক রাউন্ড ইমেজ */
         .letter-img {
-            width: 110px;
-            height: 110px;
+            width: 105px;
+            height: 105px;
             object-fit: cover;
             border-radius: 50%;
             border: 4px solid #ff758f;
             margin: 0 auto 15px auto;
             display: block;
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            animation: popIn 0.5s ease;
         }
 
-        @keyframes popIn {
-            0% { transform: scale(0); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        /* চিঠির টেক্সট কনটেন্ট */
         .love-letter h2 {
-            font-size: 20px;
+            font-size: 22px;
             color: #ff4d6d;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             text-align: center;
         }
         .love-letter p {
-            font-size: 15px;
-            line-height: 1.5;
-            color: #555;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #444;
             margin-bottom: 15px;
             text-align: center;
         }
 
-        /* অপশন বাটন ও ফিডব্যাক */
+        /* বাটন ও ফিডব্যাক */
         .btn-group {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             margin-top: 15px;
         }
         .btn {
-            padding: 8px 20px;
+            padding: 8px 22px;
             border: none;
             border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
-            transition: background 0.2s;
+            font-size: 15px;
         }
         .btn-yes { background-color: #4caf50; color: white; }
         .btn-no { background-color: #f44336; color: white; }
-        .btn:hover { opacity: 0.9; }
-        
         #thanks-msg {
             color: #4caf50;
             font-weight: bold;
-            margin-top: 10px;
-            display: none;
             text-align: center;
+            display: none;
+            margin-top: 10px;
         }
-
-        /* ব্যাকগ্রাউন্ড মিউজিক প্লেয়ার হাইড থাকবে */
-        audio { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- ১. লক স্ক্রিন (কাউন্টডাউন) -->
+    <!-- ১. লক স্ক্রিন -->
     <div id="lock-screen" class="screen">
-        <h2>🔒 এই চিঠিটি এখনও লক অবস্থায় আছে!</h2>
+        <h2>🔒 এই চিঠিটি দেখতে অপেক্ষা করুন</h2>
         <div id="timer">00:00</div>
     </div>
 
-    <!-- ২. অ্যানিমেশন টেক্সট স্ক্রিন -->
+    <!-- ২. অ্যানিমেশন ও টাইপিং স্ক্রিন -->
     <div id="animation-screen" class="screen active">
-        <h1 id="anim-text">চিঠিটি লোড হচ্ছে...</h1>
+        <div class="typing-container" id="typing-text"></div>
     </div>
 
     <!-- ৩. মেইন খাম ও চিঠি স্ক্রিন -->
     <div id="main-screen" class="screen">
-        <div class="envelope-wrapper" id="envelope" onclick="openEnvelope()">
-            <!-- ভেতরের চিঠি -->
+        <div class="envelope-container" id="envelope" onclick="openEnvelope()">
             <div class="love-letter" onclick="event.stopPropagation();">
-                <!-- ছবি থাকলে জাভাস্ক্রিপ্ট দিয়ে ঠিক এই জায়গায় ইমেজ ট্যাগ (letter-img) বসানো হবে -->
-                <h2 id="letter-title">আমার মনের কিছু কথা</h2>
-                <p id="letter-text">চিঠির মূল বক্তব্য এখানে দেখাবে।</p>
+                <!-- ছবি আপলোড করা থাকলে জাভাস্ক্রিপ্ট দিয়ে এখানে ইমেজ বসবে -->
+                <div id="img-holder"></div>
+                <h2 id="letter-title"></h2>
+                <p id="letter-text"></p>
                 
-                <div id="interaction-zone">
-                    <p id="question-text" style="font-weight: bold; color: #333; margin-bottom: 8px;"></p>
-                    <div class="btn-group" id="buttons-container"></div>
+                <div id="action-zone">
+                    <p id="question-text" style="font-weight: bold; text-align: center; margin-bottom: 8px;"></p>
+                    <div class="btn-group" id="btn-container"></div>
                     <p id="thanks-msg">✨ ধন্যবাদ আপনার উত্তরের জন্য! ✨</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- অডিও এলিমেন্ট -->
-    <audio id="bg-music" loop></audio>
+    <!-- টাইপিং সাউন্ড এবং ব্যাকগ্রাউন্ড মিউজিক (ফ্রি সোর্স অডিও) -->
+    <audio id="typing-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
+    <audio id="bg-music" loop></preload></audio>
 
     <script>
-        // ইউআরএল থেকে আইডেন্টিফায়ার আইডি বের করা
         const linkId = window.location.pathname.split('/').pop();
-        let globalData = null;
+        let letterData = null;
 
-        // ব্যাকএন্ড API থেকে ডাটা ফেচ করা
-        async function loadContent() {
+        // ব্যাকএন্ড API থেকে ডাটা আনা
+        async function fetchLetterData() {
             try {
-                const res = await fetch('/api/get-content', {
+                const response = await fetch('/api/get-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: linkId })
                 });
-                const data = await res.json();
+                const data = await response.json();
 
                 if (!data.success) {
-                    document.getElementById('anim-text').innerText = "❌ লিঙ্কটি বৈধ নয় বা ডিলিট করা হয়েছে।";
+                    document.getElementById('typing-text').innerText = "❌ লিঙ্কটি সঠিক নয়!";
                     return;
                 }
 
-                // যদি কাউন্টডাউন লক থাকে
                 if (data.isLocked) {
-                    switchScreen('lock-screen');
-                    startCountdown(data.countdownTime);
+                    showScreen('lock-screen');
+                    runTimer(data.countdownTime);
                     return;
                 }
 
-                globalData = data;
-                // অ্যানিমেশন টেক্সট প্রসেস শুরু করা
-                startAnimation(data.animations);
+                letterData = data;
+                startTypingAnimation(data.animations);
 
             } catch (err) {
-                document.getElementById('anim-text').innerText = "⚠️ সার্ভার কানেকশন ত্রুটি!";
+                document.getElementById('typing-text').innerText = "⚠️ সার্ভার ত্রুটি! আবার চেষ্টা করুন।";
             }
         }
 
-        // স্ক্রিন পরিবর্তনের ফাংশন
-        function switchScreen(screenId) {
+        function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
+            document.getElementById(id).classList.add('active');
         }
 
-        // কাউন্টডাউন টাইমার চালুর লজিক
-        function startCountdown(targetIsoString) {
-            const timerEl = document.getElementById('timer');
-            const targetTime = new Date(targetIsoString).getTime();
+        // টাইমার ফাংশন
+        function runTimer(targetTimeStr) {
+            const timer = document.getElementById('timer');
+            const target = new Date(targetTimeStr).getTime();
 
             const interval = setInterval(() => {
                 const now = new Date().getTime();
-                const diff = targetTime - now;
+                const diff = target - now;
 
                 if (diff <= 0) {
                     clearInterval(interval);
-                    loadContent(); // লক শেষ হলে আবার কন্টেন্ট লোড করবে
+                    fetchLetterData();
                     return;
                 }
-
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                timerEl.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                timer.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }, 1000);
         }
 
-        // টেক্সট অ্যানিমেশন মেকানিজম
-        function startAnimation(lines) {
-            const animText = document.getElementById('anim-text');
-            let index = 0;
+        // 🎵 টাইপিং অ্যানিমেশন + সাউন্ড ইফেক্ট লজিক
+        function startTypingAnimation(lines) {
+            const textEl = document.getElementById('typing-text');
+            const sound = document.getElementById('typing-sound');
+            let lineIdx = 0;
 
-            function showNextLine() {
-                if (index < lines.length) {
-                    animText.style.opacity = 0;
-                    setTimeout(() => {
-                        animText.innerText = lines[index];
-                        animText.style.opacity = 1;
-                        index++;
-                        setTimeout(showNextLine, 2500); // প্রতি লাইন আড়াই সেকেন্ড থাকবে
-                    }, 500);
+            function typeLine() {
+                if (lineIdx < lines.length) {
+                    let currentLine = lines[lineIdx];
+                    let charIdx = 0;
+                    textEl.innerText = "";
+
+                    function typeChar() {
+                        if (charIdx < currentLine.length) {
+                            textEl.innerText += currentLine[charIdx];
+                            charIdx++;
+                            
+                            // প্রতি ক্যারেক্টারে সাউন্ড প্লে
+                            sound.currentTime = 0;
+                            sound.play().catch(() => {});
+                            
+                            setTimeout(typeChar, 100); // টাইপিং স্পিড
+                        } else {
+                            setTimeout(() => {
+                                lineIdx++;
+                                typeLine();
+                            }, 1500); // এক লাইনের পর বিরতি
+                        }
+                    }
+                    typeChar();
                 } else {
-                    // অ্যানিমেশন শেষ হলে মেইন খামের স্ক্রিনে নিয়ে যাওয়া
-                    setupMainEnvelope();
-                    switchScreen('main-screen');
+                    // অ্যানিমেশন শেষ হলে মেইন ইন্টারফেস রেডি করা
+                    setupEnvelopeUI();
+                    showScreen('main-screen');
                 }
             }
-            showNextLine();
+            typeLine();
         }
 
-        // খাম ও চিঠির ডাটা সেটআপ (ছবি হ্যান্ডলিংসহ)
-        function setupMainEnvelope() {
-            if (!globalData) return;
+        // খাম ও চিঠির ভেতরের ডাটা এবং ছবির রেন্ডারিং
+        function setupEnvelopeUI() {
+            if (!letterData) return;
 
-            const letterCard = document.querySelector('.love-letter');
-            const titleEl = document.getElementById('letter-title');
-
-            // 📸 গোল দাগ দেওয়া জায়গায় ছবি যোগ করার মেইন লজিক
-            if (globalData.image) {
-                // আগের কোনো ছবি থাকলে তা রিমুভ করা (ডুপ্লিকেট এড়াতে)
-                const oldImg = letterCard.querySelector('.letter-img');
-                if (oldImg) oldImg.remove();
-
-                // নতুন ইমেজ ট্যাগ তৈরি করা
-                const imgEl = document.createElement('img');
-                imgEl.src = globalData.image;
-                imgEl.className = 'letter-img';
-                
-                // টাইটেলের ঠিক উপরে ইমেজটি পুশ করা
-                letterCard.insertBefore(imgEl, titleEl);
+            // 📸 গোল দাগের জায়গায় ছবি রেন্ডার করার লজিক
+            const imgHolder = document.getElementById('img-holder');
+            imgHolder.innerHTML = ''; 
+            if (letterData.image) {
+                const img = document.createElement('img');
+                img.src = letterData.image;
+                img.className = 'letter-img';
+                imgHolder.appendChild(img);
             }
 
-            // টেক্সট ও টাইটেল সেট করা
-            titleEl.innerText = globalData.title;
-            document.getElementById('letter-text').innerText = globalData.letter;
+            document.getElementById('letter-title').innerText = letterData.title;
+            document.getElementById('letter-text').innerText = letterData.letter;
 
-            // মিউজিক সেটআপ
-            if (globalData.music) {
-                const audio = document.getElementById('bg-music');
-                audio.src = globalData.music;
+            if (letterData.music) {
+                document.getElementById('bg-music').src = letterData.music;
             }
 
-            // প্রশ্ন ও বাটন সেটআপ
-            document.getElementById('question-text').innerText = globalData.question;
-            const btnContainer = document.getElementById('buttons-container');
+            // ইন্টারঅ্যাকশন বাটন
+            document.getElementById('question-text').innerText = letterData.question;
+            const btnContainer = document.getElementById('btn-container');
             btnContainer.innerHTML = '';
 
-            globalData.buttons.forEach(btnLabel => {
+            letterData.buttons.forEach(label => {
                 const btn = document.createElement('button');
-                btn.innerText = btnLabel;
-                btn.className = `btn ${btnLabel.toLowerCase() === 'no' ? 'btn-no' : 'btn-yes'}`;
-                btn.onclick = () => submitAnswer(btnLabel);
+                btn.innerText = label;
+                btn.className = `btn ${label.toLowerCase() === 'no' ? 'btn-no' : 'btn-yes'}`;
+                btn.onclick = () => sendResponse(label);
                 btnContainer.appendChild(btn);
             });
         }
 
-        // খাম খোলার ফাংশন
         function openEnvelope() {
-            const envelope = document.getElementById('envelope');
-            if (!envelope.classList.contains('open')) {
-                envelope.classList.add('open');
-                
-                // মিউজিক চালু করা
-                const audio = document.getElementById('bg-music');
-                if (audio.src) {
-                    audio.play().catch(e => console.log("Music play blocked by browser settings."));
-                }
+            const env = document.getElementById('envelope');
+            if (!env.classList.contains('open')) {
+                env.classList.add('open');
+                const bgMusic = document.getElementById('bg-music');
+                if (bgMusic.src) bgMusic.play().catch(() => {});
             }
         }
 
-        // উত্তর সাবমিট করার ফাংশন
-        async function submitAnswer(selectedAnswer) {
+        async function sendResponse(ans) {
             try {
                 await fetch('/api/submit-answer', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: linkId, answer: selectedAnswer })
+                    body: JSON.stringify({ id: linkId, answer: ans })
                 });
-                
-                // বাটন লুকিয়ে থ্যাংকস মেসেজ দেখানো
-                document.getElementById('buttons-container').style.display = 'none';
+                document.getElementById('btn-container').style.display = 'none';
                 document.getElementById('question-text').style.display = 'none';
                 document.getElementById('thanks-msg').style.display = 'block';
             } catch (err) {
-                alert("উত্তর পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+                alert("উত্তরে সমস্যা হয়েছে, আবার চেষ্টা করুন।");
             }
         }
 
-        // পেজ লোড হলেই প্রসেস স্টার্ট হবে
-        window.onload = loadContent;
+        window.onload = fetchLetterData;
     </script>
 </body>
 </html>
