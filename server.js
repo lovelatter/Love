@@ -88,7 +88,8 @@ const locale = {
     prompt_countdown_ask: "⏰ **টাইম কাউন্টডাউন সেট করুন।**",
     btn_no_countdown: "❌ No Countdown",
     
-    help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
+    // ফিক্সড: অ্যাডমিন গাইডের পরিবর্তে বট ব্যবহারের নিয়ম যোগ করা হয়েছে
+    help_text: `❓ **বট ব্যবহারের সঠিক নিয়ম (Help Guide):**\n\n1️⃣ প্রথমে **🚀 লিঙ্ক তৈরি করুন** বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)।\n4️⃣ বটের নির্দেশনা অনুযায়ী অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     
     feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
@@ -101,7 +102,7 @@ const locale = {
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
 
-// গ্লোবাল মিডলওয়্যার (ব্যান, মেইনটেন্যান্স এবং ইউজার ট্র্যাকিং)
+// গলোবাল মিডলওয়্যার (ব্যান, মেইনটেন্যান্স এবং ইউজার ট্র্যাকিং)
 bot.use((ctx, next) => {
     try {
         const userId = ctx.chat ? ctx.chat.id : null;
@@ -130,7 +131,6 @@ bot.use((ctx, next) => {
 
 bot.command('start', (ctx) => { 
     try {
-        // নতুন করে স্টার্ট দিলে পুরানো কনফিউজিং সেশন ক্লিয়ার করে দেওয়া হবে
         delete db.userSessions[ctx.chat.id];
         saveDB();
         sendMainMenu(ctx, false); 
@@ -157,9 +157,8 @@ function showAdminDashboard(ctx, isEdit = false) {
 
 function handleAdminSecureAccess(ctx) {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) {
-        ctx.reply(locale.invalid_cmd(ctx.message.text));
-        ctx.reply(locale.help_text);
-        sendMainMenu(ctx, false);
+        ctx.reply(locale.invalid_cmd(ctx.message.text), { parse_mode: 'Markdown' });
+        ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
         return;
     }
     showAdminDashboard(ctx, false);
@@ -336,7 +335,7 @@ bot.action('menu_feedback', (ctx) => {
 
 bot.action('menu_help', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply(locale.help_text);
+    ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
 });
 
 bot.action(/^delete_link_(.+)$/, (ctx) => {
@@ -412,11 +411,10 @@ bot.on('text', (ctx) => {
         }
     }
 
-    // ফিক্সড কন্ডিশন: কোনো সেশন যদি তৈরি না থাকে (যেমন ইউজার বাটন না চেপে সরাসরি টেক্সট দিলে)
+    // ফিক্সড কন্ডিশন: সেশন না থাকলে বা ভুল ইনপুট দিলে স্টার্ট রিসেট অফ করে শুধু এরর ও গাইড দেওয়া হবে
     if (!session || !session.step) {
-        ctx.reply(locale.invalid_cmd(text));
-        ctx.reply(locale.help_text);
-        sendMainMenu(ctx, false);
+        ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
+        ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
         return;
     }
 
@@ -433,7 +431,7 @@ bot.on('text', (ctx) => {
 
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             session.animations = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
-            if (session.animations.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
+            if (session.animations.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি亗 অ্যানিমেশন টেক্সট লিখুন।");
             
             session.step = 'AWAITING_LETTER_TEXT';
             saveDB();
@@ -446,9 +444,9 @@ bot.on('text', (ctx) => {
             return;
         }
 
-        ctx.reply(locale.invalid_cmd(text));
-        ctx.reply(locale.help_text);
-        sendMainMenu(ctx, false);
+        // ফিক্সড: সেশনের ভেতরের অন্য যেকোনো ভুল ইনপুটের জন্য স্টার্ট না পাঠিয়ে শুধু নোটিফাই করা হবে
+        ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
+        ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
 
     } catch (error) {
         console.error("Critical Runtime Error:", error);
