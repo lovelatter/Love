@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const axios = require('axios');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 
@@ -25,6 +26,30 @@ const AUTOMATIC_MUSIC_MAPPING = {
     birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
     sorry: `${GITHUB_MUSIC_BASE_URL}/sorry.mp3`,
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
+};
+
+// ক্যাটাগরি অনুযায়ী কনফিগারেশন (Emojis, Questions, Buttons)
+const CATEGORY_CONFIGS = {
+    love: {
+        emojis: ["❤️", "💖", "💕"],
+        question: "Do you love me? 🥺",
+        buttons: ["Yes", "No"]
+    },
+    birthday: {
+        emojis: ["🎈", "🎉", "🎊"],
+        question: "Are you happy? 😊",
+        buttons: ["Yes", "No"]
+    },
+    sorry: {
+        emojis: ["😭", "😞", "😥"],
+        question: "Do you forgive me? 🥺",
+        buttons: ["Yes", "No"]
+    },
+    eid: {
+        emojis: ["🤝", "🎇", "🫂"],
+        question: "EID Mubarak 🌙",
+        buttons: ["EID Mubarak"]
+    }
 };
 
 // 🗄️ Database Load & Save
@@ -53,7 +78,7 @@ function esc(text) {
 let totalLinksCreated = 0;
 let totalFeedbacksReceived = 0;
 
-// 🌐 Messages Dictionary (শুধুমাত্র বাংলা)
+// 🌐 Messages Dictionary
 const locale = {
     welcome: (name) => `হ্যালো **${name}**। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
@@ -72,7 +97,7 @@ const locale = {
     session_cancelled: "❌ আপনার চলমান লিঙ্ক তৈরির সেশনটি বাতিল করা হয়েছে।",
     no_session: "💡 আপনার কোনো একটিভ সেশন নেই।",
     invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়। অনুগ্রহ করে নিচের মেইন মেনু ব্যবহার করুন অথবা সেশনটি বাতিল করতে /cancel লিখুন।`,
-    maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে আসছি।",
+    maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে ასছি।",
     session_started: () => `✨ **অ্যানিমেশন মেসেজ লিখুন।**\n\n💡**লেখার নিয়ম:**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     link_ready: (url) => `💝 অভিনন্দন! আপনার কাস্টমাইজড প্রিমিয়াম লিঙ্ক সম্পূর্ণ রেডি:\n\n${url}\n\n👉 এই লিঙ্কটি আপনার প্রিয়জনের সাথে শেয়ার করুন।`,
@@ -116,7 +141,25 @@ bot.command('cancel', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-// Admin Engine Controls
+// Admin Core & Check Answer Action Handler
+bot.action(/^chk_ans_(.+)$/, (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    const linkId = ctx.match[1];
+    const data = db.linkDatabase[linkId];
+    
+    if (!data) {
+        return ctx.answerCbQuery("❌ লিঙ্কটি খুঁজে পাওয়া যায়নি।", { show_alert: true });
+    }
+
+    if (!data.answer) {
+        return ctx.answerCbQuery("⏳ এখনো কোনো উত্তর আসেনি, অনুগ্রহ করে উত্তর আসা অবধি অপেক্ষা করুন।", { show_alert: true });
+    }
+
+    ctx.answerCbQuery();
+    ctx.reply(`📊 **ইউজারের উত্তরের বিবরণ:**\n\nName: ${data.name}\nCategory: ${data.type.toUpperCase()}\nAns: ${data.answer}`);
+});
+
+// Rest of Admin controls
 const handleAdminConsole = (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return;
     ctx.reply("👑 **Welcome to the Master Admin Core Console:**", Markup.inlineKeyboard([
@@ -166,7 +209,7 @@ bot.action('admin_view_logs', (ctx) => {
 
 bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
 
-// Link Creation Category View (Love, Birthday, Sorry, Eid এবং Back বাটন)
+// Link Creation Category View
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
@@ -184,13 +227,14 @@ bot.action(/^make_/, (ctx) => {
     db.userSessions[ctx.chat.id] = { 
         type: cat, 
         name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim() || "User",
-        music: AUTOMATIC_MUSIC_MAPPING[cat] || "" // ক্যাটাগরি অনুযায়ী অটোমেটিক মিউজিক সেট
+        username: ctx.from.username ? `@${ctx.from.username}` : "None",
+        music: AUTOMATIC_MUSIC_MAPPING[cat] || ""
     };
     saveDB();
     showCountdownPrompt(ctx);
 });
 
-// টাইম কাউন্টডাউন প্রম্পট (No Countdown, 3, 5, 10 মিনিট এবং Back বাটন)
+// টাইম কাউন্টডাউন প্রম্পট
 function showCountdownPrompt(ctx) {
     ctx.editMessageText(locale.prompt_countdown_ask, Markup.inlineKeyboard([
         [Markup.button.callback(locale.btn_no_countdown, 'timer_no')],
@@ -320,13 +364,20 @@ function processFinalLinkCreation(ctx, letterText) {
 
     const uniqueId = Math.random().toString(36).substring(2, 9);
     db.linkDatabase[uniqueId] = {
-        userId: userId, name: session.name, type: session.type,
+        userId: userId, name: session.name, username: session.username, type: session.type,
         music: session.music, countdown: finalCountdownIso,
-        animations: session.animations, letter: letterText, isActive: true
+        animations: session.animations, letter: letterText, isActive: true, answer: null
     };
     saveDB();
     
     ctx.reply(locale.link_ready(`${SERVER_URL}/love/${uniqueId}`));
+
+    // অ্যাডমিন নোটিফিকেশন ইঞ্জিন প্রেরণ
+    const adminMsg = `নতুন লিংক তৈরি করা হয়েছে।\nName: ${session.name}\nID: ${userId}\nUsername: ${session.username}\nCategory: ${session.type.toUpperCase()}`;
+    bot.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, Markup.inlineKeyboard([
+        [Markup.button.callback("🔍 Check Answer", `chk_ans_${uniqueId}`)]
+    ])).catch(e => console.error(e));
+
     delete db.userSessions[userId];
 }
 
@@ -344,14 +395,15 @@ function sendMainMenu(ctx, isEdit = false) {
     } catch (err) { console.error(err); }
 }
 
-// API Route
+// 🌐 API Routes
 app.post('/api/get-content', async (req, res) => {
     try {
         const { id } = req.body;
         const data = db.linkDatabase[id];
         if (!data || !data.isActive) return res.json({ success: false });
 
-        bot.telegram.sendMessage(data.userId, esc(`👀 Link opened!`)).catch(e => console.error(e));
+        // ইউজার নোটিফিকেশন: কেউ লিঙ্কটি প্রথমবার বা পুনরায় ওপেন করেছে[span_1](start_span)[span_1](end_span)
+        bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(e => console.error(e));
 
         if (data.countdown) {
             const now = new Date();
@@ -361,13 +413,46 @@ app.post('/api/get-content', async (req, res) => {
             }
         }
 
+        // ক্যাটাগরি অনুযায়ী কনফিগ ডেটা লোড
+        const currentConfig = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+
         return res.json({ 
             success: true, 
             isLocked: false,
             music: data.music, 
             animations: data.animations, 
-            letter: data.letter 
+            letter: data.letter,
+            // নতুন ফ্রন্টএন্ড ইমোজি ও প্রশ্ন ডেটা পাঠানো হচ্ছে
+            emojis: currentConfig.emojis,
+            question: currentConfig.question,
+            buttons: currentConfig.buttons
         });
+    } catch (err) {
+        res.json({ success: false });
+    }
+});
+
+// ভিজিটরের উত্তরের সাবমিশন প্রসেস করার API
+app.post('/api/submit-answer', async (req, res) => {
+    try {
+        const { id, answer } = req.body;
+        const data = db.linkDatabase[id];
+        if (!data || !data.isActive) return res.json({ success: false });
+
+        data.answer = answer;
+        saveDB();
+
+        const currentConfig = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+
+        // ইউজারের কাছে উত্তর আসার নোটিফিকেশন
+        const userNotifyMsg = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${currentConfig.question}\nAns: ${answer}`;
+        bot.telegram.sendMessage(data.userId, userNotifyMsg).catch(e => console.error(e));
+
+        // অ্যাডমিনের কাছে উত্তর আসার অটোমেটিক নোটিফিকেশন
+        const adminNotifyMsg = `Name: ${data.name}\nCategory: ${data.type.toUpperCase()}\nAns: ${answer}`;
+        bot.telegram.sendMessage(ADMIN_CHAT_ID, adminNotifyMsg).catch(e => console.error(e));
+
+        return res.json({ success: true });
     } catch (err) {
         res.json({ success: false });
     }
