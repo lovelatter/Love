@@ -88,7 +88,7 @@ const locale = {
     
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)।\n4️⃣ বটের নির্দেশনা অনুযায়ী অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     
-    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     
@@ -423,7 +423,13 @@ bot.on('text', (ctx) => {
     try {
         if (session.step === 'AWAITING_USER_FEEDBACK') {
             if (text.length < 5) return ctx.reply(locale.feedback_short);
-            bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback from User ${userId}:\n\n${text}`).catch(()=>{});
+            
+            const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
+            const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
+            
+            const formattedFeedback = `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`;
+            
+            bot.telegram.sendMessage(ADMIN_CHAT_ID, formattedFeedback).catch(e => console.error(e));
             ctx.reply(locale.feedback_success);
             delete db.userSessions[userId]; 
             saveDB();
@@ -556,4 +562,4 @@ app.listen(PORT, () => {
     bot.launch();
     console.log(`Server running successfully on port ${PORT}`);
 });
-2
+s
