@@ -86,7 +86,7 @@ const locale = {
     prompt_countdown_ask: "⏰ টাইম কাউন্টডাউন সেট করুন।",
     btn_no_countdown: "❌ No Countdown",
     
-    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)।\n4️⃣ বটের নির্দেশনা অনুযায়ী অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
+    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)।\n4️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     
     feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
@@ -374,6 +374,22 @@ bot.on('text', (ctx) => {
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
 
+    if (session && session.step === 'AWAITING_USER_FEEDBACK') {
+        if (text.length < 5) {
+            return ctx.reply(locale.feedback_short);
+        }
+        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
+        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
+        const formattedFeedback = `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`;
+        
+        bot.telegram.sendMessage(ADMIN_CHAT_ID, formattedFeedback).catch(e => console.error(e));
+        ctx.reply(locale.feedback_success);
+        delete db.userSessions[userId]; 
+        saveDB();
+        sendMainMenu(ctx, false); 
+        return;
+    }
+
     if (Number(userId) === Number(ADMIN_CHAT_ID) && session) {
         if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
             db.registeredUsers.forEach(id => {
@@ -421,22 +437,6 @@ bot.on('text', (ctx) => {
     }
 
     try {
-        if (session.step === 'AWAITING_USER_FEEDBACK') {
-            if (text.length < 5) return ctx.reply(locale.feedback_short);
-            
-            const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
-            const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-            
-            const formattedFeedback = `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`;
-            
-            bot.telegram.sendMessage(ADMIN_CHAT_ID, formattedFeedback).catch(e => console.error(e));
-            ctx.reply(locale.feedback_success);
-            delete db.userSessions[userId]; 
-            saveDB();
-            sendMainMenu(ctx, false); 
-            return;
-        }
-
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             const lines = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
             if (lines.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
