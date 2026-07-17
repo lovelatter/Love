@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const axios = require('axios');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 
@@ -76,7 +77,7 @@ const locale = {
     prompt_countdown_ask: "⏰ **টাইম কাউন্টডাউন সেট করুন।**",
     btn_no_countdown: "❌ No Countdown",
     
-    help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
+    help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো টাকায় এডমিনের সাথে যোগাযোগ করুন।`,
     
     feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
@@ -147,6 +148,18 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
 
     ctx.editMessageText("❌ **আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।**");
     sendMainMenu(ctx, false);
+});
+
+// 📋 ক্লিপবোর্ডে কপি করার জন্য বাটন হ্যান্ডলার (ফরওয়ার্ড ট্রিক এড়াতে নোটিফিকেশন অ্যালার্ট মেকানিজম)
+bot.action(/^copy_link_(.+)$/, (ctx) => {
+    const linkId = ctx.match[1];
+    const data = db.linkDatabase[linkId];
+    if (!data) {
+        return ctx.answerCbQuery("❌ লিঙ্কটি খুঁজে পাওয়া যায়নি।", { show_alert: true });
+    }
+    const finalGeneratedUrl = `${SERVER_URL}/love/${linkId}`;
+    // টেলিগ্রাম ইনলাইন কোড স্টাইল দিয়ে পপআপ অ্যালার্ট পাঠানো যাতে ইউজার এক টাচেই কপি করতে পারেন
+    return ctx.answerCbQuery(`📋 লিংকটি নিচে দেওয়া হলো, চেপে ধরে কপি করুন:\n\n${finalGeneratedUrl}`, { show_alert: true });
 });
 
 const handleAdminConsole = (ctx) => {
@@ -357,13 +370,16 @@ function processFinalLinkCreation(ctx, letterText) {
     };
     saveDB();
     
-    // আপনার চাওয়া নির্দিষ্ট ফরম্যাটে মেসেজ ও ইনলাইন বাটনসমূহ
-    const userSuccessMsg = `আপনার লিংক তৈরি করা হয়েছে। যাকে লিংক পাঠাতে চান, লিংকটি কপি করে তাকে পাঠিয়ে দিন。\n\nলিংক: ${finalGeneratedUrl}`;
+    // মনমতো মেসেজ ফরম্যাট এবং কপি করার জন্য ডেডিকেটেড অ্যাকশন বাটন লুপ
+    const userSuccessMsg = `আপনার লিংক তৈরি করা হয়েছে। যাকে লিংক পাঠাতে চান, লিংকটি কপি করে তাকে পাঠিয়ে দিন।\n\nলিংক: \`${finalGeneratedUrl}\``;
     
-    ctx.reply(userSuccessMsg, Markup.inlineKeyboard([
-        [Markup.button.url("📋 Copy Link", `https://t.me/share/url?url=${encodeURIComponent(finalGeneratedUrl)}`)],
-        [Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]
-    ]));
+    ctx.reply(userSuccessMsg, {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+            [Markup.button.callback("📋 Copy Link", `copy_link_${uniqueId}`)],
+            [Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]
+        ])
+    });
 
     const adminMsg = `নতুন লিংক তৈরি করা হয়েছে。\nName: ${session.name}\nID: ${userId}\nUsername: ${session.username}\nCategory: ${session.type.toUpperCase()}`;
     bot.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, Markup.inlineKeyboard([
@@ -433,7 +449,6 @@ app.post('/api/submit-answer', async (req, res) => {
 
         const currentConfig = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
 
-        // উত্তর আসার মেসেজ এবং নিচে "Link Off" করার বাটন সংযোজন
         const userNotifyMsg = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${currentConfig.question}\nAns: ${answer}`;
         bot.telegram.sendMessage(data.userId, userNotifyMsg, Markup.inlineKeyboard([
             [Markup.button.callback("❌ Link Off", `delete_link_${id}`)]
