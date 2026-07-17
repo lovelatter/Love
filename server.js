@@ -455,7 +455,7 @@ bot.on('text', async (ctx) => {
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             const lines = text.split(/[\n,痕]+/).map(l => l.trim()).filter(l => l.length > 0);
-            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
+            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি messagebox বা টেক্সট লিখুন।");
             
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
@@ -500,7 +500,16 @@ function processFinalLinkCreation(ctx, letterText) {
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
 
-    bot.telegram.sendMessage(ADMIN_CHAT_ID, `নতুন লিংক তৈরি করা হয়েছে।\nName: ${session.name}\nID: ${userId}\nCategory: ${session.type.toUpperCase()}\nImage Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`, Markup.inlineKeyboard([[Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`)]])).catch(() => {});
+    // অ্যাডমিনকে পাঠানোর নোটিফিকেশন মেসেজ ফরম্যাট (অনুরোধ অনুযায়ী পরিমার্জিত)
+    const adminNotificationText = `নতুন লিংক তৈরি করা হয়েছে।
+Name: ${session.name || "User"}
+ID: ${userId}
+Username: ${session.username || "None"}
+Category: ${String(session.type || "love").toUpperCase()}
+Image Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}
+Link: ${finalGeneratedUrl}`;
+
+    bot.telegram.sendMessage(ADMIN_CHAT_ID, adminNotificationText, Markup.inlineKeyboard([[Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`)]])).catch(() => {});
 
     delete db.userSessions[userId];
     saveDB();
