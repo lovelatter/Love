@@ -7,7 +7,6 @@ const https = require('https');
 const app = express();
 app.use(express.json());
 
-// আপলোড করা ছবিগুলো স্ট্যাটিক্যালি সার্ভ করার জন্য এক্সপ্রেস কনফিগারেশন
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -16,7 +15,6 @@ const SERVER_URL = "https://love-bb7p.onrender.com";
 const DB_FILE = path.join(__dirname, 'db.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
-// আপলোড ফোল্ডার না থাকলে তৈরি করে নেবে
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -47,7 +45,6 @@ let db = {
     usernameMap: {}
 };
 
-// ডাটাবেজ লোড ও ফাইল সেটাপ
 try {
     if (fs.existsSync(DB_FILE)) {
         db = { ...db, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
@@ -77,7 +74,7 @@ const locale = {
     btn_no_countdown: "❌ No Countdown",
     prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
-    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন。\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
+    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
@@ -88,7 +85,6 @@ const locale = {
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
 
-// মিডলওয়্যার ফিল্টার
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
     if (!userId) return;
@@ -104,7 +100,6 @@ bot.use(async (ctx, next) => {
     return next();
 });
 
-// মেইন মেনু জেনারেটর
 const sendMainMenu = (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
     const keyboard = Markup.inlineKeyboard([
@@ -122,7 +117,6 @@ bot.command('start', (ctx) => {
     sendMainMenu(ctx, false); 
 });
 
-// অ্যাডমিন কন্ট্রোল প্যানেল
 const showAdminDashboard = (ctx, isEdit = false) => {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
     const keyboard = Markup.inlineKeyboard([
@@ -193,7 +187,6 @@ bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     const targetKey = ctx.match[1];
     if (db.linkDatabase[targetKey]) {
-        // যদি ছবি থাকে তা ডিলিট করা
         if (db.linkDatabase[targetKey].imagePath) {
             const fullImgPath = path.join(__dirname, db.linkDatabase[targetKey].imagePath);
             if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
@@ -210,7 +203,6 @@ bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
 bot.action('adm_delete_all_links_confirm', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
-    // সব ছবি ডিলিট করা
     Object.keys(db.linkDatabase).forEach(key => {
         if (db.linkDatabase[key].imagePath) {
             const fullImgPath = path.join(__dirname, db.linkDatabase[key].imagePath);
@@ -240,7 +232,6 @@ bot.action('adm_back_to_dashboard', (ctx) => {
 
 bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
 
-// লিঙ্ক মেকিং লজিক
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
@@ -293,7 +284,6 @@ bot.action(/^set_time_/, (ctx) => {
     showImageUploadPrompt(ctx);
 });
 
-// ছবি আপলোড করার প্রম্পট
 function showImageUploadPrompt(ctx) {
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
@@ -357,25 +347,21 @@ bot.action(/^view_ans_(.+)$/, (ctx) => {
     return ctx.answerCbQuery(data.answer ? `📩 ইউজারের উত্তর: ${data.answer}` : "⏳ ইউজার এখনও উত্তর দেয়নি!", { show_alert: true });
 });
 
-// ফটো/ছবি হ্যান্ডলার মিডলওয়্যার
 bot.on('photo', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
 
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
         try {
-            // সবচেয়ে বড় সাইজের ছবি সিলেক্ট করা হচ্ছে কোয়ালিটি ঠিক রাখার জন্য
             const photoArray = ctx.message.photo;
             const fileId = photoArray[photoArray.length - 1].file_id;
             
-            // টেলিগ্রাম থেকে ফাইলের লিংক আনা
             const fileUrlObj = await bot.telegram.getFileLink(fileId);
             const fileUrl = fileUrlObj.href;
 
             const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 5)}.jpg`;
             const localPath = path.join(UPLOADS_DIR, filename);
 
-            // ফাইল ডাউনলোড লজিক
             const fileStream = fs.createWriteStream(localPath);
             https.get(fileUrl, (response) => {
                 response.pipe(fileStream);
@@ -399,7 +385,6 @@ bot.on('photo', async (ctx) => {
     }
 });
 
-// টেক্সট মেসেজ রিসিভার
 bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
@@ -487,7 +472,6 @@ function processFinalLinkCreation(ctx, letterText) {
     const uniqueId = Math.random().toString(36).substring(2, 9);
     const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
     
-    // ছবির আপলোড পাথ সম্পূর্ণ ইউআরএল-এ কনভার্ট করে ডাটাবেজে রাখা
     const dbImageUrl = session.imageUrl ? `${SERVER_URL}${session.imageUrl}` : null;
 
     db.linkDatabase[uniqueId] = {
@@ -507,7 +491,6 @@ function processFinalLinkCreation(ctx, letterText) {
     saveDB();
 }
 
-// REST API এন্ডপয়েন্টস
 app.post('/api/get-content', async (req, res) => {
     try {
         const data = db.linkDatabase[req.body.id];
