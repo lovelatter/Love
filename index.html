@@ -30,9 +30,8 @@
         .love-letter { position:absolute; background:#fff0f5; padding:25px; border-radius:15px; text-align:center; max-width:380px; width:85%; box-shadow:0 15px 40px rgba(0,0,0,0.4); color:#333; z-index:2; transform:translateY(20px) scale(0.85); opacity:0; transition:all 1.2s cubic-bezier(0.1, 1, 0.2, 1); pointer-events:none; }
         .letter-popout { opacity:1 !important; transform:translateY(-50px) scale(1) !important; z-index:12 !important; pointer-events:auto !important; }
         
-        /* 📸 ডাইনামিক ইমেজের নতুন স্টাইল */
+        /* 📸 ডাইনামিক ইমেজ স্টাইল */
         .dynamic-letter-img { width:105px; height:105px; object-fit:cover; border-radius:50%; border:4px solid #ff4d6d; margin:0 auto 15px auto; display:block; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-        /* থিম অনুযায়ী ছবির বর্ডার কালার পরিবর্তন */
         body.theme-neon .dynamic-letter-img { border-color: #00f3ff; }
         body.theme-gold .dynamic-letter-img { border-color: #ffd700; }
         body.theme-dark .dynamic-letter-img { border-color: #4b5563; }
@@ -48,6 +47,7 @@
         .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index: 5; }
         .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
         .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
+        .btn-no:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(231,76,60,0.5); }
         
         .heart { position:absolute; color:#ff4d6d; font-size:24px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index: 1; }
         @keyframes floatUp { 0% { transform:translateY(100vh) scale(0); opacity:0; } 10% { opacity:0.8; } 90% { opacity:0.8; } 100% { transform:translateY(-10vh) scale(1.5); opacity:0; } }
@@ -106,7 +106,6 @@
     </div>
     
     <div id="loveLetter" class="love-letter">
-        <!-- 📸 ডাইনামিক ইমেজ কন্টেইনার অ্যাড করা হলো -->
         <div id="imageContainer"></div>
         <h2 id="letterTitle">কিছু কথা</h2>
         <p id="letterContent">লোডিং...</p>
@@ -156,7 +155,6 @@
                         letterTitle.innerText = "কিছু কথা";
                     }
 
-                    // 📸 ডাটাবেজ থেকে ইমেজ থাকলে তা সুন্দর ফ্রেমসহ রেন্ডার করার জন্য নতুন লজিক
                     if (data.image) {
                         const imgContainer = document.getElementById('imageContainer');
                         if (imgContainer) {
@@ -194,8 +192,7 @@
                             } else {
                                 btn.classList.add('btn-no');
                                 btn.id = 'noBtn';
-                                btn.onmouseover = moveNoButton;
-                                btn.ontouchstart = moveNoButton; 
+                                // নড়াচড়ার ইভেন্টগুলো (moveNoButton) পুরোপুরি বাদ দেওয়া হলো
                                 btn.onclick = () => sendResponse(`${btnText} ❌`);
                             }
                             btnGroup.appendChild(btn);
@@ -209,7 +206,7 @@
                 }
             } catch(e) { 
                 console.log('Content fetch error');
-                letterTitle.innerText = "কিছু কথা";
+                letterTitle.innerText = "कुछ কথা";
             }
         });
 
@@ -307,15 +304,6 @@
             document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
         }
 
-        function moveNoButton() {
-            const noBtn = document.getElementById('noBtn');
-            if(!noBtn) return;
-            noBtn.style.position = 'absolute';
-            const x = Math.random() * (loveLetter.offsetWidth - noBtn.offsetWidth - 40) + 10;
-            const y = Math.random() * (loveLetter.offsetHeight - noBtn.offsetHeight - 180) + 120;
-            noBtn.style.left = `${x}px`; noBtn.style.top = `${y}px`;
-        }
-
         function sendResponse(answer) {
             questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>`;
 
@@ -331,4 +319,3 @@
     </script>
 </body>
 </html>
-2
