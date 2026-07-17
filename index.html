@@ -96,7 +96,6 @@
     </div>
     
     <div id="loveLetter" class="love-letter">
-        <!-- ডিফল্ট টাইটেল পরিবর্তন করে "কিছু কথা" করা হলো -->
         <h2 id="letterTitle">কিছু কথা</h2>
         <p id="letterContent">লোডিং...</p>
         
@@ -112,13 +111,6 @@
         let textArray = ["...", "আপনার জন্য বার্তা..."];
         let arrayIndex = 0, audioCtx = null;
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
-
-        const titleMapping = {
-            love: "আমার মনের কথা!",
-            birthday: "শুভ জন্মদিন!",
-            sorry: "দুঃখিত প্রিয়!",
-            eid: "ঈদ মোবারক"
-        };
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
@@ -146,15 +138,15 @@
                         return; 
                     }
 
-                    const categoryKey = data.type || data.category || '';
-                    const matchedCategory = categoryKey.toLowerCase().trim();
-
-                    // ক্যাটাগরি ম্যাচ করলে সেটি দেখাবে, না হলে ব্যাকআপ হিসেবে "কিছু কথা" দেখাবে
-                    if (titleMapping[matchedCategory]) {
-                        letterTitle.innerText = titleMapping[matchedCategory];
+                    // 🎯 ফিক্স: ব্যাকএন্ড থেকে আসা ডাইনামিক টাইটেল এখানে সেট করা হচ্ছে
+                    if (data.title) {
+                        letterTitle.innerText = data.title;
                     } else {
                         letterTitle.innerText = "কিছু কথা";
                     }
+
+                    const categoryKey = data.type || data.category || '';
+                    const matchedCategory = categoryKey.toLowerCase().trim();
 
                     if(data.emojis && data.emojis.length > 0) {
                         flyingEmojis = data.emojis;
