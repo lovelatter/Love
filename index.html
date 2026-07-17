@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Love Letter...</title>
+    <title>Wish Letter...</title>
     <style>
         /* আপনার অরিজিনাল সমস্ত CSS স্টাইল হুবহু অপরিবর্তিত রাখা হয়েছে */
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -42,7 +42,7 @@
         .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
         .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
         
-        .heart { position:absolute; color:#ff4d6d; font-size:20px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; }
+        .heart { position:absolute; color:#ff4d6d; font-size:24px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index: 1; }
         @keyframes floatUp { 0% { transform:translateY(100vh) scale(0); opacity:0; } 10% { opacity:0.8; } 90% { opacity:0.8; } 100% { transform:translateY(-10vh) scale(1.5); opacity:0; } }
         .fade-in { opacity:1 !important; transform:scale(1) !important; transition:all 0.8s ease; }
 
@@ -76,7 +76,7 @@
     </style>
 </head>
 <body>
-    <audio id="bgMusic" src="https://cdn.jsdelivr.net/gh/lovelatter/Love@main/music.mp3" loop preload="auto"></audio>
+    <audio id="bgMusic" src="" loop preload="auto"></audio>
     
     <div id="lockScreen">
         <div id="countdown-box">
@@ -91,7 +91,7 @@
         <div class="envelope-flap"></div>
         <div class="envelope-pockets"></div>
         <div class="envelope-bottom"></div>
-        <div class="envelope-heart">💝</div>
+        <div class="envelope-heart" id="envelopeHeart">💝</div>
         <div class="envelope-label">খাম খুলুন</div>
     </div>
     
@@ -100,25 +100,26 @@
         <p id="letterContent">লোডিং...</p>
         
         <div class="question-box" id="questionBox">
-            <h3>Do you love me? 🥺</h3>
-            <div class="btn-group">
-                <button class="ask-btn btn-yes" onclick="sendResponse('Yes! I Love You Too ❤️')">Yes</button>
-                <button class="ask-btn btn-no" id="noBtn" onmouseover="moveNoButton()" onclick="sendResponse('No 💔')">No</button>
+            <h3 id="displayQuestion">Do you love me? 🥺</h3>
+            <div class="btn-group" id="btnGroup">
+                <!-- বাটনগুলো জাভাস্ক্রিপ্ট দিয়ে ডাইনামিক্যালি তৈরি হবে -->
             </div>
         </div>
     </div>
 
     <script>
-        const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), noBtn = document.getElementById('noBtn'), questionBox = document.getElementById('questionBox'), lockScreen = document.getElementById('lockScreen');
+        const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), questionBox = document.getElementById('questionBox'), lockScreen = document.getElementById('lockScreen'), letterTitle = document.getElementById('letterTitle'), displayQuestion = document.getElementById('displayQuestion'), btnGroup = document.getElementById('btnGroup'), envelopeHeart = document.getElementById('envelopeHeart');
         
         let textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
         let arrayIndex = 0, audioCtx = null;
+        let flyingEmojis = ['❤️', '💖', '💘', '💕', '💗']; // ডিফল্ট লাভ ইমোজি
 
-        const musicTracks = {
-            romantic: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", 
-            piano: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",    
-            birthday: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", 
-            none: ""
+        // ক্যাটাগরি অনুযায়ী টাইটেল ম্যাপ
+        const titleMapping = {
+            love: "আমার হৃদয়ের কথা...",
+            birthday: "শুভ জন্মদিন ✨",
+            sorry: "ক্ষমা চেয়ে কিছু কথা...",
+            eid: "ঈদের শুভেচ্ছা 🌙"
         };
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -138,17 +139,54 @@
                         document.body.classList.add(`theme-${data.theme}`);
                     }
 
-                    if (data.music && musicTracks[data.music]) {
-                        bgMusic.src = musicTracks[data.music];
-                    } else if (data.music && data.music.startsWith('http')) {
-                        bgMusic.src = data.music; 
-                    } else if (data.music === 'none') {
-                        bgMusic.removeAttribute('src');
+                    // ব্যাকএন্ড থেকে আসা মিউজিক ডিরেক্ট সেট করা
+                    if (data.music) {
+                        bgMusic.src = data.music;
                     }
 
                     if (data.isLocked && data.countdownTime) {
                         handleTimeLock(data.countdownTime);
                         return; 
+                    }
+
+                    // 🎈 ডাইনামিক ক্যাটাগরি ও ইমোজি সেটআপ
+                    if(data.emojis && data.emojis.length > 0) {
+                        flyingEmojis = data.emojis;
+                        if(envelopeHeart) envelopeHeart.innerText = data.emojis[0];
+                    }
+
+                    // টাইটেল ম্যাপ করা
+                    if (data.type && titleMapping[data.type]) {
+                        letterTitle.innerText = titleMapping[data.type];
+                    }
+
+                    // প্রশ্ন সেট করা
+                    if(data.question) {
+                        displayQuestion.innerText = data.question;
+                    }
+
+                    // বাটন জেনারেট করা (১টি বা ২টি বাটনের জন্য ডাইনামিক হ্যান্ডলার)
+                    if(data.buttons && data.buttons.length > 0) {
+                        btnGroup.innerHTML = ''; // ক্লিয়ার করুন
+                        data.buttons.forEach((btnText, idx) => {
+                            const btn = document.createElement('button');
+                            btn.innerText = btnText;
+                            btn.classList.add('ask-btn');
+                            
+                            if(idx === 0) {
+                                // প্রথম বাটন (যেমন: Yes বা Eid Mubarak)
+                                btn.classList.add('btn-yes');
+                                btn.onclick = () => sendResponse(`${btnText} ❤️`);
+                            } else {
+                                // দ্বিতীয় বাটন (যেমন: No) যা মাউস নিলে দূরে সরে যাবে
+                                btn.classList.add('btn-no');
+                                btn.id = 'noBtn';
+                                btn.onmouseover = moveNoButton;
+                                btn.ontouchstart = moveNoButton; // মোবাইলের জন্যও
+                                btn.onclick = () => sendResponse(`${btnText} 💔`);
+                            }
+                            btnGroup.appendChild(btn);
+                        });
                     }
 
                     if(data.animations && data.animations.length > 0) textArray = data.animations;
@@ -245,27 +283,25 @@
             }, 550);
         });
         
+        // 🎈 ডাইনামিক ইমোজি অ্যানিমেশন মেকার
         function createHeart() {
             const heart = document.createElement('div'); heart.classList.add('heart');
-            const heartTypes = ['❤️', '💖', '💘', '💕', '💗']; heart.innerText = heartTypes[Math.floor(Math.random() * heartTypes.length)];
+            heart.innerText = flyingEmojis[Math.floor(Math.random() * flyingEmojis.length)];
             heart.style.left = Math.random() * 100 + 'vw'; heart.style.animationDuration = Math.random() * 2 + 3 + 's';
             document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
         }
 
         function moveNoButton() {
+            const noBtn = document.getElementById('noBtn');
+            if(!noBtn) return;
             noBtn.style.position = 'absolute';
             const x = Math.random() * (loveLetter.offsetWidth - noBtn.offsetWidth - 40) + 10;
             const y = Math.random() * (loveLetter.offsetHeight - noBtn.offsetHeight - 180) + 120;
             noBtn.style.left = `${x}px`; noBtn.style.top = `${y}px`;
         }
 
-        // 🔗 ব্যাকএন্ড API রাউট ইন্টারসেপ্টর ফিক্স (/api/submit-answer)
         function sendResponse(answer) {
-            if(answer.includes('Yes')) {
-                questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">আই লাভ ইউ টু! ❤️</h3>`;
-            } else {
-                questionBox.innerHTML = `<h3 style="color:#e74c3c; font-size:1.3rem; margin-top:10px;">ওহ আচ্ছা... 💔</h3>`;
-            }
+            questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>`;
 
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
