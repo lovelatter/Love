@@ -41,7 +41,7 @@
             margin-top: 20px;
         }
 
-        /* টাইপিং অ্যানিমেশন টেক্সট */
+        /* অরিজিনাল টাইপিং অ্যানিমেশন টেক্সট */
         .typing-container {
             font-size: 24px;
             color: #ff758f;
@@ -71,7 +71,6 @@
         .envelope-container:hover {
             transform: scale(1.02);
         }
-        /* খামের ওপরের ফ্ল্যাপ (ত্রিভুজ) */
         .envelope-container::before {
             content: '';
             position: absolute;
@@ -158,6 +157,7 @@
         }
         .btn-yes { background-color: #4caf50; color: white; }
         .btn-no { background-color: #f44336; color: white; }
+        
         #thanks-msg {
             color: #4caf50;
             font-weight: bold;
@@ -184,7 +184,7 @@
     <div id="main-screen" class="screen">
         <div class="envelope-container" id="envelope" onclick="openEnvelope()">
             <div class="love-letter" onclick="event.stopPropagation();">
-                <!-- ছবি আপলোড করা থাকলে জাভাস্ক্রিপ্ট দিয়ে এখানে ইমেজ বসবে -->
+                <!-- ছবি আপলোড করা থাকলে এখানে ইমেজ বসবে -->
                 <div id="img-holder"></div>
                 <h2 id="letter-title"></h2>
                 <p id="letter-text"></p>
@@ -198,9 +198,9 @@
         </div>
     </div>
 
-    <!-- টাইপিং সাউন্ড এবং ব্যাকগ্রাউন্ড মিউজিক (ফ্রি সোর্স অডিও) -->
-    <audio id="typing-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
-    <audio id="bg-music" loop></preload></audio>
+    <!-- 🎵 আপনার প্রোজেক্টের আগের অরিজিনাল লোকাল টাইপিং সাউন্ড ফাইলের নাম (যেমন: typing.mp3) এখানে src তে বসান -->
+    <audio id="typing-sound" src="typing.mp3" preload="auto"></audio>
+    <audio id="bg-music" loop></audio>
 
     <script>
         const linkId = window.location.pathname.split('/').pop();
@@ -260,7 +260,7 @@
             }, 1000);
         }
 
-        // 🎵 টাইপিং অ্যানিমেশন + সাউন্ড ইফেক্ট লজিক
+        // অরিজিনাল টাইপিং অ্যানিমেশন + সাউন্ড লজিক
         function startTypingAnimation(lines) {
             const textEl = document.getElementById('typing-text');
             const sound = document.getElementById('typing-sound');
@@ -277,21 +277,22 @@
                             textEl.innerText += currentLine[charIdx];
                             charIdx++;
                             
-                            // প্রতি ক্যারেক্টারে সাউন্ড প্লে
-                            sound.currentTime = 0;
-                            sound.play().catch(() => {});
+                            // অরিজিনাল টাইপিং সাউন্ড প্লে
+                            if(sound && sound.src) {
+                                sound.currentTime = 0;
+                                sound.play().catch(() => {});
+                            }
                             
-                            setTimeout(typeChar, 100); // টাইপিং স্পিড
+                            setTimeout(typeChar, 100); 
                         } else {
                             setTimeout(() => {
                                 lineIdx++;
                                 typeLine();
-                            }, 1500); // এক লাইনের পর বিরতি
+                            }, 1500); 
                         }
                     }
                     typeChar();
                 } else {
-                    // অ্যানিমেশন শেষ হলে মেইন ইন্টারফেস রেডি করা
                     setupEnvelopeUI();
                     showScreen('main-screen');
                 }
@@ -299,11 +300,11 @@
             typeLine();
         }
 
-        // খাম ও চিঠির ভেতরের ডাটা এবং ছবির রেন্ডারিং
+        // চিঠির ভেতরের ডাটা এবং ছবির রেন্ডারিং
         function setupEnvelopeUI() {
             if (!letterData) return;
 
-            // 📸 গোল দাগের জায়গায় ছবি রেন্ডার করার লজিক
+            // 📸 ছবি রেন্ডার করার লজিক
             const imgHolder = document.getElementById('img-holder');
             imgHolder.innerHTML = ''; 
             if (letterData.image) {
@@ -320,7 +321,7 @@
                 document.getElementById('bg-music').src = letterData.music;
             }
 
-            // ইন্টারঅ্যাকশন বাটন
+            // বাটন সেটআপ
             document.getElementById('question-text').innerText = letterData.question;
             const btnContainer = document.getElementById('btn-container');
             btnContainer.innerHTML = '';
