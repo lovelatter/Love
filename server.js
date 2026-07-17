@@ -3,7 +3,7 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 
-const app = report = express();
+const app = express();
 app.use(express.json());
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -78,23 +78,23 @@ function saveDB() {
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
 const locale = {
-    welcome: (name) => `হ্যালো **${name}**। বটের পক্ষ থেকে স্বাগতম।`,
+    welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
-    choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?**",
+    choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
     cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
     
-    prompt_countdown_ask: "⏰ **টাইম কাউন্টডাউন সেট করুন।**",
+    prompt_countdown_ask: "⏰ টাইম কাউন্টডাউন সেট করুন।",
     btn_no_countdown: "❌ No Countdown",
     
-    help_text: `❓ **বট ব্যবহারের সঠিক নিয়ম (Help Guide):**\n\n1️⃣ প্রথমে **🚀 লিঙ্ক তৈরি করুন** বাটনে ক্লিক করুন。\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন。\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)。\n4️⃣ বটের নির্দেশনা অনুযায়ী অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
+    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)।\n4️⃣ বটের নির্দেশনা অনুযায়ী অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     
-    feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     
-    invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
-    maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে আসছি।",
-    session_started: () => `✨ **অ্যানিমেশন মেসেজ লিখুন।**\n\n💡**লেখার নিয়ম:**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
+    invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
+    maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।",
+    session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n\n💡লেখার নিয়ম:\n• প্রতি লাইনের পর কীবোর্ডের Enter চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
@@ -135,7 +135,7 @@ bot.command('start', (ctx) => {
 
 function showAdminDashboard(ctx, isEdit = false) {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
-    const text = `👑 **Welcome to the Master Admin Core Console:**`;
+    const text = `👑 Welcome to the Master Admin Core Console:`;
     
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
@@ -176,15 +176,15 @@ bot.action('adm_broadcast', (ctx) => {
     ctx.answerCbQuery();
     db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
     saveDB();
-    ctx.reply("📢 **Announcement মেসেজটি পাঠান:**\n\nবটের সকল ইউজারের কাছে চলে যাবে।", Markup.inlineKeyboard([
-        [Markup.button.callback("❌ ক্যানсел করুন", "adm_back_to_dashboard")]
+    ctx.reply("📢 Announcement মেসেজটি পাঠান:\n\nবটের সকল ইউজারের কাছে চলে যাবে।", Markup.inlineKeyboard([
+        [Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]
     ]));
 });
 
 bot.action('adm_all_links_menu', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
-    ctx.editMessageText("🔗 **All Links Management Sub-Menu:**", Markup.inlineKeyboard([
+    ctx.editMessageText("🔗 All Links Management Sub-Menu:", Markup.inlineKeyboard([
         [Markup.button.callback("📜 View All Links List", "adm_view_links_list")],
         [Markup.button.callback("💥 Turn Off & Delete All Links", "adm_delete_all_links_confirm")],
         [Markup.button.callback("🔙 ব্যাক টু ড্যাশবোর্ড", "adm_back_to_dashboard")]
@@ -202,7 +202,7 @@ bot.action('adm_view_links_list', (ctx) => {
         ]));
     }
 
-    ctx.reply("📜 **চলতি সকল লিংকের তালিকা (বন্ধ করতে লিংকে ক্লিক করুন):**");
+    ctx.reply("📜 চলতি সকল লিংকের তালিকা (বন্ধ করতে লিংকে ক্লিক করুন):");
     keys.forEach(key => {
         const linkData = db.linkDatabase[key];
         ctx.reply(`👤 Creator: ${linkData.name}\n📂 Cat: ${linkData.type}\n🔗 Link ID: ${key}`, Markup.inlineKeyboard([
@@ -218,7 +218,7 @@ bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
         delete db.linkDatabase[targetKey];
         saveDB();
         ctx.answerCbQuery("✅ লিংকটি সফলভাবে রিমুভ করা হয়েছে।");
-        ctx.editMessageText("❌ **এই লিংকটি অ্যাডমিন প্যানেল থেকে চিরতরে অফ এবং ডিলিট করা হয়েছে।**");
+        ctx.editMessageText("❌ এই লিংকটি অ্যাডমিন প্যানেল থেকে চিরতরে অফ এবং ডিলিট করা হয়েছে।");
     } else {
         ctx.answerCbQuery("⚠️ লিংকটি অলরেডি ডিলিট হয়ে গেছে!");
     }
@@ -229,7 +229,7 @@ bot.action('adm_delete_all_links_confirm', (ctx) => {
     ctx.answerCbQuery();
     db.linkDatabase = {};
     saveDB();
-    ctx.editMessageText("💥 **সistemের সমস্ত একটিভ লিংক এক ক্লিকে চিরতরে ডিলিট করে দেওয়া হয়েছে!**", Markup.inlineKeyboard([
+    ctx.editMessageText("💥 সিস্টেমের সমস্ত একটিভ লিংক এক ক্লিকে চিরতরে ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([
         [Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]
     ]));
 });
@@ -244,8 +244,8 @@ bot.action('adm_ban_menu', (ctx) => {
     db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
     saveDB();
 
-    ctx.reply(`🚫 **Ban / Unban Management System**\n\n📊 **পরিসংখ্যান:**\n• মোট ইউজার সংখ্যা: ${totalUsersCount}\n• ব্যান ইউজার: ${bannedUsersCount}\n\n👉 অনুগ্রহ করে যে ইউজারকে ব্যান বা আনব্যান করতে চান তার **Telegram User ID** অথবা **Username** নিচে লিখে পাঠান:`, Markup.inlineKeyboard([
-        [Markup.button.callback("❌ ক্যানсел করুন", "adm_back_to_dashboard")]
+    ctx.reply(`🚫 Ban / Unban Management System\n\n📊 পরিসংখ্যান:\n• মোট ইউজার সংখ্যা: ${totalUsersCount}\n• ব্যান ইউজার: ${bannedUsersCount}\n\n👉 অনুগ্রহ করে যে ইউজারকে ব্যান বা আনব্যান করতে চান তার Telegram User ID অথবা Username নিচে লিখে পাঠান:`, Markup.inlineKeyboard([
+        [Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]
     ]));
 });
 
@@ -278,7 +278,7 @@ bot.action(/^make_/, (ctx) => {
         name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim() || "User",
         username: ctx.from.username ? `@${ctx.from.username}` : "None",
         music: AUTOMATIC_MUSIC_MAPPING[cat] || "",
-        step: 'AWAITING_COUNTDOWN_SELECTION' // সেশন ট্র্যাকিং শুরু
+        step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
     showCountdownPrompt(ctx);
@@ -349,21 +349,35 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
     ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
     delete db.linkDatabase[linkId];
     saveDB();
-    ctx.editMessageText("❌ **আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।**");
+    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
     sendMainMenu(ctx, false);
 });
 
-// ইনকামিং মেসেজ প্রসেসিং কোর (ফিক্সড)
+bot.action(/^view_ans_(.+)$/, (ctx) => {
+    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    const linkId = ctx.match[1];
+    const data = db.linkDatabase[linkId];
+    
+    if (!data) {
+        return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি বা ডিলিট হয়ে গেছে।", { show_alert: true });
+    }
+    
+    if (data.answer) {
+        return ctx.answerCbQuery(`📩 ইউজারের উত্তর: ${data.answer}`, { show_alert: true });
+    } else {
+        return ctx.answerCbQuery("⏳ ইউজার এখনও কোনো উত্তর সাবমিট করেনি!", { show_alert: true });
+    }
+});
+
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
 
-    // অ্যাডমিন প্রসেসিং চেক
     if (Number(userId) === Number(ADMIN_CHAT_ID) && session) {
         if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
             db.registeredUsers.forEach(id => {
-                bot.telegram.sendMessage(id, `📢 **[Announcement]**\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{});
+                bot.telegram.sendMessage(id, `📢 [Announcement]\n\n${text}`, { parse_mode: 'Markdown' }).catch(()=>{});
             });
             ctx.reply("📡 Broadcast Transmission Completed to All Users.");
             delete db.userSessions[userId]; 
@@ -385,10 +399,10 @@ bot.on('text', (ctx) => {
             let responseAdminMsg = "";
             if (db.bannedUsers.includes(targetId)) {
                 db.bannedUsers = db.bannedUsers.filter(id => id !== targetId);
-                responseAdminMsg = `🟢 ইউজার \`${targetId}\` কে সফলভাবে **UNBAN** করা হয়েছে।`;
+                responseAdminMsg = `🟢 ইউজার \`${targetId}\` কে সফলভাবে UNBAN করা হয়েছে।`;
             } else {
                 db.bannedUsers.push(targetId);
-                responseAdminMsg = `🚫 ইউজার \`${targetId}\` কে সফলভাবে **BAN** করা হয়েছে।`;
+                responseAdminMsg = `🚫 ইউজার \`${targetId}\` কে সফলভাবে BAN করা হয়েছে।`;
             }
             
             saveDB();
@@ -400,7 +414,6 @@ bot.on('text', (ctx) => {
         }
     }
 
-    // স্টেট ভ্যালিডেশন ফিক্স
     if (!session || !session.step) {
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
         ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
@@ -471,8 +484,10 @@ function processFinalLinkCreation(ctx, letterText) {
         ])
     });
 
-    const adminMsg = `নতুন লিংক তৈরি করা হয়েছে。\nName: ${session.name}\nCategory: ${session.type.toUpperCase()}`;
-    bot.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg).catch(e => console.error(e));
+    const adminMsg = `নতুন লিংক তৈরি করা হয়েছে。\nName: ${session.name}\nID: ${userId}\nUsername: ${session.username}\nCategory: ${session.type.toUpperCase()}`;
+    bot.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg, Markup.inlineKeyboard([
+        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`)]
+    ])).catch(e => console.error(e));
 
     delete db.userSessions[userId];
     saveDB();
@@ -541,3 +556,4 @@ app.listen(PORT, () => {
     bot.launch();
     console.log(`Server running successfully on port ${PORT}`);
 });
+2
