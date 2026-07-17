@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const axios = require('axios');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 
@@ -55,17 +56,17 @@ let totalFeedbacksReceived = 0;
 
 // 🌐 Messages Dictionary (শুধুমাত্র বাংলা)
 const locale = {
-    welcome: (name) => `💝 **হ্যালো ${name}!** 💝\n\nবটের পক্ষ থেকে স্বাগতম। আপনার প্রিয়জনের জন্য আকর্ষণীয় টাইম কাউন্টডাউন করা ওয়েব লিঙ্ক তৈরি করুন একদম ফ্রিতে।\n\nনিচের যেকোনো একটি অপশন সিলেক্ট করুন:`,
+    welcome: (name) => `হ্যালো **${name}**। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
     choose_cat: "✨ **আপনি কোন ক্যাটাগরির লিঙ্ক তৈরি করতে চান?**",
     cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
     
-    prompt_countdown_ask: "⏰ **আপনি কি এই লিঙ্কে নির্দিষ্ট টাইম কাউন্টডাউন (Time Countdown) সেট করতে চান?**\n\n(কাউন্টডাউন সেট করলে আপনার দেওয়া সময় শেষ হওয়ার আগে কেউ লিঙ্কের ভেতরের চিঠি দেখতে পারবে না।)",
-    btn_no_countdown: "❌ No Countdown (টাইমার ছাড়া)",
+    prompt_countdown_ask: "⏰ **টাইম কাউন্টডাউন সেট করুন।**",
+    btn_no_countdown: "❌ No Countdown",
     
     help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
     
-    feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     
@@ -73,7 +74,7 @@ const locale = {
     no_session: "💡 আপনার কোনো একটিভ সেশন নেই।",
     invalid_cmd: (cmd) => `❌ **ভুল ইনপুট বা আদেশ:** \`${cmd}\` গ্রহণযোগ্য নয়। অনুগ্রহ করে নিচের মেইন মেনু ব্যবহার করুন অথবা সেশনটি বাতিল করতে /cancel লিখুন।`,
     maint_msg: "🚧 **বটের কাজ চলছে (Under Maintenance)!** খুব শীঘ্রই আমরা ফিরে আসছি।",
-    session_started: (cat) => `✨ আপনার কাস্টম \`${cat.toUpperCase()}\` লিঙ্ক তৈরির সেশন শুরু হয়েছে!\n\n👉 আপনার প্রিয়জনের জন্য **অ্যানিমেশন টেক্সটগুলো** পাঠান।\n\n💡 **লেখার নিয়ম (How to write):**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন।\n• অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন।`,
+    session_started: () => `✨ **অ্যানিমেশন মেসেজ লিখুন।**\n\n💡**লেখার নিয়ম:**\n• প্রতি লাইনের পর কীবোর্ডের **Enter** চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে **কমা ( , )** ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     link_ready: (url) => `💝 অভিনন্দন! আপনার কাস্টমাইজড প্রিমিয়াম লিঙ্ক সম্পূর্ণ রেডি:\n\n${url}\n\n👉 এই লিঙ্কটি আপনার প্রিয়জনের সাথে শেয়ার করুন।`,
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন বা /cancel লিখে নতুন সেশন শুরু করুন।"
@@ -183,7 +184,7 @@ bot.action(/^make_/, (ctx) => {
     const cat = ctx.match.input.replace('make_', '');
     db.userSessions[ctx.chat.id] = { 
         type: cat, 
-        name: ctx.from.first_name || "User",
+        name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim() || "User",
         music: AUTOMATIC_MUSIC_MAPPING[cat] || "" // ক্যাটাগরি অনুযায়ী অটোমেটিক মিউজিক সেট
     };
     saveDB();
@@ -197,7 +198,7 @@ function showCountdownPrompt(ctx) {
         [Markup.button.callback('🕒 ৩ মিনিট', 'set_time_3'), Markup.button.callback('🕒 ৫ মিনিট', 'set_time_5')],
         [Markup.button.callback('🕒 ১০ মিনিট', 'set_time_10')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ])).catch(()=>{});
+    ]), { parse_mode: 'Markdown' }).catch(()=>{});
 }
 
 bot.action('timer_no', (ctx) => { 
@@ -221,7 +222,7 @@ bot.action(/^set_time_/, (ctx) => {
 function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     saveDB();
-    ctx.editMessageText(locale.session_started(db.userSessions[ctx.chat.id].type), Markup.inlineKeyboard([
+    ctx.editMessageText(locale.session_started(), Markup.inlineKeyboard([
         [Markup.button.callback("🔙 পেছনে যান", 'back_to_timer_ask')]
     ]), { parse_mode: 'Markdown' }).catch(()=>{});
 }
@@ -333,13 +334,14 @@ function processFinalLinkCreation(ctx, letterText) {
 function sendMainMenu(ctx, isEdit = false) {
     try {
         const userId = ctx.chat.id;
-        const text = locale.welcome(ctx.from?.first_name || "User");
+        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
+        const text = locale.welcome(fullName);
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback(locale.btn_make, 'menu_makelink')],
             [Markup.button.callback(locale.btn_feedback, 'menu_feedback'), Markup.button.callback(locale.btn_help, 'menu_help')]
         ]);
-        if (isEdit) return ctx.editMessageText(text, keyboard).catch(()=>{});
-        return ctx.reply(text, keyboard);
+        if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(()=>{});
+        return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' });
     } catch (err) { console.error(err); }
 }
 
