@@ -55,7 +55,7 @@ let db = {
     isMaintenanceMode: false,
     bannedUsers: [],
     registeredUsers: [],
-    usernameMap: {} // ইউজারনেম থেকে আইডি খোঁজার জন্য নতুন ম্যাপ
+    usernameMap: {}
 };
 
 if (fs.existsSync(DB_FILE)) {
@@ -107,7 +107,6 @@ bot.use((ctx, next) => {
         const userId = ctx.chat ? ctx.chat.id : null;
         if (!userId) return next();
         
-        // ইউজার ট্র্যাক ও ইউজারনেম ম্যাপিং
         if (!db.registeredUsers.includes(userId)) {
             db.registeredUsers.push(userId);
         }
@@ -117,13 +116,8 @@ bot.use((ctx, next) => {
         }
         saveDB();
 
-        // অ্যাডমিন হলে অলওয়েজ বাইপাস
         if (Number(userId) === Number(ADMIN_CHAT_ID)) return next();
-
-        // ব্যান চেকিং
         if (db.bannedUsers.includes(userId)) return;
-
-        // মেইনটেন্যান্স চেকিং
         if (db.isMaintenanceMode) {
             return ctx.reply(locale.maint_msg);
         }
@@ -140,7 +134,6 @@ bot.command('start', (ctx) => {
     } catch (err) { console.error(err); }
 });
 
-// এডমিন ড্যাশবোর্ড ডিসপ্লে
 function showAdminDashboard(ctx, isEdit = false) {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
     const text = `👑 **Welcome to the Master Admin Core Console:**`;
@@ -243,7 +236,6 @@ bot.action('adm_delete_all_links_confirm', (ctx) => {
     ]));
 });
 
-// অ্যাডমিন ব্যান সাব-মেনু (ইউজারনেম বা আইডি ইনপুট নেওয়ার জন্য রেডি)
 bot.action('adm_ban_menu', (ctx) => {
     if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
@@ -384,14 +376,12 @@ bot.on('text', (ctx) => {
             return;
         }
         
-        // 🎯 ইউজারনেম এবং আইডি চেকিং লজিক
         if (session.step === 'AWAITING_BAN_USER_INPUT') {
             let targetId = parseInt(text, 10);
             
-            // যদি ইনপুট সংখ্যা না হয়ে টেক্সট/ইউজারনেম হয়
             if (isNaN(targetId)) {
                 let cleanUsername = text.replace('@', '').trim().toLowerCase();
-                targetId = db.usernameMap[cleanUsername]; // ম্যাপ থেকে আইডি খোঁজা
+                targetId = db.usernameMap[cleanUsername];
                 
                 if (!targetId) {
                     return ctx.reply("❌ দুঃখিত! এই ইউজারনেমটি বটের ডাটাবেজে খুঁজে পাওয়া যায়নি। ইউজারকে অন্তত একবার বটের সাথে চ্যাট করতে হবে।");
@@ -436,8 +426,9 @@ bot.on('text', (ctx) => {
             return;
         }
 
+        // 🎯 ফিক্স: চাইনিজ টাইপো (因素) সরিয়ে এখানে একদম ক্লিন কমা এবং নিউলাইন স্প্লিটিং বসানো হয়েছে
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            session.animations = text.split(/[\n,因素]+/).map(l => l.trim()).filter(l => l.length > 0);
+            session.animations = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
             if (session.animations.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
             session.step = 'AWAITING_LETTER_TEXT';
             saveDB();
