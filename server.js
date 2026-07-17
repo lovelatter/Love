@@ -82,7 +82,7 @@ const locale = {
     
     help_text: `❓ **সাহায্য গাইড:**\n\n💡 যেকোনো সমস্যায় এডমিনের সাথে যোগাযোগ করুন।`,
     
-    feedback_prompt: "📝 **مতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     
@@ -125,7 +125,7 @@ bot.action(/^chk_ans_(.+)$/, (ctx) => {
     }
 
     if (!data.answer) {
-        return ctx.answerCbQuery("⏳ এখনো কোনো উত্তর আসেনি, অনুগ্রহ করে উত্তর আসা aDAO অপেক্ষা করুন।", { show_alert: true });
+        return ctx.answerCbQuery("⏳ এখনো কোনো উত্তর আসেনি, অনুগ্রহ করে উত্তর আসা অবধি অপেক্ষা করুন।", { show_alert: true });
     }
 
     ctx.answerCbQuery();
@@ -332,7 +332,6 @@ bot.on('text', (ctx) => {
         }
 
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            // 🎯 স্পেস-সহ বা স্পেস ছাড়া কমা এবং নিউলাইন হ্যান্ডেল করার ফিক্সড লজিক
             session.animations = text.split(/[\n,，]+/)
                                      .map(l => l.trim())
                                      .filter(l => l.length > 0);
@@ -345,8 +344,9 @@ bot.on('text', (ctx) => {
             return;
         }
 
+        // 🎯 ফিক্স: যখন ইউজার চিঠির টেক্সট দিবে, তখন সরাসরি এই কন্ডিশন এক্সিকিউট হবে এবং রিটার্ন করবে
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            processFinalLinkCreation(ctx, text);
+            processFinalLinkCreation(ctx, ctx.message.text); // হুবহু র-টেক্সট (স্পেস/নিউলাইনসহ) পাস করা হচ্ছে
             return;
         }
 
