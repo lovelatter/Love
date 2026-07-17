@@ -3,363 +3,332 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Special Letter</title>
+    <title>Wish Letter...</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background-color: #1a1a1a;
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            color: #fff;
-        }
-
-        /* স্ক্রিন ম্যানেজমেন্ট */
-        .screen {
-            display: none;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        .active { display: flex; }
-
-        /* লক/কাউন্টডাউন স্ক্রিন */
-        #timer {
-            font-size: 48px;
-            font-weight: bold;
-            color: #ff4d6d;
-            margin-top: 20px;
-        }
-
-        /* অরিজিনাল টাইপিং অ্যানিমেশন টেক্সট */
-        .typing-container {
-            font-size: 24px;
-            color: #ff758f;
-            min-height: 40px;
-            text-align: center;
-            padding: 0 20px;
-            border-right: 3px solid #ff758f;
-            white-space: pre-wrap;
-            animation: blink 0.75s step-end infinite;
-        }
-        @keyframes blink {
-            from, to { border-color: transparent }
-            50% { border-color: #ff758f; }
-        }
-
-        /* 💌 অরিজিনাল খাম ডিজাইন */
-        .envelope-container {
-            position: relative;
-            width: 320px;
-            height: 220px;
-            background-color: #ff4d6d;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        .envelope-container:hover {
-            transform: scale(1.02);
-        }
-        .envelope-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            border-left: 160px solid transparent;
-            border-right: 160px solid transparent;
-            border-top: 120px solid #ff758f;
-            transform-origin: top;
-            transition: transform 0.5s ease 0.2s;
-            z-index: 3;
-        }
-        .envelope-container.open::before {
-            transform: rotateX(180deg) translateY(0);
-            z-index: 1;
-        }
-
-        /* 📄 চিঠির কার্ড */
-        .love-letter {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 300px;
-            background: #ffffff;
-            color: #333333;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 2;
-            opacity: 0;
-            transform: translateY(0);
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .envelope-container.open .love-letter {
-            opacity: 1;
-            transform: translateY(-260px);
-            z-index: 5;
-            width: 340px;
-            left: -10px;
-        }
-
-        /* 📸 ডাইনামিক রাউন্ড ইমেজ */
-        .letter-img {
-            width: 105px;
-            height: 105px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 4px solid #ff758f;
-            margin: 0 auto 15px auto;
-            display: block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-
-        .love-letter h2 {
-            font-size: 22px;
-            color: #ff4d6d;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-        .love-letter p {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #444;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        /* বাটন ও ফিডব্যাক */
-        .btn-group {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 15px;
-        }
-        .btn {
-            padding: 8px 22px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 15px;
-        }
-        .btn-yes { background-color: #4caf50; color: white; }
-        .btn-no { background-color: #f44336; color: white; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body, html { width:100%; height:100%; overflow:hidden; background-color:#000; font-family:'Arial',sans-serif; display:flex; justify-content:center; align-items:center; color:#fff; user-select:none; flex-direction:column; }
+        #openBtn { font-size:2rem; color:#fff; background:linear-gradient(45deg, #ff4d6d, #ff758f); border:none; padding:16px 40px; border-radius:50px; cursor:pointer; z-index:20; position:relative; transition:transform 0.2s ease; }
+        #openBtn::before { content:''; position:absolute; top:-4px; left:-4px; right:-4px; bottom:-4px; border-radius:50px; background:linear-gradient(45deg, #ff4d6d, #ff758f, #ff85a2, #ff4d6d); background-size:400%; z-index:-1; filter:blur(15px); animation:streamingLight 3s linear infinite; }
+        @keyframes streamingLight { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+        .blast-out { animation:blastAway 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards !important; pointer-events:none; }
+        @keyframes blastAway { 0% { transform:scale(1); opacity:1; filter:blur(0px); } 100% { transform:scale(3); opacity:0; filter:blur(10px); } }
+        .text-container { position:absolute; text-align:center; font-size:2.5rem; font-weight:bold; width:90%; max-width:600px; opacity:0; transform:scale(0.95); transition:opacity 0.5s ease, transform 0.5s ease; }
+        .text-container::after { content:'|'; animation:blinkCursor 0.6s infinite; color:#ff4d6d; }
+        @keyframes blinkCursor { 0%, 100% { opacity:0; } 50% { opacity:1; } }
+        .envelope-container { display:none; position:relative; width:320px; height:220px; background-color:#d93654; border-radius:0 0 10px 10px; box-shadow:0 30px 50px rgba(0,0,0,0.6); cursor:pointer; z-index:10; opacity:0; transform:scale(0.8); transition:all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); perspective:1000px; }
+        .envelope-flap { position:absolute; top:0; left:0; width:0; height:0; border-left:160px solid transparent; border-right:160px solid transparent; border-top:120px solid #ff4d6d; transform-origin:top; transition:transform 0.6s ease-in-out; z-index:5; filter:drop-shadow(0 4px 5px rgba(0,0,0,0.2)); }
+        .envelope-pockets { position:absolute; bottom:0; left:0; width:100%; height:100%; z-index:4; overflow:hidden; border-radius:0 0 10px 10px; }
+        .envelope-pockets::before { content:''; position:absolute; bottom:0; left:0; width:0; height:0; border-left:165px solid #ff5c7a; border-top:110px solid transparent; border-bottom:110px solid #ff5c7a; }
+        .envelope-pockets::after { content:''; position:absolute; bottom:0; right:0; width:0; height:0; border-right:165px solid #ff5c7a; border-top:110px solid transparent; border-bottom:110px solid #ff5c7a; }
+        .envelope-bottom { position:absolute; bottom:0; left:0; width:0; height:0; border-left:160px solid transparent; border-right:160px solid transparent; border-bottom:115px solid #e6425e; z-index:4; border-radius:0 0 10px 10px; }
+        .envelope-label { position:absolute; top:130px; left:50%; transform:translateX(-50%); background:#fff; color:#ff4d6d; padding:8px 20px; font-size:1.1rem; font-weight:bold; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:6; white-space:nowrap; transition:all 0.4s ease; }
+        .envelope-heart { position:absolute; top:75px; left:50%; transform:translate(-50%, -50%); font-size:2.2rem; z-index:6; transition:all 0.4s ease; animation:pulseHeart 1.5s infinite; }
+        @keyframes pulseHeart { 0%, 100% { transform:translate(-50%, -50%) scale(1); } 50% { transform:translate(-50%, -50%) scale(1.15); } }
+        .envelope-container.open .envelope-flap { transform:rotateX(180deg); z-index:1; border-top-color:#ff5c7a; }
+        .envelope-container.open .envelope-heart, .envelope-container.open .envelope-label { opacity:0; transform:translate(-50%, -50%) scale(0) !important; }
         
-        #thanks-msg {
-            color: #4caf50;
-            font-weight: bold;
-            text-align: center;
-            display: none;
-            margin-top: 10px;
-        }
+        .love-letter { position:absolute; background:#fff0f5; padding:25px; border-radius:15px; text-align:center; max-width:380px; width:85%; box-shadow:0 15px 40px rgba(0,0,0,0.4); color:#333; z-index:2; transform:translateY(20px) scale(0.85); opacity:0; transition:all 1.2s cubic-bezier(0.1, 1, 0.2, 1); pointer-events:none; }
+        .letter-popout { opacity:1 !important; transform:translateY(-50px) scale(1) !important; z-index:12 !important; pointer-events:auto !important; }
+        
+        /* 📸 ডাইনামিক ইমেজের নতুন স্টাইল */
+        .dynamic-letter-img { width:105px; height:105px; object-fit:cover; border-radius:50%; border:4px solid #ff4d6d; margin:0 auto 15px auto; display:block; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+        /* থিম অনুযায়ী ছবির বর্ডার কালার পরিবর্তন */
+        body.theme-neon .dynamic-letter-img { border-color: #00f3ff; }
+        body.theme-gold .dynamic-letter-img { border-color: #ffd700; }
+        body.theme-dark .dynamic-letter-img { border-color: #4b5563; }
+
+        .love-letter h2 { color:#ff4d6d; margin-bottom:10px; font-size:1.8rem; font-family:'Georgia', serif; }
+        .love-letter p { font-size:1.05rem; line-height:1.6; color:#444; margin-bottom:15px; white-space: pre-line; }
+        
+        .question-box { border-top:1px dashed #ff758f; padding-top:15px; margin-top:10px; }
+        .question-box h3 { font-size:1.3rem; color:#ff4d6d; margin-bottom:12px; }
+        
+        .btn-group { display:flex; justify-content:center; align-items:center; gap:25px; min-height: 60px; position: relative; margin-top: 10px; }
+        .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height: 42px; }
+        .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index: 5; }
+        .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
+        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
+        
+        .heart { position:absolute; color:#ff4d6d; font-size:24px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index: 1; }
+        @keyframes floatUp { 0% { transform:translateY(100vh) scale(0); opacity:0; } 10% { opacity:0.8; } 90% { opacity:0.8; } 100% { transform:translateY(-10vh) scale(1.5); opacity:0; } }
+        .fade-in { opacity:1 !important; transform:scale(1) !important; transition:all 0.8s ease; }
+
+        #lockScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050508; z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
+        #countdown-box { border: 2px solid #ff4d6d; border-radius: 20px; padding: 30px 20px; background: rgba(0, 0, 0, 0.75); box-shadow: 0 0 25px rgba(255, 77, 109, 0.4); width: 290px; max-width: 85%; text-align: center; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .lock-title { font-size: 1.1rem; color: #ffffff; margin-bottom: 20px; letter-spacing: 0.5px; font-weight: 500; }
+        #timer-display { font-family: 'Courier New', Courier, monospace; font-size: 1.8rem; color: #ff4d6d; font-weight: bold; line-height: 1.5; text-shadow: 0 0 10px rgba(255, 77, 109, 0.5); }
+        #timer-display div { margin: 6px 0; animation: lineFadeIn 0.4s ease-in-out; }
+        @keyframes lineFadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        body.theme-neon { background-color: #0d0116; }
+        body.theme-neon #openBtn { background: linear-gradient(45deg, #00f3ff, #b900ff); }
+        body.theme-neon #openBtn::before { background: linear-gradient(45deg, #00f3ff, #b900ff, #00f3ff); }
+        body.theme-neon .text-container::after { color: #00f3ff; }
+        body.theme-neon #countdown-box { border-color: #00f3ff; box-shadow: 0 0 25px rgba(0, 243, 255, 0.4); }
+        body.theme-neon #timer-display { color: #00f3ff; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+        body.theme-neon .love-letter h2 { color: #00f3ff; }
+
+        body.theme-gold { background-color: #141108; }
+        body.theme-gold #openBtn { background: linear-gradient(45deg, #ffd700, #ffaa00); }
+        body.theme-gold #openBtn::before { background: linear-gradient(45deg, #ffd700, #ffaa00, #ffd700); }
+        body.theme-gold .text-container::after { color: #ffd700; }
+        body.theme-gold #countdown-box { border-color: #ffd700; box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
+        body.theme-gold #timer-display { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        body.theme-gold .love-letter h2 { color: #ffd700; }
+
+        body.theme-dark { background-color: #09090b; }
+        body.theme-dark #openBtn { background: linear-gradient(45deg, #4b5563, #1f2937); }
+        body.theme-dark #openBtn::before { background: linear-gradient(45deg, #4b5563, #1f2937, #4b5563); }
+        body.theme-dark .text-container::after { color: #9ca3af; }
+        body.theme-dark #countdown-box { border-color: #4b5563; box-shadow: 0 0 25px rgba(75, 85, 99, 0.4); }
+        body.theme-dark #timer-display { color: #9ca3af; text-shadow: 0 0 10px rgba(156, 163, 175, 0.5); }
+        body.theme-dark .love-letter h2 { color: #f3f4f6; }
     </style>
 </head>
 <body>
-
-    <!-- ১. লক স্ক্রিন -->
-    <div id="lock-screen" class="screen">
-        <h2>🔒 এই চিঠিটি দেখতে অপেক্ষা করুন</h2>
-        <div id="timer">00:00</div>
-    </div>
-
-    <!-- ২. অ্যানিমেশন ও টাইপিং স্ক্রিন -->
-    <div id="animation-screen" class="screen active">
-        <div class="typing-container" id="typing-text"></div>
-    </div>
-
-    <!-- ৩. মেইন খাম ও চিঠি স্ক্রিন -->
-    <div id="main-screen" class="screen">
-        <div class="envelope-container" id="envelope" onclick="openEnvelope()">
-            <div class="love-letter" onclick="event.stopPropagation();">
-                <!-- ছবি আপলোড করা থাকলে এখানে ইমেজ বসবে -->
-                <div id="img-holder"></div>
-                <h2 id="letter-title"></h2>
-                <p id="letter-text"></p>
-                
-                <div id="action-zone">
-                    <p id="question-text" style="font-weight: bold; text-align: center; margin-bottom: 8px;"></p>
-                    <div class="btn-group" id="btn-container"></div>
-                    <p id="thanks-msg">✨ ধন্যবাদ আপনার উত্তরের জন্য! ✨</p>
-                </div>
-            </div>
+    <audio id="bgMusic" src="" loop preload="auto"></audio>
+    
+    <div id="lockScreen">
+        <div id="countdown-box">
+            <div class="lock-title">⏳ Waiting for the Special Moment...</div>
+            <div id="timer-display"></div>
         </div>
     </div>
 
-    <!-- 🎵 আপনার প্রোজেক্টের আগের অরিজিনাল লোকাল টাইপিং সাউন্ড ফাইলের নাম (যেমন: typing.mp3) এখানে src তে বসান -->
-    <audio id="typing-sound" src="typing.mp3" preload="auto"></audio>
-    <audio id="bg-music" loop></audio>
+    <button id="openBtn">Open ❤️</button>
+    <div id="textDisplay" class="text-container"></div>
+    <div id="envelope" class="envelope-container">
+        <div class="envelope-flap"></div>
+        <div class="envelope-pockets"></div>
+        <div class="envelope-bottom"></div>
+        <div class="envelope-heart" id="envelopeHeart">💝</div>
+        <div class="envelope-label">খাম খুলুন</div>
+    </div>
+    
+    <div id="loveLetter" class="love-letter">
+        <!-- 📸 ডাইনামিক ইমেজ কন্টেইনার অ্যাড করা হলো -->
+        <div id="imageContainer"></div>
+        <h2 id="letterTitle">কিছু কথা</h2>
+        <p id="letterContent">লোডিং...</p>
+        
+        <div class="question-box" id="questionBox">
+            <h3 id="displayQuestion">Are you happy? 😊</h3>
+            <div class="btn-group" id="btnGroup"></div>
+        </div>
+    </div>
 
     <script>
-        const linkId = window.location.pathname.split('/').pop();
-        let letterData = null;
+        const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), questionBox = document.getElementById('questionBox'), lockScreen = document.getElementById('lockScreen'), letterTitle = document.getElementById('letterTitle'), displayQuestion = document.getElementById('displayQuestion'), btnGroup = document.getElementById('btnGroup'), envelopeHeart = document.getElementById('envelopeHeart');
+        
+        let textArray = ["...", "আপনার জন্য বার্তা..."];
+        let arrayIndex = 0, audioCtx = null;
+        let flyingEmojis = ['🎈', '🎉', '🎊']; 
 
-        // ব্যাকএন্ড API থেকে ডাটা আনা
-        async function fetchLetterData() {
+        window.addEventListener('DOMContentLoaded', async () => {
+            const pathParts = window.location.pathname.split('/');
+            const id = pathParts[pathParts.length - 1];
+            
             try {
                 const response = await fetch('/api/get-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: linkId })
+                    body: JSON.stringify({ id: id })
                 });
                 const data = await response.json();
+                
+                if(data.success) {
+                    if (data.theme && data.theme !== 'classic') {
+                        document.body.classList.add(`theme-${data.theme}`);
+                    }
 
-                if (!data.success) {
-                    document.getElementById('typing-text').innerText = "❌ লিঙ্কটি সঠিক নয়!";
-                    return;
+                    if (data.music) {
+                        bgMusic.src = data.music;
+                    }
+
+                    if (data.isLocked && data.countdownTime) {
+                        handleTimeLock(data.countdownTime);
+                        return; 
+                    }
+
+                    if (data.title) {
+                        letterTitle.innerText = data.title;
+                    } else {
+                        letterTitle.innerText = "কিছু কথা";
+                    }
+
+                    // 📸 ডাটাবেজ থেকে ইমেজ থাকলে তা সুন্দর ফ্রেমসহ রেন্ডার করার জন্য নতুন লজিক
+                    if (data.image) {
+                        const imgContainer = document.getElementById('imageContainer');
+                        if (imgContainer) {
+                            imgContainer.innerHTML = `<img src="${data.image}" class="dynamic-letter-img" alt="Letter Image">`;
+                        }
+                    }
+
+                    const categoryKey = data.type || data.category || '';
+                    const matchedCategory = categoryKey.toLowerCase().trim();
+
+                    if(data.emojis && data.emojis.length > 0) {
+                        flyingEmojis = data.emojis;
+                    } else {
+                        if(matchedCategory === 'love') flyingEmojis = ['❤️', '💖', '💕'];
+                        else if(matchedCategory === 'sorry') flyingEmojis = ['😭', '😞', '😥'];
+                        else if(matchedCategory === 'eid') flyingEmojis = ['🤝', '🎇', '🫂'];
+                        else flyingEmojis = ['🎈', '🎉', '🎊'];
+                    }
+                    if(envelopeHeart) envelopeHeart.innerText = flyingEmojis[0];
+
+                    if(data.question) {
+                        displayQuestion.innerText = data.question;
+                    }
+
+                    if(data.buttons && data.buttons.length > 0) {
+                        btnGroup.innerHTML = ''; 
+                        data.buttons.forEach((btnText, idx) => {
+                            const btn = document.createElement('button');
+                            btn.innerText = btnText;
+                            btn.classList.add('ask-btn');
+                            
+                            if(idx === 0) {
+                                btn.classList.add('btn-yes');
+                                btn.onclick = () => sendResponse(`${btnText} ✅`);
+                            } else {
+                                btn.classList.add('btn-no');
+                                btn.id = 'noBtn';
+                                btn.onmouseover = moveNoButton;
+                                btn.ontouchstart = moveNoButton; 
+                                btn.onclick = () => sendResponse(`${btnText} ❌`);
+                            }
+                            btnGroup.appendChild(btn);
+                        });
+                    }
+
+                    if(data.animations && data.animations.length > 0) textArray = data.animations;
+                    if(data.letter) document.getElementById('letterContent').innerText = data.letter;
+                } else {
+                    document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
-
-                if (data.isLocked) {
-                    showScreen('lock-screen');
-                    runTimer(data.countdownTime);
-                    return;
-                }
-
-                letterData = data;
-                startTypingAnimation(data.animations);
-
-            } catch (err) {
-                document.getElementById('typing-text').innerText = "⚠️ সার্ভার ত্রুটি! আবার চেষ্টা করুন।";
+            } catch(e) { 
+                console.log('Content fetch error');
+                letterTitle.innerText = "কিছু কথা";
             }
-        }
+        });
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        function handleTimeLock(countdownTime) {
+            lockScreen.style.display = 'flex';
+            const targetTime = new Date(countdownTime).getTime();
+            const displayElement = document.getElementById("timer-display");
 
-        // টাইমার ফাংশন
-        function runTimer(targetTimeStr) {
-            const timer = document.getElementById('timer');
-            const target = new Date(targetTimeStr).getTime();
-
-            const interval = setInterval(() => {
+            const timerInterval = setInterval(() => {
                 const now = new Date().getTime();
-                const diff = target - now;
+                const difference = targetTime - now;
 
-                if (diff <= 0) {
-                    clearInterval(interval);
-                    fetchLetterData();
+                if (difference <= 0) {
+                    clearInterval(timerInterval);
+                    location.reload(); 
                     return;
                 }
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                timer.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+                let htmlOutput = "";
+                if (hours > 0) { htmlOutput += `<div>${hours} ${hours === 1 ? 'hour' : 'hours'}</div>`; }
+                if (minutes > 0 || hours > 0) { htmlOutput += `<div>${minutes} ${minutes === 1 ? 'minute' : 'minutes'}</div>`; }
+                htmlOutput += `<div>${seconds} ${seconds === 1 ? 'second' : 'seconds'}</div>`;
+
+                displayElement.innerHTML = htmlOutput;
             }, 1000);
         }
 
-        // অরিজিনাল টাইপিং অ্যানিমেশন + সাউন্ড লজিক
-        function startTypingAnimation(lines) {
-            const textEl = document.getElementById('typing-text');
-            const sound = document.getElementById('typing-sound');
-            let lineIdx = 0;
-
-            function typeLine() {
-                if (lineIdx < lines.length) {
-                    let currentLine = lines[lineIdx];
-                    let charIdx = 0;
-                    textEl.innerText = "";
-
-                    function typeChar() {
-                        if (charIdx < currentLine.length) {
-                            textEl.innerText += currentLine[charIdx];
-                            charIdx++;
-                            
-                            // অরিজিনাল টাইপিং সাউন্ড প্লে
-                            if(sound && sound.src) {
-                                sound.currentTime = 0;
-                                sound.play().catch(() => {});
-                            }
-                            
-                            setTimeout(typeChar, 100); 
-                        } else {
-                            setTimeout(() => {
-                                lineIdx++;
-                                typeLine();
-                            }, 1500); 
-                        }
-                    }
-                    typeChar();
-                } else {
-                    setupEnvelopeUI();
-                    showScreen('main-screen');
-                }
-            }
-            typeLine();
-        }
-
-        // চিঠির ভেতরের ডাটা এবং ছবির রেন্ডারিং
-        function setupEnvelopeUI() {
-            if (!letterData) return;
-
-            // 📸 ছবি রেন্ডার করার লজিক
-            const imgHolder = document.getElementById('img-holder');
-            imgHolder.innerHTML = ''; 
-            if (letterData.image) {
-                const img = document.createElement('img');
-                img.src = letterData.image;
-                img.className = 'letter-img';
-                imgHolder.appendChild(img);
-            }
-
-            document.getElementById('letter-title').innerText = letterData.title;
-            document.getElementById('letter-text').innerText = letterData.letter;
-
-            if (letterData.music) {
-                document.getElementById('bg-music').src = letterData.music;
-            }
-
-            // বাটন সেটআপ
-            document.getElementById('question-text').innerText = letterData.question;
-            const btnContainer = document.getElementById('btn-container');
-            btnContainer.innerHTML = '';
-
-            letterData.buttons.forEach(label => {
-                const btn = document.createElement('button');
-                btn.innerText = label;
-                btn.className = `btn ${label.toLowerCase() === 'no' ? 'btn-no' : 'btn-yes'}`;
-                btn.onclick = () => sendResponse(label);
-                btnContainer.appendChild(btn);
-            });
-        }
-
-        function openEnvelope() {
-            const env = document.getElementById('envelope');
-            if (!env.classList.contains('open')) {
-                env.classList.add('open');
-                const bgMusic = document.getElementById('bg-music');
-                if (bgMusic.src) bgMusic.play().catch(() => {});
-            }
-        }
-
-        async function sendResponse(ans) {
+        function playIphoneTinkSound() {
             try {
-                await fetch('/api/submit-answer', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: linkId, answer: ans })
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime, osc1 = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator(), gainNode = audioCtx.createGain(), filter = audioCtx.createBiquadFilter();
+                
+                osc1.type = 'sine'; osc1.frequency.setValueAtTime(1800, now); osc1.frequency.exponentialRampToValueAtTime(1200, now + 0.01);
+                osc2.type = 'triangle'; osc2.frequency.setValueAtTime(300, now); osc2.frequency.exponentialRampToValueAtTime(80, now + 0.015);
+                filter.type = 'lowpass'; filter.frequency.setValueAtTime(2500, now);
+                gainNode.gain.setValueAtTime(0.9, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+                osc1.connect(filter); osc2.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc1.start(now); osc2.start(now); osc1.stop(now + 0.03); osc2.stop(now + 0.03);
+            } catch (e) {}
+        }
+        
+        function typeText(text, charIndex, callback) {
+            if (charIndex < text.length) {
+                if (text.charAt(charIndex) !== ' ') playIphoneTinkSound();
+                textDisplay.innerText += text.charAt(charIndex);
+                setTimeout(() => typeText(text, charIndex + 1, callback), 140);
+            } else { setTimeout(callback, 1500); }
+        }
+        
+        function startTextSequence() {
+            if (arrayIndex < textArray.length) {
+                textDisplay.innerText = '';
+                textDisplay.classList.remove('fade-out'); textDisplay.classList.add('fade-in');
+                typeText(textArray[arrayIndex], 0, () => {
+                    textDisplay.classList.remove('fade-in'); textDisplay.classList.add('fade-out');
+                    setTimeout(() => { arrayIndex++; startTextSequence(); }, 600);
                 });
-                document.getElementById('btn-container').style.display = 'none';
-                document.getElementById('question-text').style.display = 'none';
-                document.getElementById('thanks-msg').style.display = 'block';
-            } catch (err) {
-                alert("উত্তরে সমস্যা হয়েছে, আবার চেষ্টা করুন।");
+            } else {
+                textDisplay.style.display = 'none'; envelope.style.display = 'block';
+                setTimeout(() => envelope.classList.add('fade-in'), 50);
             }
         }
+        
+        openBtn.addEventListener('click', () => {
+            openBtn.classList.add('blast-out');
+            if(bgMusic.src && bgMusic.src !== window.location.href) {
+                bgMusic.volume = 0; bgMusic.muted = true;
+                bgMusic.play().then(() => { bgMusic.muted = false; bgMusic.volume = 0.001; }).catch(e => console.log("Audio unlock retry"));
+            }
+            setTimeout(() => { openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence(); }, 800);
+        });
+        
+        envelope.addEventListener('click', () => {
+            envelope.classList.add('open');
+            if(bgMusic.src && bgMusic.src !== window.location.href) {
+                bgMusic.currentTime = 0; bgMusic.volume = 1.0;
+                bgMusic.play().catch(e => console.log("Final play blocked"));
+            }
+            setTimeout(() => {
+                loveLetter.style.display = 'block';
+                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(createHeart, 300); }, 50);
+            }, 550);
+        });
+        
+        function createHeart() {
+            if(flyingEmojis.length === 0) return;
+            const heart = document.createElement('div'); heart.classList.add('heart');
+            heart.innerText = flyingEmojis[Math.floor(Math.random() * flyingEmojis.length)];
+            heart.style.left = Math.random() * 100 + 'vw'; heart.style.animationDuration = Math.random() * 2 + 3 + 's';
+            document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
+        }
 
-        window.onload = fetchLetterData;
+        function moveNoButton() {
+            const noBtn = document.getElementById('noBtn');
+            if(!noBtn) return;
+            noBtn.style.position = 'absolute';
+            const x = Math.random() * (loveLetter.offsetWidth - noBtn.offsetWidth - 40) + 10;
+            const y = Math.random() * (loveLetter.offsetHeight - noBtn.offsetHeight - 180) + 120;
+            noBtn.style.left = `${x}px`; noBtn.style.top = `${y}px`;
+        }
+
+        function sendResponse(answer) {
+            questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>`;
+
+            const pathParts = window.location.pathname.split('/');
+            const id = pathParts[pathParts.length - 1];
+
+            fetch('/api/submit-answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ answer: answer, id: id })
+            }).catch(error => console.log('Error sending response'));
+        }
     </script>
 </body>
 </html>
+2
