@@ -130,6 +130,9 @@ bot.use((ctx, next) => {
 
 bot.command('start', (ctx) => { 
     try {
+        // নতুন করে স্টার্ট দিলে পুরানো কনফিউজিং সেশন ক্লিয়ার করে দেওয়া হবে
+        delete db.userSessions[ctx.chat.id];
+        saveDB();
         sendMainMenu(ctx, false); 
     } catch (err) { console.error(err); }
 });
@@ -358,12 +361,13 @@ bot.action(/^copy_link_(.+)$/, (ctx) => {
     return ctx.answerCbQuery(`📋 লিংকটি নিচে দেওয়া হলো, চেপে ধরে কপি করুন:\n\n${finalGeneratedUrl}`, { show_alert: true });
 });
 
-// ইনকামিং মেসেজ প্রসেসিং
+// ইনকামিং মেসেজ প্রসেসিং কোর
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
 
+    // অ্যাডমিন প্রসেসিং চেক
     if (Number(userId) === Number(ADMIN_CHAT_ID) && session) {
         if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
             db.registeredUsers.forEach(id => {
@@ -408,7 +412,8 @@ bot.on('text', (ctx) => {
         }
     }
 
-    if (!session) {
+    // ফিক্সড কন্ডিশন: কোনো সেশন যদি তৈরি না থাকে (যেমন ইউজার বাটন না চেপে সরাসরি টেক্সট দিলে)
+    if (!session || !session.step) {
         ctx.reply(locale.invalid_cmd(text));
         ctx.reply(locale.help_text);
         sendMainMenu(ctx, false);
@@ -426,10 +431,10 @@ bot.on('text', (ctx) => {
             return;
         }
 
-        // 🎯 ফিক্স: চাইনিজ টাইপো (因素) সরিয়ে এখানে একদম ক্লিন কমা এবং নিউলাইন স্প্লিটিং বসানো হয়েছে
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             session.animations = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
             if (session.animations.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
+            
             session.step = 'AWAITING_LETTER_TEXT';
             saveDB();
             ctx.reply(locale.input_anim_success(session.animations.length));
@@ -548,5 +553,5 @@ app.get('/love/:id', (req, res) => { res.sendFile(path.join(__dirname, 'index.ht
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     bot.launch();
-    console.log(`Server & Admin dashboard deployed successfully on port ${PORT}`);
+    console.log(`Server running successfully on port ${PORT}`);
 });
