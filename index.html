@@ -91,31 +91,30 @@
         <div class="envelope-flap"></div>
         <div class="envelope-pockets"></div>
         <div class="envelope-bottom"></div>
-        <div class="envelope-heart" id="envelopeHeart">💝</div>
+        <div class="envelope-heart" id="envelopeHeart"></div>
         <div class="envelope-label">খাম খুলুন</div>
     </div>
     
     <div id="loveLetter" class="love-letter">
-        <!-- ডিফল্ট হিসেবে একটি টাইটেল দেওয়া রইলো, যা নিচে জাভাস্ক্রিপ্ট দিয়ে আপডেট হবে -->
-        <h2 id="letterTitle">আমার মনের কথা!</h2>
-        <p id="letterContent">লোডিং...</p>
+        <!-- সমস্ত ডিফল্ট টেক্সট মুছে একদম ফাকঁ রাখা হলো -->
+        <h2 id="letterTitle"></h2>
+        <p id="letterContent"></p>
         
-        <div class="question-box" id="questionBox">
-            <h3 id="displayQuestion">Do you love me? 🥺</h3>
-            <div class="btn-group" id="btnGroup">
-                <!-- বাটনগুলো জাভাস্ক্রিপ্ট দিয়ে তৈরি হবে -->
-            </div>
+        <div class="question-box" id="questionBox" style="display: none;">
+            <h3 id="displayQuestion"></h3>
+            <div class="btn-group" id="btnGroup"></div>
         </div>
     </div>
 
     <script>
         const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), questionBox = document.getElementById('questionBox'), lockScreen = document.getElementById('lockScreen'), letterTitle = document.getElementById('letterTitle'), displayQuestion = document.getElementById('displayQuestion'), btnGroup = document.getElementById('btnGroup'), envelopeHeart = document.getElementById('envelopeHeart');
         
-        let textArray = ["হেই সুন্দরী", "কেমন আছো", "তুমি কী আমার হবে?", "আমি শুধু..."];
+        // ডিফল্ট কোনো টেক্সট থাকবে না, ফাকাঁ অ্যারে
+        let textArray = [];
         let arrayIndex = 0, audioCtx = null;
-        let flyingEmojis = ['❤️', '💖', '💘', '💕', '💗']; 
+        let flyingEmojis = []; 
 
-        // 🌟 আপনার রিকোয়ারমেন্ট অনুযায়ী নতুন টাইটেল ম্যাপিং
+        // ক্যাটাগরি ম্যাপিং লজিক
         const titleMapping = {
             love: "আমার মনের কথা!",
             birthday: "শুভ জন্মদিন!",
@@ -149,20 +148,24 @@
                         return; 
                     }
 
+                    // ১. ইউজার যে ক্যাটাগরি চুজ করেছে শুধু সেটাই দেখাবে
+                    if (data.type && titleMapping[data.type]) {
+                        letterTitle.innerText = titleMapping[data.type];
+                    }
+
+                    // ২. ইউজার বটের মাধ্যমে যে ইমোজি সেট করেছে শুধু সেটাই উড়বে
                     if(data.emojis && data.emojis.length > 0) {
                         flyingEmojis = data.emojis;
                         if(envelopeHeart) envelopeHeart.innerText = data.emojis[0];
                     }
 
-                    // 🌟 এখানে ক্যাটাগরি অনুযায়ী নতুন টাইটেল ডাইনামিক্যালি সেট হচ্ছে
-                    if (data.type && titleMapping[data.type]) {
-                        letterTitle.innerText = titleMapping[data.type];
-                    }
-
+                    // ৩. ইউজার যদি প্রশ্ন দিয়ে থাকে তবেই বক্স দেখাবে, নাইলে হাইড থাকবে
                     if(data.question) {
                         displayQuestion.innerText = data.question;
+                        questionBox.style.display = 'block';
                     }
 
+                    // ৪. ইউজার থেকে পাওয়া বাটনের টেক্সট জেনারেট
                     if(data.buttons && data.buttons.length > 0) {
                         btnGroup.innerHTML = ''; 
                         data.buttons.forEach((btnText, idx) => {
@@ -172,24 +175,32 @@
                             
                             if(idx === 0) {
                                 btn.classList.add('btn-yes');
-                                btn.onclick = () => sendResponse(`${btnText} ❤️`);
+                                btn.onclick = () => sendResponse(`${btnText} ✅`);
                             } else {
                                 btn.classList.add('btn-no');
                                 btn.id = 'noBtn';
                                 btn.onmouseover = moveNoButton;
                                 btn.ontouchstart = moveNoButton; 
-                                btn.onclick = () => sendResponse(`${btnText} 💔`);
+                                btn.onclick = () => sendResponse(`${btnText} ❌`);
                             }
                             btnGroup.appendChild(btn);
                         });
                     }
 
-                    if(data.animations && data.animations.length > 0) textArray = data.animations;
+                    // ৫. ইউজার থেকে আসা অ্যানিমেশন টেক্সট লোড করা
+                    if(data.animations && data.animations.length > 0) {
+                        textArray = data.animations;
+                    } else {
+                        textArray = ["..."]; // যদি কোনো টেক্সট না থাকে
+                    }
+
                     if(data.letter) document.getElementById('letterContent').innerText = data.letter;
                 } else {
                     document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
-            } catch(e) { console.log('Content fetch error'); }
+            } catch(e) { 
+                console.log('Content fetch error');
+            }
         });
 
         function handleTimeLock(countdownTime) {
@@ -274,11 +285,15 @@
             }
             setTimeout(() => {
                 loveLetter.style.display = 'block';
-                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(createHeart, 300); }, 50);
+                setTimeout(() => { 
+                    loveLetter.classList.add('letter-popout'); 
+                    if(flyingEmojis.length > 0) setInterval(createHeart, 300); 
+                }, 50);
             }, 550);
         });
         
         function createHeart() {
+            if(flyingEmojis.length === 0) return;
             const heart = document.createElement('div'); heart.classList.add('heart');
             heart.innerText = flyingEmojis[Math.floor(Math.random() * flyingEmojis.length)];
             heart.style.left = Math.random() * 100 + 'vw'; heart.style.animationDuration = Math.random() * 2 + 3 + 's';
