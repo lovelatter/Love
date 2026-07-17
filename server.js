@@ -75,7 +75,7 @@ const locale = {
     prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
-    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপদেশের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
@@ -352,6 +352,8 @@ bot.on('photo', async (ctx) => {
     const session = db.userSessions[userId];
 
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
+        const loadingMsg = await ctx.reply("⏳ Uploading your image... Please wait...").catch(() => null);
+
         try {
             const photoArray = ctx.message.photo;
             const fileId = photoArray[photoArray.length - 1].file_id;
@@ -370,17 +372,30 @@ bot.on('photo', async (ctx) => {
                     db.userSessions[userId].imageUrl = `/uploads/${filename}`;
                     saveDB();
                     
-                    ctx.reply("📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।");
+                    if (loadingMsg) {
+                        bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।").catch(() => {});
+                    } else {
+                        ctx.reply("📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।");
+                    }
+                    
                     showAnimationIntro(ctx);
                 });
             }).on('error', (err) => {
                 console.error("Image download error:", err);
-                ctx.reply("⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন বা Skip করুন।");
+                if (loadingMsg) {
+                    bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন বা Skip করুন।").catch(() => {});
+                } else {
+                    ctx.reply("⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন বা Skip করুন।");
+                }
             });
 
         } catch (error) {
             console.error("Photo process error:", error);
-            ctx.reply("⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+            if (loadingMsg) {
+                bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।").catch(() => {});
+            } else {
+                ctx.reply("⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+            }
         }
     }
 });
@@ -439,7 +454,7 @@ bot.on('text', async (ctx) => {
 
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
+            const lines = text.split(/[\n,痕]+/).map(l => l.trim()).filter(l => l.length > 0);
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
             
             db.userSessions[userId].animations = lines;
