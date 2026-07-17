@@ -3,7 +3,7 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 
-const app = express();
+const app = report = express();
 app.use(express.json());
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -47,7 +47,6 @@ const CATEGORY_CONFIGS = {
     }
 };
 
-// ডেটাবেজ ইনিশিয়ালাইজেশন
 let db = {
     linkDatabase: {},
     userSessions: {},
@@ -66,7 +65,6 @@ if (fs.existsSync(DB_FILE)) {
     }
 }
 
-// ফরম্যাট নিশ্চিতকরণ
 if (!Array.isArray(db.bannedUsers)) db.bannedUsers = [];
 if (!Array.isArray(db.registeredUsers)) db.registeredUsers = [];
 if (!db.linkDatabase) db.linkDatabase = {};
@@ -88,9 +86,9 @@ const locale = {
     prompt_countdown_ask: "⏰ **টাইম কাউন্টডাউন সেট করুন।**",
     btn_no_countdown: "❌ No Countdown",
     
-    help_text: `❓ **বট ব্যবহারের সঠিক নিয়ম (Help Guide):**\n\n1️⃣ প্রথমে **🚀 লিঙ্ক তৈরি করুন** বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)।\n4️⃣ বটের নির্দেশনা অনুযায়ী অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
+    help_text: `❓ **বট ব্যবহারের সঠিক নিয়ম (Help Guide):**\n\n1️⃣ প্রথমে **🚀 লিঙ্ক তৈরি করুন** বাটনে ক্লিক করুন。\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন。\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন (অথবা No Countdown দিন)。\n4️⃣ বটের নির্দেশনা অনুযায়ী অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n5️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     
-    feedback_prompt: "📝 **مতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
+    feedback_prompt: "📝 **মতামত ও রিপোর্ট:**\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপдейটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
     feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     
@@ -101,7 +99,6 @@ const locale = {
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
 };
 
-// গ্লোবাল মিডলওয়্যার
 bot.use((ctx, next) => {
     try {
         const userId = ctx.chat ? ctx.chat.id : null;
@@ -232,7 +229,7 @@ bot.action('adm_delete_all_links_confirm', (ctx) => {
     ctx.answerCbQuery();
     db.linkDatabase = {};
     saveDB();
-    ctx.editMessageText("💥 **সিস্টেমের সমস্ত একটিভ লিংক এক ক্লিকে চিরতরে ডিলিট করে দেওয়া হয়েছে!**", Markup.inlineKeyboard([
+    ctx.editMessageText("💥 **সistemের সমস্ত একটিভ লিংক এক ক্লিকে চিরতরে ডিলিট করে দেওয়া হয়েছে!**", Markup.inlineKeyboard([
         [Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]
     ]));
 });
@@ -247,7 +244,7 @@ bot.action('adm_ban_menu', (ctx) => {
     db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
     saveDB();
 
-    ctx.reply(`🚫 **Ban / Unban Management System**\n\n📊 **পরিসংখ্যান:**\n• মোট ইউজার সংখ্যা: ${totalUsersCount} (ব্যান/আনব্যান সহ)\n• ব্যান ইউজার: ${bannedUsersCount}\n\n👉 অনুগ্রহ করে যে ইউজারকে ব্যান বা আনব্যান করতে চান তার **Telegram User ID** অথবা **Username** (যেমন: @username বা শুধু username) নিচে লিখে পাঠান:`, Markup.inlineKeyboard([
+    ctx.reply(`🚫 **Ban / Unban Management System**\n\n📊 **পরিসংখ্যান:**\n• মোট ইউজার সংখ্যা: ${totalUsersCount}\n• ব্যান ইউজার: ${bannedUsersCount}\n\n👉 অনুগ্রহ করে যে ইউজারকে ব্যান বা আনব্যান করতে চান তার **Telegram User ID** অথবা **Username** নিচে লিখে পাঠান:`, Markup.inlineKeyboard([
         [Markup.button.callback("❌ ক্যানсел করুন", "adm_back_to_dashboard")]
     ]));
 });
@@ -280,7 +277,8 @@ bot.action(/^make_/, (ctx) => {
         type: cat, 
         name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim() || "User",
         username: ctx.from.username ? `@${ctx.from.username}` : "None",
-        music: AUTOMATIC_MUSIC_MAPPING[cat] || ""
+        music: AUTOMATIC_MUSIC_MAPPING[cat] || "",
+        step: 'AWAITING_COUNTDOWN_SELECTION' // সেশন ট্র্যাকিং শুরু
     };
     saveDB();
     showCountdownPrompt(ctx);
@@ -297,6 +295,7 @@ function showCountdownPrompt(ctx) {
 
 bot.action('timer_no', (ctx) => { 
     ctx.answerCbQuery(); 
+    if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
     saveDB();
     showAnimationIntro(ctx); 
@@ -305,14 +304,17 @@ bot.action('timer_no', (ctx) => {
 bot.action(/^set_time_/, (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
     const minutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
-    session.pendingMinutes = minutes;
+    db.userSessions[userId].pendingMinutes = minutes;
     saveDB();
     showAnimationIntro(ctx);
 });
 
 function showAnimationIntro(ctx) {
+    if (!db.userSessions[ctx.chat.id]) {
+        db.userSessions[ctx.chat.id] = { type: 'love', name: 'User', username: 'None' };
+    }
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     saveDB();
     ctx.editMessageText(locale.session_started(), Markup.inlineKeyboard([
@@ -351,7 +353,7 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
     sendMainMenu(ctx, false);
 });
 
-// ইনকামিং মেসেজ প্রসেসিং কোর
+// ইনকামিং মেসেজ প্রসেসিং কোর (ফিক্সড)
 bot.on('text', (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
@@ -372,13 +374,11 @@ bot.on('text', (ctx) => {
         
         if (session.step === 'AWAITING_BAN_USER_INPUT') {
             let targetId = parseInt(text, 10);
-            
             if (isNaN(targetId)) {
                 let cleanUsername = text.replace('@', '').trim().toLowerCase();
                 targetId = db.usernameMap[cleanUsername];
-                
                 if (!targetId) {
-                    return ctx.reply("❌ দুঃখিত! এই ইউজারনেমটি বটের ডাটাবেজে খুঁজে পাওয়া যায়নি। ইউজারকে অন্তত একবার বটের সাথে চ্যাট করতে হবে।");
+                    return ctx.reply("❌ দুঃখিত! এই ইউজারনেমটি বটের ডাটাবেজে খুঁজে পাওয়া যায়নি।");
                 }
             }
             
@@ -386,11 +386,9 @@ bot.on('text', (ctx) => {
             if (db.bannedUsers.includes(targetId)) {
                 db.bannedUsers = db.bannedUsers.filter(id => id !== targetId);
                 responseAdminMsg = `🟢 ইউজার \`${targetId}\` কে সফলভাবে **UNBAN** করা হয়েছে।`;
-                bot.telegram.sendMessage(targetId, "😇 আপনাকে বটের পক্ষ থেকে আনব্যান করা হয়েছে।").catch(()=>{});
             } else {
                 db.bannedUsers.push(targetId);
                 responseAdminMsg = `🚫 ইউজার \`${targetId}\` কে সফলভাবে **BAN** করা হয়েছে।`;
-                bot.telegram.sendMessage(targetId, "🛑 দুঃখিত, আপনাকে বটের পক্ষ থেকে ব্যান করা হয়েছে।").catch(()=>{});
             }
             
             saveDB();
@@ -402,6 +400,7 @@ bot.on('text', (ctx) => {
         }
     }
 
+    // স্টেট ভ্যালিডেশন ফিক্স
     if (!session || !session.step) {
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' });
         ctx.reply(locale.help_text, { parse_mode: 'Markdown' });
@@ -420,17 +419,18 @@ bot.on('text', (ctx) => {
         }
 
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            session.animations = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
-            if (session.animations.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
+            const lines = text.split(/[\n,，]+/).map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি অ্যানিমেশন টেক্সট লিখুন।");
             
-            session.step = 'AWAITING_LETTER_TEXT';
+            db.userSessions[userId].animations = lines;
+            db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
             saveDB();
-            ctx.reply(locale.input_anim_success(session.animations.length));
+            ctx.reply(locale.input_anim_success(lines.length));
             return;
         }
 
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            processFinalLinkCreation(ctx, ctx.message.text);
+            processFinalLinkCreation(ctx, text);
             return;
         }
 
@@ -443,7 +443,6 @@ bot.on('text', (ctx) => {
     }
 });
 
-// 🎯 ফিক্স: এখান থেকে '📋 Copy Link' বাটনটি পুরোপুরি রিমুভ করে দেওয়া হয়েছে
 function processFinalLinkCreation(ctx, letterText) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
@@ -460,8 +459,8 @@ function processFinalLinkCreation(ctx, letterText) {
     const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
     
     db.linkDatabase[uniqueId] = {
-        userId: userId, name: session.name, username: session.username, type: session.type,
-        music: session.music, countdown: finalCountdownIso,
+        userId: userId, name: session.name || "User", username: session.username || "None", type: session.type || "love",
+        music: session.music || "", countdown: finalCountdownIso,
         animations: session.animations, letter: letterText, answer: null
     };
     
