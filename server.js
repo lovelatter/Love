@@ -354,6 +354,9 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
     const data = db.linkDatabase[linkId];
     if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
     if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
+    app.get('/', (req, res) => {
+    res.send('Bot is active and running!');
+});
     
     ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
     if (data.imagePath) {
@@ -674,8 +677,9 @@ app.post('/api/submit-answer', async (req, res) => {
 
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
+app.get('/', (req, res) => { res.send('Bot is active and running!'); }); 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     bot.launch().catch(err => console.error("Bot launch failure:", err));
     console.log(`Smart Server successfully running on port ${PORT}`);
 });
