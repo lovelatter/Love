@@ -3,6 +3,13 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
+const admin = require('firebase-admin');
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://loveletter-4a9d8-default-rtdb.firebaseio.com/"
+});
 
 const app = express();
 app.use(express.json());
@@ -378,10 +385,9 @@ bot.action(/^view_vi_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
     if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-    ctx.answerCbQuery();
-
+    
     if (!data.visitors || data.visitors.length === 0) {
-        return ctx.reply("ℹ️ এই লিঙ্কটি এখনও কেউ ওপেন করেনি।");
+        return ctx.answerCbQuery("ℹ️ এই লিঙ্কটি এখনও কেউ ওপেন করেনি।", { show_alert: true });
     }
 
     let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
@@ -389,11 +395,11 @@ bot.action(/^view_vi_(.+)$/, async (ctx) => {
         report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
     });
 
-    if (report.length > 4000) {
-        report = report.substring(0, 3900) + "\n...[Truncated due to length limit]";
+    if (report.length > 200) {
+        report = report.substring(0, 197) + "...";
     }
 
-    ctx.reply(report);
+    ctx.answerCbQuery(report, { show_alert: true });
 });
 
 bot.on('photo', async (ctx) => {
