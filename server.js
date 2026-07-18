@@ -11,7 +11,10 @@ app.set('trust proxy', true);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim()).filter(id => id !== "");
+
+const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
+
 const SERVER_URL = "https://love-bb7p.onrender.com";
 const DB_FILE = path.join(__dirname, 'db.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -83,7 +86,7 @@ const locale = {
     maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
     session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n\n💡লেখার নিয়ম:\n• প্রতি লাইনের পর কীবোর্ডের Enter চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
-    general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
+    general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন."
 };
 
 bot.use(async (ctx, next) => {
@@ -92,7 +95,7 @@ bot.use(async (ctx, next) => {
     if (!db.registeredUsers.includes(userId)) db.registeredUsers.push(userId);
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
     saveDB();
-    if (Number(userId) === Number(ADMIN_CHAT_ID)) return next();
+    if (isAdmin(userId)) return next();
     if (db.bannedUsers.includes(userId)) return;
     if (db.isMaintenanceMode) {
         const session = db.userSessions[userId];
@@ -138,7 +141,7 @@ const showAdminDashboard = (ctx, isEdit = false) => {
 };
 
 const handleAdminSecureAccess = (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) {
+    if (!isAdmin(ctx.chat.id)) {
         ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
@@ -148,7 +151,7 @@ const handleAdminSecureAccess = (ctx) => {
 bot.command(['admin', 'adm'], handleAdminSecureAccess);
 
 bot.action('adm_toggle_maint', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     db.isMaintenanceMode = !db.isMaintenanceMode;
     saveDB();
     ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`);
@@ -156,7 +159,7 @@ bot.action('adm_toggle_maint', (ctx) => {
 });
 
 bot.action('adm_broadcast', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
     saveDB();
@@ -164,7 +167,7 @@ bot.action('adm_broadcast', (ctx) => {
 });
 
 bot.action('adm_all_links_menu', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     ctx.editMessageText("🔗 All Links Management Sub-Menu:", Markup.inlineKeyboard([
         [Markup.button.callback("📜 View All Links List", "adm_view_links_list")],
@@ -174,7 +177,7 @@ bot.action('adm_all_links_menu', (ctx) => {
 });
 
 bot.action('adm_view_links_list', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     const keys = Object.keys(db.linkDatabase);
     if (!keys.length) {
@@ -188,7 +191,7 @@ bot.action('adm_view_links_list', (ctx) => {
 });
 
 bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     const targetKey = ctx.match[1];
     if (db.linkDatabase[targetKey]) {
         if (db.linkDatabase[targetKey].imagePath) {
@@ -205,7 +208,7 @@ bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
 });
 
 bot.action('adm_delete_all_links_confirm', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     Object.keys(db.linkDatabase).forEach(key => {
         if (db.linkDatabase[key].imagePath) {
@@ -219,7 +222,7 @@ bot.action('adm_delete_all_links_confirm', (ctx) => {
 });
 
 bot.action('adm_ban_menu', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
     saveDB();
@@ -227,7 +230,7 @@ bot.action('adm_ban_menu', (ctx) => {
 });
 
 bot.action('adm_back_to_dashboard', (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     ctx.answerCbQuery();
     delete db.userSessions[ctx.chat.id];
     saveDB();
@@ -348,14 +351,14 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
 });
 
 bot.action(/^view_ans_(.+)$/, (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     const data = db.linkDatabase[ctx.match[1]];
     if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
     return ctx.answerCbQuery(data.answer ? `📩 ইউজারের উত্তর: ${data.answer}` : "⏳ ইউজার এখনও উত্তর দেয়নি!", { show_alert: true });
 });
 
 bot.action(/^view_vi_(.+)$/, async (ctx) => {
-    if (Number(ctx.chat.id) !== Number(ADMIN_CHAT_ID)) return ctx.answerCbQuery();
+    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
     if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
@@ -412,12 +415,12 @@ bot.on('text', async (ctx) => {
         if (text.length < 5) return ctx.reply(locale.feedback_short);
         const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
         const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-        bot.telegram.sendMessage(ADMIN_CHAT_ID, `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`).catch(() => {});
+        ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`).catch(() => {}));
         delete db.userSessions[userId];
         saveDB();
         return ctx.reply(locale.feedback_success, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
     }
-    if (Number(userId) === Number(ADMIN_CHAT_ID) && session) {
+    if (isAdmin(userId) && session) {
         if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
             db.registeredUsers.forEach(id => {
                 bot.telegram.sendMessage(id, `📢 [Announcement]\n\n${text}`, { parse_mode: 'Markdown' }).catch(() => {});
@@ -501,9 +504,9 @@ function processFinalLinkCreation(ctx, letterText) {
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
 🔗 Main Link: ${finalGeneratedUrl}`;
-    bot.telegram.sendMessage(ADMIN_CHAT_ID, adminNotificationText, Markup.inlineKeyboard([
+    ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
         [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
-    ])).catch(() => {});
+    ])).catch(() => {}));
     delete db.userSessions[userId];
     saveDB();
 }
@@ -600,3 +603,4 @@ app.listen(PORT, () => {
     bot.launch().catch(err => console.error(err));
     console.log(`Server running on port ${PORT}`);
 });
+2
