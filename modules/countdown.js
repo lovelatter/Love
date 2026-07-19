@@ -1,8 +1,13 @@
 const { Markup } = require('telegraf');
 
-function showCountdownPrompt(ctx, locale, db, saveDB, showImageUploadPrompt) {
-    ctx.editMessageText(locale.prompt_countdown_ask, Markup.inlineKeyboard([
-        [Markup.button.callback(locale.btn_no_countdown, 'timer_no')],
+const COUNTDOWN_CONFIG = {
+    prompt: "⏰ টাইম কাউন্টডাউন সেট করুন।",
+    btn_no: "❌ No Countdown"
+};
+
+function showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt) {
+    ctx.editMessageText(COUNTDOWN_CONFIG.prompt, Markup.inlineKeyboard([
+        [Markup.button.callback(COUNTDOWN_CONFIG.btn_no, 'timer_no')],
         [Markup.button.callback('🕒 ৩ মিনিট', 'set_time_3'), Markup.button.callback('🕒 ৫ মিনিট', 'set_time_5')],
         [Markup.button.callback('🕒 ১০ মিনিট', 'set_time_10')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
@@ -27,4 +32,4 @@ function handleSetTime(ctx, db, saveDB, showImageUploadPrompt) {
     showImageUploadPrompt(ctx);
 }
 
-module.exports = { showCountdownPrompt, handleTimerNo, handleSetTime };
+module.exports = { showCountdownPrompt, handleTimerNo, handleSetTime, COUNTDOWN_CONFIG };
