@@ -3,8 +3,9 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
-// মডিউল ইমপোর্ট করা হলো
 const photohandle = require('./modules/photohandle');
+// কাউন্টডাউন মডিউল ইমপোর্ট
+const { showCountdownPrompt, handleTimerNo, handleSetTime } = require('./modules/countdown');
 
 const app = express();
 app.use(express.json());
@@ -91,13 +92,28 @@ const locale = {
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন."
 };
 
-// Functions forward declaration (moved before usage)
 function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     saveDB();
     const text = locale.session_started();
     ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
         ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
+    });
+}
+
+function showImageUploadPrompt(ctx) {
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
+    saveDB();
+    ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
+        [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
+        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+    ])).catch(() => {
+        ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
+            [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
+            [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+        ])).catch(() => {});
     });
 }
 
@@ -152,15 +168,13 @@ const showAdminDashboard = (ctx, isEdit = false) => {
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-const handleAdminSecureAccess = (ctx) => {
+bot.command(['admin', 'adm'], (ctx) => {
     if (!isAdmin(ctx.chat.id)) {
         ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     showAdminDashboard(ctx, false);
-};
-
-bot.command(['admin', 'adm'], handleAdminSecureAccess);
+});
 
 bot.action('adm_toggle_maint', (ctx) => {
     if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
@@ -274,57 +288,16 @@ bot.action(/^make_/, (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
-    showCountdownPrompt(ctx);
+    showCountdownPrompt(ctx, locale, db, saveDB, showImageUploadPrompt);
 });
 
-function showCountdownPrompt(ctx) {
-    ctx.editMessageText(locale.prompt_countdown_ask, Markup.inlineKeyboard([
-        [Markup.button.callback(locale.btn_no_countdown, 'timer_no')],
-        [Markup.button.callback('🕒 ৩ মিনিট', 'set_time_3'), Markup.button.callback('🕒 ৫ মিনিট', 'set_time_5')],
-        [Markup.button.callback('🕒 ১০ মিনিট', 'set_time_10')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ]), { parse_mode: 'Markdown' }).catch(() => {});
-}
-
-bot.action('timer_no', (ctx) => { 
-    ctx.answerCbQuery(); 
-    if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
-    db.userSessions[ctx.chat.id].pendingMinutes = null; 
-    saveDB();
-    showImageUploadPrompt(ctx); 
-});
-
-bot.action(/^set_time_/, (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
-    db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
-    saveDB();
-    showImageUploadPrompt(ctx);
-});
-
-function showImageUploadPrompt(ctx) {
-    const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
-    db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
-    saveDB();
-    ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
-        [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ])).catch(() => {
-        ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
-            [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
-            [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-        ])).catch(() => {});
-    });
-}
+bot.action('timer_no', (ctx) => handleTimerNo(ctx, db, saveDB, showImageUploadPrompt));
+bot.action(/^set_time_/, (ctx) => handleSetTime(ctx, db, saveDB, showImageUploadPrompt));
 
 bot.action('skip_image_upload', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    if (db.userSessions[userId]) {
-        db.userSessions[userId].imageUrl = null;
-    }
+    if (db.userSessions[userId]) db.userSessions[userId].imageUrl = null;
     showAnimationIntro(ctx);
 });
 
@@ -373,13 +346,10 @@ bot.action(/^view_vi_(.+)$/, async (ctx) => {
     data.visitors.forEach((v, index) => {
         report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
     });
-    if (report.length > 4000) {
-        report = report.substring(0, 3900) + "\n...[Truncated]";
-    }
+    if (report.length > 4000) report = report.substring(0, 3900) + "\n...[Truncated]";
     ctx.reply(report);
 });
 
-// মডিউল ব্যবহারের আপডেট অংশ
 bot.on('photo', async (ctx) => {
     await photohandle(ctx, bot, UPLOADS_DIR, db, saveDB, showAnimationIntro);
 });
@@ -437,7 +407,7 @@ bot.on('text', async (ctx) => {
             return ctx.reply(locale.input_anim_success(lines.length));
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            return processFinalLinkCreation(ctx, text);
+            processFinalLinkCreation(ctx, text);
         }
     } catch (error) {
         ctx.reply(locale.general_error).catch(() => {});
@@ -475,9 +445,7 @@ function processFinalLinkCreation(ctx, letterText) {
 📂 Category: ${String(session.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
-    if (dbImageUrl) {
-        adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
-    }
+    if (dbImageUrl) adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
 🔗 Main Link: ${finalGeneratedUrl}`;
@@ -518,9 +486,7 @@ app.post('/api/get-content', async (req, res) => {
         const userAgent = req.headers['user-agent'] || "";
         const { os, browser } = parseUserAgent(userAgent);
         const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
-        let visitorObj = {
-            time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
-        };
+        let visitorObj = { time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser };
         if (ip && ip !== "127.0.0.1" && ip !== "::1") {
             https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
                 let body = "";
