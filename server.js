@@ -4,7 +4,7 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 
-// নতুন মডিউল ইমপোর্ট করা হয়েছে
+// মডিউল ইমপোর্ট
 const { db, saveDB } = require('./modules/database');
 const config = require('./modules/config');
 const locale = require('./modules/locale');
@@ -13,7 +13,6 @@ const { parseUserAgent } = require('./modules/utils');
 const app = express();
 app.use(express.json());
 app.set('trust proxy', true);
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -22,10 +21,7 @@ const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 
 const SERVER_URL = "https://love-bb7p.onrender.com";
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
-
-if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
@@ -52,8 +48,8 @@ bot.use(async (ctx, next) => {
     return next();
 });
 
-// মেনু ফাংশন
-const sendMainMenu = (ctx, isEdit = false) => {
+// মেনু এবং কমান্ডস
+function sendMainMenu(ctx, isEdit = false) {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(locale.btn_make, 'menu_makelink')],
@@ -61,53 +57,65 @@ const sendMainMenu = (ctx, isEdit = false) => {
     ]);
     if (isEdit) return ctx.editMessageText(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
     return ctx.reply(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
-};
+}
 
-// স্টার্ট কমান্ড
-bot.command('start', (ctx) => { 
-    delete db.userSessions[ctx.chat.id];
-    saveDB();
-    sendMainMenu(ctx, false); 
+bot.command('start', (ctx) => { delete db.userSessions[ctx.chat.id]; saveDB(); sendMainMenu(ctx, false); });
+
+bot.command(['admin', 'adm'], (ctx) => {
+    if (!isAdmin(ctx.chat.id)) return ctx.reply(locale.invalid_cmd(ctx.message.text || ''));
+    showAdminDashboard(ctx, false);
 });
 
-// এডমিন ড্যাশবোর্ড লজিক এখানে আসবে...
-// (আপনার আগের কোডের বাকি অংশগুলো এখানে কপি করে নিন)
-// ...
+// এডমিন ড্যাশবোর্ড লজিক
+function showAdminDashboard(ctx, isEdit = false) {
+    const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
+        [Markup.button.callback("📢 Announcement", "adm_broadcast")],
+        [Markup.button.callback("🔗 Links Management", "adm_all_links_menu")],
+        [Markup.button.callback("🚫 Ban System", "adm_ban_menu")]
+    ]);
+    const text = `👑 Master Admin Console:`;
+    if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+}
 
-// API এন্ডপয়েন্টস
+// বাটন অ্যাকশন হ্যান্ডলারসমূহ (এগুলো আপনার আগের কোড থেকে আনা হয়েছে)
+bot.action('menu_makelink', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
+        [Markup.button.callback(locale.cat_love, 'make_love')],
+        [Markup.button.callback(locale.cat_birthday, 'make_birthday')],
+        [Markup.button.callback(locale.btn_back, 'go_to_main_menu')]
+    ]));
+});
+
+bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
+
+bot.action(/^make_/, (ctx) => {
+    ctx.answerCbQuery();
+    const cat = ctx.match.input.replace('make_', '');
+    db.userSessions[ctx.chat.id] = { type: cat, step: 'AWAITING_COUNTDOWN_SELECTION' };
+    saveDB();
+    ctx.editMessageText(locale.prompt_countdown_ask, Markup.inlineKeyboard([
+        [Markup.button.callback('🕒 ৩ মিনিট', 'set_time_3'), Markup.button.callback('🕒 ৫ মিনিট', 'set_time_5')],
+        [Markup.button.callback(locale.btn_back, 'menu_makelink')]
+    ]));
+});
+
+// অন্যান্য Action এবং On Text/Photo হ্যান্ডলারগুলো এখানে বসিয়ে দিন...
+
+// API অংশ
 app.post('/api/get-content', async (req, res) => {
-    try {
-        const linkId = req.body.id;
-        const data = db.linkDatabase[linkId];
-        if (!data) return res.json({ success: false });
-        
-        // ভিজিটর ট্র্যাকিং
-        let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
-        let ip = rawIp.split(',')[0].trim();
-        if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
-        const { os, browser } = parseUserAgent(req.headers['user-agent'] || "");
-        
-        if (!data.visitors) data.visitors = [];
-        data.visitors.push({ time: new Date().toLocaleString(), ip, os, browser });
-        saveDB();
-
-        if (data.countdown && new Date(data.countdown) > new Date()) {
-            return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
-        }
-        
-        const configData = config.CATEGORY_CONFIGS[data.type] || config.CATEGORY_CONFIGS['love'];
-        return res.json({ 
-            success: true, isLocked: false, title: configData.title, music: data.music, 
-            animations: data.animations, letter: data.letter, emojis: configData.emojis, 
-            question: configData.question, buttons: configData.buttons, image: data.image || null 
-        });
-    } catch (err) { res.json({ success: false }); }
+    const data = db.linkDatabase[req.body.id];
+    if (!data) return res.json({ success: false });
+    res.json({ success: true, ...data });
 });
 
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    bot.launch().catch(err => console.error(err));
+    bot.launch();
     console.log(`Server running on port ${PORT}`);
 });
