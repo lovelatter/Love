@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const DB_FILE = path.join(__dirname, '../db.json');
+const DB_FILE = path.join(__dirname, '../database.json');
 
 let db = {
     linkDatabase: {},
@@ -14,14 +14,23 @@ let db = {
 
 try {
     if (fs.existsSync(DB_FILE)) {
-        db = { ...db, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
+        const fileContent = fs.readFileSync(DB_FILE, 'utf8');
+        if (fileContent && fileContent.trim() !== "") {
+            db = { ...db, ...JSON.parse(fileContent) };
+        }
     } else {
         fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
     }
-} catch (e) { console.error(e); }
+} catch (e) {
+    console.error("Database loading error, starting with fresh state:", e);
+}
 
 const saveDB = () => {
-    try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch (e) { console.error(e); }
+    try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+    } catch (e) {
+        console.error("Failed to save database:", e);
+    }
 };
 
 module.exports = { db, saveDB };
