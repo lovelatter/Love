@@ -1,9 +1,8 @@
-// modules/photohandle.js
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 const https = require('https');
 
-const handlePhoto = async (ctx, bot, db, saveDB, UPLOADS_DIR, showAnimationIntro) => {
+async function photohandle(ctx, bot, UPLOADS_DIR, db, saveDB, showAnimationIntro) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     
@@ -34,6 +33,6 @@ const handlePhoto = async (ctx, bot, db, saveDB, UPLOADS_DIR, showAnimationIntro
             if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
         }
     }
-};
+}
 
-module.exports = { handlePhoto };
+module.exports = photohandle;
