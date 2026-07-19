@@ -4,8 +4,11 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 const photohandle = require('./modules/photohandle');
+
+// মডিউলসমূহ ইমপোর্ট করা হলো
 const { showCountdownPrompt, handleTimerNo, handleSetTime } = require('./modules/countdown');
-const { CATEGORY_CONFIGS, getCategoryKeyboard } = require('./modules/category');
+const { CATEGORY_CONFIGS, getCategoryKeyboard, CATEGORY_MENU_TEXT } = require('./modules/category');
+const { handleFeedbackMenu, processFeedbackText } = require('./modules/feedback');
 
 const app = express();
 app.use(express.json());
@@ -68,16 +71,9 @@ const bot = new Telegraf(TELEGRAM_TOKEN);
 const locale = {
     welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
-    choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
-    cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
-    prompt_countdown_ask: "⏰ টাইম কাউন্টডাউন সেট করুন।",
-    btn_no_countdown: "❌ No Countdown",
     prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
-    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপদেশের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
-    feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
-    feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
     maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
     session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n\n💡লেখার নিয়ম:\n• প্রতি লাইনের পর কীবোর্ডের Enter চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
@@ -256,11 +252,9 @@ bot.action('adm_back_to_dashboard', (ctx) => {
     showAdminDashboard(ctx, true);
 });
 
-bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
-
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
-    ctx.editMessageText(locale.choose_cat, getCategoryKeyboard(locale));
+    ctx.editMessageText(CATEGORY_MENU_TEXT.choose_cat, getCategoryKeyboard(locale.btn_back));
 });
 
 bot.action(/^make_/, (ctx) => {
@@ -275,7 +269,7 @@ bot.action(/^make_/, (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
-    showCountdownPrompt(ctx, locale, db, saveDB, showImageUploadPrompt);
+    showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt);
 });
 
 bot.action('timer_no', (ctx) => handleTimerNo(ctx, db, saveDB, showImageUploadPrompt));
@@ -288,54 +282,8 @@ bot.action('skip_image_upload', (ctx) => {
     showAnimationIntro(ctx);
 });
 
-bot.action('menu_feedback', (ctx) => { 
-    ctx.answerCbQuery(); 
-    db.userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; 
-    saveDB(); 
-    ctx.reply(locale.feedback_prompt); 
-});
-
+bot.action('menu_feedback', (ctx) => handleFeedbackMenu(ctx, db, saveDB, locale.btn_back));
 bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
-
-bot.action(/^delete_link_(.+)$/, (ctx) => {
-    const linkId = ctx.match[1];
-    const data = db.linkDatabase[linkId];
-    if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
-    if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
-    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
-    if (data.imagePath) {
-        const fullImgPath = path.join(__dirname, data.imagePath);
-        if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
-    }
-    delete db.linkDatabase[linkId];
-    saveDB();
-    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
-    sendMainMenu(ctx, false);
-});
-
-bot.action(/^view_ans_(.+)$/, (ctx) => {
-    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-    const data = db.linkDatabase[ctx.match[1]];
-    if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-    return ctx.answerCbQuery(data.answer ? `📩 ইউজারের উত্তর: ${data.answer}` : "⏳ ইউজার এখনও উত্তর দেয়নি!", { show_alert: true });
-});
-
-bot.action(/^view_vi_(.+)$/, async (ctx) => {
-    if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-    const linkId = ctx.match[1];
-    const data = db.linkDatabase[linkId];
-    if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-    ctx.answerCbQuery();
-    if (!data.visitors || data.visitors.length === 0) {
-        return ctx.reply("ℹ️ এই লিঙ্কটি এখনও কেউ ওপেন করেনি।");
-    }
-    let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
-    data.visitors.forEach((v, index) => {
-        report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
-    });
-    if (report.length > 4000) report = report.substring(0, 3900) + "\n...[Truncated]";
-    ctx.reply(report);
-});
 
 bot.on('photo', async (ctx) => {
     await photohandle(ctx, bot, UPLOADS_DIR, db, saveDB, showAnimationIntro);
@@ -346,13 +294,7 @@ bot.on('text', async (ctx) => {
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        if (text.length < 5) return ctx.reply(locale.feedback_short);
-        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
-        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-        ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`).catch(() => {}));
-        delete db.userSessions[userId];
-        saveDB();
-        return ctx.reply(locale.feedback_success, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
+        return processFeedbackText(ctx, text, db, saveDB, ADMIN_IDS, bot, locale.btn_back);
     }
     if (isAdmin(userId) && session) {
         if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
