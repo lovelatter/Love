@@ -1,36 +1,13 @@
-const path = require('path');
+Const path = require('path');
 const fs = require('fs');
 const https = require('https');
-const { Markup } = require('telegraf');
-
-const PHOTO_CONFIG = {
-    prompt: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে আপলোড করুন অথবা নিচে Skip করুন।",
-    loading: "⏳ Uploading your image...",
-    success: "📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।",
-    error_upload: "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।",
-    error_process: "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে。",
-    btn_skip: "⏭️ Skip করুন",
-    btn_back: "🔙 পেছনে যান"
-};
-
-function showImageUploadPrompt(ctx) {
-    ctx.editMessageText(PHOTO_CONFIG.prompt, Markup.inlineKeyboard([
-        [Markup.button.callback(PHOTO_CONFIG.btn_skip, 'skip_image_upload')],
-        [Markup.button.callback(PHOTO_CONFIG.btn_back, 'menu_makelink')]
-    ])).catch(() => {
-        ctx.reply(PHOTO_CONFIG.prompt, Markup.inlineKeyboard([
-            [Markup.button.callback(PHOTO_CONFIG.btn_skip, 'skip_image_upload')],
-            [Markup.button.callback(PHOTO_CONFIG.btn_back, 'menu_makelink')]
-        ])).catch(() => {});
-    });
-}
 
 async function photohandle(ctx, bot, UPLOADS_DIR, db, saveDB, showAnimationIntro) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
-        const loadingMsg = await ctx.reply(PHOTO_CONFIG.loading).catch(() => null);
+        const loadingMsg = await ctx.reply("⏳ Uploading your image...").catch(() => null);
         try {
             const photoArray = ctx.message.photo;
             const fileId = photoArray[photoArray.length - 1].file_id;
@@ -46,16 +23,16 @@ async function photohandle(ctx, bot, UPLOADS_DIR, db, saveDB, showAnimationIntro
                     fileStream.close();
                     db.userSessions[userId].imageUrl = `/uploads/${filename}`;
                     saveDB();
-                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, PHOTO_CONFIG.success).catch(() => {});
+                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।").catch(() => {});
                     showAnimationIntro(ctx);
                 });
             }).on('error', () => {
-                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, PHOTO_CONFIG.error_upload).catch(() => {});
+                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
             });
         } catch (error) {
-            if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, PHOTO_CONFIG.error_process).catch(() => {});
+            if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
         }
     }
 }
 
-module.exports = { photohandle, showImageUploadPrompt };
+module.exports = photohandle;
