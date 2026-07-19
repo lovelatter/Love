@@ -309,9 +309,16 @@ app.post('/api/get-content', async (req, res) => {
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-loadDB().then(() => {
-    app.listen(PORT, () => {
+
+// ১. আগে সার্ভার চালু করুন (এতে Render দ্রুত পোর্ট ডিটেক্ট করতে পারবে)
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+    
+    // ২. সার্ভার চালু হওয়ার পর ডাটাবেজ লোড করুন এবং বোট স্টার্ট করুন
+    loadDB().then(() => {
         bot.launch();
-        console.log(`Server running on port ${PORT}`);
+        console.log("Firebase DB loaded and Bot started");
+    }).catch(err => {
+        console.error("Failed to load DB:", err);
     });
 });
