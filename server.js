@@ -4,7 +4,6 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 const photohandle = require('./modules/photohandle');
-// কাউন্টডাউন মডিউল ইমপোর্ট
 const { showCountdownPrompt, handleTimerNo, handleSetTime } = require('./modules/countdown');
 
 const app = express();
