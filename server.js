@@ -9,7 +9,7 @@ const admin = require('firebase-admin');
 const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://loveletter-4a9d8-default-rtdb.firebaseio.com"
+    databaseURL: "https://loveletter-4a9d8-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 const dbRef = admin.database().ref('bot_data');
 
