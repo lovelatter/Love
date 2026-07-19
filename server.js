@@ -5,6 +5,7 @@ const fs = require('fs');
 const https = require('https');
 const photohandle = require('./modules/photohandle');
 const { showCountdownPrompt, handleTimerNo, handleSetTime } = require('./modules/countdown');
+const { CATEGORY_CONFIGS, getCategoryKeyboard } = require('./modules/category');
 
 const app = express();
 app.use(express.json());
@@ -32,13 +33,6 @@ const AUTOMATIC_MUSIC_MAPPING = {
     birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
     sorry: `${GITHUB_MUSIC_BASE_URL}/sorry.mp3`,
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
-};
-
-const CATEGORY_CONFIGS = {
-    love: { title: "আমার মনের কিছু কথা", emojis: ["❤️", "💖", "💕"], question: "Do you love me? 🥺", buttons: ["Yes", "No"] },
-    birthday: { title: "Happy Birthday", emojis: ["🎈", "🎉", "🎊"], question: "Are you happy? 😊", buttons: ["Yes", "No"] },
-    sorry: { title: "I'm Sorry", emojis: ["😭", "😞", "😥"], question: "Do you forgive me? 🥺", buttons: ["Yes", "No"] },
-    eid: { title: "Eid Mubarak", emojis: ["🤝", "🎇", "🫂"], question: "EID Mubarak 🌙", buttons: ["EID Mubarak"] }
 };
 
 let db = {
@@ -266,13 +260,7 @@ bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, 
 
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
-    ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
-        [Markup.button.callback(locale.cat_love, 'make_love')],
-        [Markup.button.callback(locale.cat_birthday, 'make_birthday')],
-        [Markup.button.callback(locale.cat_sorry, 'make_sorry')],
-        [Markup.button.callback(locale.cat_eid, 'make_eid')],
-        [Markup.button.callback(locale.btn_back, 'go_to_main_menu')]
-    ]));
+    ctx.editMessageText(locale.choose_cat, getCategoryKeyboard(locale));
 });
 
 bot.action(/^make_/, (ctx) => {
