@@ -4,8 +4,8 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 
-// নতুন db.js থেকে ফাংশন ইম্পোর্ট
-const { getDB, saveDB } = require('./modules/db'); 
+// db.js থেকে ফাংশন ইম্পোর্ট
+const { getDB, saveDB } = require('./modules/db');
 
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
@@ -32,7 +32,6 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 const GITHUB_MUSIC_BASE_URL = "https://raw.githubusercontent.com/lovelatter/Love/main";
-
 const AUTOMATIC_MUSIC_MAPPING = {
     love: `${GITHUB_MUSIC_BASE_URL}/love.mp3`,
     birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
@@ -40,7 +39,6 @@ const AUTOMATIC_MUSIC_MAPPING = {
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
 };
 
-// ডেটাবেস ইনিশিয়ালাইজেশন
 let db = {
     linkDatabase: {},
     userSessions: {},
@@ -51,11 +49,12 @@ let db = {
     usernameMap: {}
 };
 
-// অ্যাপ চালুর সময় ডাটা লোড করা
+// অ্যাপ চালুর সময় ডাটাবেস লোড
 async function loadInitialData() {
     const remoteDb = await getDB();
     if (remoteDb) {
         db = { ...db, ...remoteDb };
+        console.log("Database initialized successfully.");
     }
 }
 
@@ -79,7 +78,9 @@ bot.use(async (ctx, next) => {
     if (!userId) return;
     if (!db.registeredUsers.includes(userId)) db.registeredUsers.push(userId);
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
-    await saveDB(db); // অ্যাসিঙ্ক্রোনাস সেভ
+    
+    await saveDB(db); // ডাটা আপডেট সেভ করা
+
     if (isAdmin(userId)) return next();
     if (db.bannedUsers.includes(userId)) return;
     if (db.isMaintenanceMode) {
@@ -162,9 +163,7 @@ bot.action(/^set_time_/, async (ctx) => {
 bot.action('skip_image_upload', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    if (db.userSessions[userId]) {
-        db.userSessions[userId].imageUrl = null;
-    }
+    if (db.userSessions[userId]) db.userSessions[userId].imageUrl = null;
     showAnimationIntro(ctx);
 });
 
@@ -203,12 +202,9 @@ bot.on('text', async (ctx) => {
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
     
-    if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
-    }
-
+    if (session?.step === 'AWAITING_USER_FEEDBACK') return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
     if (isAdmin(userId) && session) {
-        const handled = handleAdminText(ctx, text, session, db, saveDB, bot);
+        const handled = await handleAdminText(ctx, text, session, db, saveDB, bot);
         if (handled) return;
     }
     
@@ -225,12 +221,8 @@ bot.on('text', async (ctx) => {
             await saveDB(db);
             return ctx.reply(locale.input_anim_success(lines.length));
         }
-        if (session.step === 'AWAITING_LETTER_TEXT') {
-            return processFinalLinkCreation(ctx, text);
-        }
-    } catch (error) {
-        ctx.reply(locale.general_error).catch(() => {});
-    }
+        if (session.step === 'AWAITING_LETTER_TEXT') return processFinalLinkCreation(ctx, text);
+    } catch (error) { ctx.reply(locale.general_error).catch(() => {}); }
 });
 
 async function processFinalLinkCreation(ctx, letterText) {
@@ -269,36 +261,38 @@ async function processFinalLinkCreation(ctx, letterText) {
     await saveDB(db);
 }
 
-// ... (parseUserAgent function remains same)
+function parseUserAgent(ua) {
+    let os = "Unknown OS", browser = "Unknown Browser";
+    if (!ua) return { os, browser };
+    if (ua.includes("Windows")) os = "Windows PC";
+    else if (ua.includes("Android")) os = "Android Mobile";
+    else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS (iPhone/iPad)";
+    else if (ua.includes("Macintosh")) os = "Mac OS";
+    else if (ua.includes("Linux")) os = "Linux PC";
+    if (ua.includes("Telegram")) browser = "Telegram App Browser";
+    else if (ua.includes("FBAN") || ua.includes("FBAV")) browser = "Facebook App Browser";
+    else if (ua.includes("Chrome")) browser = "Google Chrome";
+    else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+    else if (ua.includes("Firefox")) browser = "Mozilla Firefox";
+    else if (ua.includes("Edge")) browser = "Microsoft Edge";
+    return { os, browser };
+}
 
 app.post('/api/get-content', async (req, res) => {
     try {
         const linkId = req.body.id;
         const data = db.linkDatabase[linkId];
         if (!data) return res.json({ success: false });
-        
-        // Visitor Logging
         let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
-        let ip = rawIp.split(',')[0].trim();
-        if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
+        let ip = rawIp.split(',')[0].trim().replace('::ffff:', '');
         const { os, browser } = parseUserAgent(req.headers['user-agent'] || "");
         const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
-        
-        const visitorObj = { time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser };
-        
         if (!data.visitors) data.visitors = [];
-        data.visitors.push(visitorObj);
+        data.visitors.push({ time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser });
         await saveDB(db);
-
-        if (data.countdown && new Date(data.countdown) > new Date()) {
-            return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
-        }
+        if (data.countdown && new Date(data.countdown) > new Date()) return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
         const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-        return res.json({ 
-            success: true, isLocked: false, title: config.title, music: data.music, 
-            animations: data.animations, letter: data.letter, emojis: config.emojis, 
-            question: config.question, buttons: config.buttons, image: data.image || null 
-        });
+        return res.json({ success: true, isLocked: false, title: config.title, music: data.music, animations: data.animations, letter: data.letter, emojis: config.emojis, question: config.question, buttons: config.buttons, image: data.image || null });
     } catch (err) { res.json({ success: false }); }
 });
 
@@ -309,8 +303,7 @@ app.post('/api/submit-answer', async (req, res) => {
         if (!data) return res.json({ success: false });
         data.answer = answer;
         await saveDB(db);
-        const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-        bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+        bot.telegram.sendMessage(data.userId, `আপনার লিংক থেকে রিপ্লাই এসেছে।\nAns: ${answer}`).catch(() => {});
         return res.json({ success: true });
     } catch (err) { res.json({ success: false }); }
 });
