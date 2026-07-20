@@ -3,10 +3,8 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
-
-// মডিউল থেকে কাউন্টডাউন ও ফটো হ্যান্ডেলার ইম্পোর্ট
+// কাউন্টডাউন মডিউল ইম্পোর্ট
 const { showCountdownPrompt } = require('./modules/countdown');
-const { handlePhotoUpload } = require('./modules/photo');
 
 const app = express();
 app.use(express.json());
@@ -78,6 +76,7 @@ const locale = {
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
     choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
     cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
+    prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপদেশের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
@@ -263,7 +262,6 @@ bot.action(/^make_/, (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
-    // মডিউল থেকে কল করা হলো
     showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt);
 });
 
@@ -289,11 +287,11 @@ function showImageUploadPrompt(ctx) {
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
     saveDB();
-    ctx.editMessageText("📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।", Markup.inlineKeyboard([
+    ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
         [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
     ])).catch(() => {
-        ctx.reply("📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।", Markup.inlineKeyboard([
+        ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
             [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
             [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
         ])).catch(() => {});
@@ -369,9 +367,35 @@ bot.action(/^view_vi_(.+)$/, async (ctx) => {
     ctx.reply(report);
 });
 
-// ফটো হ্যান্ডেলার মডিউল থেকে
-bot.on('photo', (ctx) => {
-    handlePhotoUpload(ctx, bot, db, saveDB, UPLOADS_DIR, showAnimationIntro);
+bot.on('photo', async (ctx) => {
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
+        const loadingMsg = await ctx.reply("⏳ Uploading your image...").catch(() => null);
+        try {
+            const photoArray = ctx.message.photo;
+            const fileId = photoArray[photoArray.length - 1].file_id;
+            const fileUrlObj = await bot.telegram.getFileLink(fileId);
+            const fileUrl = fileUrlObj.href;
+            const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 5)}.jpg`;
+            const localPath = path.join(UPLOADS_DIR, filename);
+            const fileStream = fs.createWriteStream(localPath);
+            https.get(fileUrl, (response) => {
+                response.pipe(fileStream);
+                fileStream.on('finish', () => {
+                    fileStream.close();
+                    db.userSessions[userId].imageUrl = `/uploads/${filename}`;
+                    saveDB();
+                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।").catch(() => {});
+                    showAnimationIntro(ctx);
+                });
+            }).on('error', () => {
+                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
+            });
+        } catch (error) {
+            if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
+        }
+    }
 });
 
 bot.on('text', async (ctx) => {
