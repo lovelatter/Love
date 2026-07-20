@@ -3,8 +3,8 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
-const photohandle = require('./modules/photohandle');
-const { showCountdownPrompt, handleTimerNo, handleSetTime } = require('./modules/countdown');
+// কাউন্টডাউন মডিউল ইম্পোর্ট
+const { showCountdownPrompt } = require('./modules/countdown');
 
 const app = express();
 app.use(express.json());
@@ -76,8 +76,6 @@ const locale = {
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
     choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
     cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
-    prompt_countdown_ask: "⏰ টাইম কাউন্টডাউন সেট করুন।",
-    btn_no_countdown: "❌ No Countdown",
     prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
@@ -90,31 +88,6 @@ const locale = {
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন."
 };
-
-function showAnimationIntro(ctx) {
-    db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    saveDB();
-    const text = locale.session_started();
-    ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
-        ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
-    });
-}
-
-function showImageUploadPrompt(ctx) {
-    const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
-    db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
-    saveDB();
-    ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
-        [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ])).catch(() => {
-        ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
-            [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
-            [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-        ])).catch(() => {});
-    });
-}
 
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
@@ -167,13 +140,15 @@ const showAdminDashboard = (ctx, isEdit = false) => {
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-bot.command(['admin', 'adm'], (ctx) => {
+const handleAdminSecureAccess = (ctx) => {
     if (!isAdmin(ctx.chat.id)) {
         ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     showAdminDashboard(ctx, false);
-});
+};
+
+bot.command(['admin', 'adm'], handleAdminSecureAccess);
 
 bot.action('adm_toggle_maint', (ctx) => {
     if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
@@ -287,18 +262,59 @@ bot.action(/^make_/, (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
-    showCountdownPrompt(ctx, locale, db, saveDB, showImageUploadPrompt);
+    showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt);
 });
 
-bot.action('timer_no', (ctx) => handleTimerNo(ctx, db, saveDB, showImageUploadPrompt));
-bot.action(/^set_time_/, (ctx) => handleSetTime(ctx, db, saveDB, showImageUploadPrompt));
+bot.action('timer_no', (ctx) => { 
+    ctx.answerCbQuery(); 
+    if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
+    db.userSessions[ctx.chat.id].pendingMinutes = null; 
+    saveDB();
+    showImageUploadPrompt(ctx); 
+});
+
+bot.action(/^set_time_/, (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
+    saveDB();
+    showImageUploadPrompt(ctx);
+});
+
+function showImageUploadPrompt(ctx) {
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
+    saveDB();
+    ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
+        [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
+        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+    ])).catch(() => {
+        ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
+            [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
+            [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+        ])).catch(() => {});
+    });
+}
 
 bot.action('skip_image_upload', (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    if (db.userSessions[userId]) db.userSessions[userId].imageUrl = null;
+    if (db.userSessions[userId]) {
+        db.userSessions[userId].imageUrl = null;
+    }
     showAnimationIntro(ctx);
 });
+
+function showAnimationIntro(ctx) {
+    db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
+    saveDB();
+    const text = locale.session_started();
+    ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
+        ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
+    });
+}
 
 bot.action('menu_feedback', (ctx) => { 
     ctx.answerCbQuery(); 
@@ -345,12 +361,41 @@ bot.action(/^view_vi_(.+)$/, async (ctx) => {
     data.visitors.forEach((v, index) => {
         report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
     });
-    if (report.length > 4000) report = report.substring(0, 3900) + "\n...[Truncated]";
+    if (report.length > 4000) {
+        report = report.substring(0, 3900) + "\n...[Truncated]";
+    }
     ctx.reply(report);
 });
 
 bot.on('photo', async (ctx) => {
-    await photohandle(ctx, bot, UPLOADS_DIR, db, saveDB, showAnimationIntro);
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
+        const loadingMsg = await ctx.reply("⏳ Uploading your image...").catch(() => null);
+        try {
+            const photoArray = ctx.message.photo;
+            const fileId = photoArray[photoArray.length - 1].file_id;
+            const fileUrlObj = await bot.telegram.getFileLink(fileId);
+            const fileUrl = fileUrlObj.href;
+            const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 5)}.jpg`;
+            const localPath = path.join(UPLOADS_DIR, filename);
+            const fileStream = fs.createWriteStream(localPath);
+            https.get(fileUrl, (response) => {
+                response.pipe(fileStream);
+                fileStream.on('finish', () => {
+                    fileStream.close();
+                    db.userSessions[userId].imageUrl = `/uploads/${filename}`;
+                    saveDB();
+                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।").catch(() => {});
+                    showAnimationIntro(ctx);
+                });
+            }).on('error', () => {
+                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
+            });
+        } catch (error) {
+            if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
+        }
+    }
 });
 
 bot.on('text', async (ctx) => {
@@ -406,7 +451,7 @@ bot.on('text', async (ctx) => {
             return ctx.reply(locale.input_anim_success(lines.length));
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            processFinalLinkCreation(ctx, text);
+            return processFinalLinkCreation(ctx, text);
         }
     } catch (error) {
         ctx.reply(locale.general_error).catch(() => {});
@@ -444,7 +489,9 @@ function processFinalLinkCreation(ctx, letterText) {
 📂 Category: ${String(session.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
-    if (dbImageUrl) adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
+    if (dbImageUrl) {
+        adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
+    }
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
 🔗 Main Link: ${finalGeneratedUrl}`;
@@ -485,7 +532,9 @@ app.post('/api/get-content', async (req, res) => {
         const userAgent = req.headers['user-agent'] || "";
         const { os, browser } = parseUserAgent(userAgent);
         const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
-        let visitorObj = { time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser };
+        let visitorObj = {
+            time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
+        };
         if (ip && ip !== "127.0.0.1" && ip !== "::1") {
             https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
                 let body = "";
