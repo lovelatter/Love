@@ -9,6 +9,7 @@ const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload } = require('./modules/photo');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
+const { CATEGORY_CONFIGS, localeCategories } = require('./modules/category');
 
 const app = express();
 app.use(express.json());
@@ -36,13 +37,6 @@ const AUTOMATIC_MUSIC_MAPPING = {
     birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
     sorry: `${GITHUB_MUSIC_BASE_URL}/sorry.mp3`,
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
-};
-
-const CATEGORY_CONFIGS = {
-    love: { title: "আমার মনের কিছু কথা", emojis: ["❤️", "💖", "💕"], question: "Do you love me? 🥺", buttons: ["Yes", "No"] },
-    birthday: { title: "Happy Birthday", emojis: ["🎈", "🎉", "🎊"], question: "Are you happy? 😊", buttons: ["Yes", "No"] },
-    sorry: { title: "I'm Sorry", emojis: ["😭", "😞", "😥"], question: "Do you forgive me? 🥺", buttons: ["Yes", "No"] },
-    eid: { title: "Eid Mubarak", emojis: ["🤝", "🎇", "🫂"], question: "EID Mubarak 🌙", buttons: ["EID Mubarak"] }
 };
 
 let db = {
@@ -79,7 +73,7 @@ const locale = {
     welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
     choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
-    cat_love: "❤️ প্রেমের চিঠি (Love)", cat_birthday: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)", cat_sorry: "🥺 দুঃখ প্রকাশ (Sorry)", cat_eid: "🌙 ঈদ মোবারক (Eid)",
+    ...localeCategories,
     prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
@@ -90,6 +84,9 @@ const locale = {
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন."
 };
+
+// Middleware ও অন্যান্য কোড একইভাবে থাকবে...
+// (আপনি বর্তমানে যে কোডটি ব্যবহার করছেন, ঠিক সেইভাবেই রাখবেন)
 
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
@@ -113,7 +110,6 @@ bot.use(async (ctx, next) => {
     return next();
 });
 
-// অ্যাডমিন প্যানেল ইনিশিয়ালাইজেশন
 setupAdmin(bot, db, saveDB, isAdmin, __dirname, locale);
 
 const sendMainMenu = (ctx, isEdit = false) => {
@@ -212,7 +208,6 @@ function showAnimationIntro(ctx) {
 }
 
 bot.action('menu_feedback', (ctx) => handleFeedbackStart(ctx, db, saveDB));
-
 bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
 
 bot.action(/^delete_link_(.+)$/, (ctx) => {
