@@ -6,7 +6,7 @@ const https = require('https');
 
 // মডিউল ইম্পোর্ট
 const { showCountdownPrompt } = require('./modules/countdown');
-const { handlePhotoUpload } = require('./modules/photo');
+const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { CATEGORY_CONFIGS, localeCategories } = require('./modules/category');
@@ -83,9 +83,6 @@ const locale = {
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন."
 };
 
-// Middleware ও অন্যান্য কোড একইভাবে থাকবে...
-// (আপনি বর্তমানে যে কোডটি ব্যবহার করছেন, ঠিক সেইভাবেই রাখবেন)
-
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
     if (!userId) return;
@@ -151,7 +148,7 @@ bot.action(/^make_/, (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
-    showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt);
+    showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt, locale);
 });
 
 bot.action('timer_no', (ctx) => { 
@@ -159,7 +156,7 @@ bot.action('timer_no', (ctx) => {
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
     saveDB();
-    showImageUploadPrompt(ctx); 
+    showImageUploadPrompt(ctx, db, saveDB, locale); 
 });
 
 bot.action(/^set_time_/, (ctx) => {
@@ -168,24 +165,8 @@ bot.action(/^set_time_/, (ctx) => {
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
     saveDB();
-    showImageUploadPrompt(ctx);
+    showImageUploadPrompt(ctx, db, saveDB, locale);
 });
-
-function showImageUploadPrompt(ctx) {
-    const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
-    db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
-    saveDB();
-    ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
-        [Markup.button.callback(locale.btn_skip, 'skip_image_upload')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ])).catch(() => {
-        ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
-            [Markup.button.callback(locale.btn_skip, 'skip_image_upload')],
-            [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-        ])).catch(() => {});
-    });
-}
 
 bot.action('skip_image_upload', (ctx) => {
     ctx.answerCbQuery();
