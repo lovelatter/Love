@@ -5,8 +5,8 @@ const { Markup } = require('telegraf');
 
 const UPLOADS_DIR = path.join(__dirname, '../uploads');
 
-const CATEGORY_CONFIGS = {
-    prompt_image_ask: "📸 ছবি যুক্ত করতে চাইলে ছবিটি এখানে পাঠান অথবা Skip করুন।"
+const img_msg = {
+    img_ask: "📸 ছবি যুক্ত করতে চাইলে ছবিটি এখানে পাঠান অথবা Skip করুন।"
 };
 
 
@@ -16,7 +16,7 @@ function showImageUploadPrompt(ctx, db, saveDB, locale) {
     db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
     saveDB();
     
-    const message = locale.prompt_image_ask;
+    const message = img_msg.img_ask;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(locale.btn_skip, 'skip_image_upload')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
