@@ -3,9 +3,11 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
+
 // মডিউল ইম্পোর্ট
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload } = require('./modules/photo');
+const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 
 const app = express();
 app.use(express.json());
@@ -80,9 +82,7 @@ const locale = {
     prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
-    feedback_prompt: "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপদেশের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি নিচে লিখে পাঠিয়ে দিন:",
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।",
-    feedback_success: "✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে। ধন্যবাদ!",
     invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
     maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
     session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n\n💡লেখার নিয়ম:\n• প্রতি লাইনের পর কীবোর্ডের Enter চেপে নতুন লাইনে লিখুন অথবা প্রতিটি লাইনের মাঝে কমা ( , ) ব্যবহার করুন। যেমন হ্যালো, প্রিয়, কেমন আছো।`,
@@ -141,15 +141,13 @@ const showAdminDashboard = (ctx, isEdit = false) => {
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-const handleAdminSecureAccess = (ctx) => {
+bot.command(['admin', 'adm'], (ctx) => {
     if (!isAdmin(ctx.chat.id)) {
         ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     showAdminDashboard(ctx, false);
-};
-
-bot.command(['admin', 'adm'], handleAdminSecureAccess);
+});
 
 bot.action('adm_toggle_maint', (ctx) => {
     if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
@@ -317,12 +315,7 @@ function showAnimationIntro(ctx) {
     });
 }
 
-bot.action('menu_feedback', (ctx) => { 
-    ctx.answerCbQuery(); 
-    db.userSessions[ctx.chat.id] = { step: 'AWAITING_USER_FEEDBACK' }; 
-    saveDB(); 
-    ctx.reply(locale.feedback_prompt); 
-});
+bot.action('menu_feedback', (ctx) => handleFeedbackStart(ctx, db, saveDB));
 
 bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
 
@@ -374,15 +367,11 @@ bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
+    
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        if (text.length < 5) return ctx.reply(locale.feedback_short);
-        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
-        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-        ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`).catch(() => {}));
-        delete db.userSessions[userId];
-        saveDB();
-        return ctx.reply(locale.feedback_success, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
+        return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
     }
+
     if (isAdmin(userId) && session) {
         if (session.step === 'AWAITING_ADMIN_BROADCAST_MSG') {
             db.registeredUsers.forEach(id => {
