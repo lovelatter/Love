@@ -17,14 +17,17 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
 
 const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.command(['admin', 'adm'], (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return;
+        if (!isAdmin(ctx.chat.id)) {
+            ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
+            return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+        }
         showAdminDashboard(ctx, db, false);
     });
 
     bot.action('adm_toggle_maint', async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         db.isMaintenanceMode = !db.isMaintenanceMode;
-        await saveDB(db);
+        await saveDB();
         ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`);
         showAdminDashboard(ctx, db, true);
     });
@@ -33,7 +36,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
-        await saveDB(db);
+        await saveDB();
         ctx.reply("📢 Announcement মেসেজটি পাঠান।", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
@@ -70,7 +73,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
                 if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
             }
             delete db.linkDatabase[targetKey];
-            await saveDB(db);
+            await saveDB();
             ctx.answerCbQuery("✅ লিংকটি রিমুভ করা হয়েছে।");
             ctx.editMessageText("❌ লিংকটি ডিলিট করা হয়েছে।").catch(() => {});
         } else {
@@ -88,7 +91,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             }
         });
         db.linkDatabase = {};
-        await saveDB(db);
+        await saveDB();
         ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]]));
     });
 
@@ -96,7 +99,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
-        await saveDB(db);
+        await saveDB();
         ctx.reply(`🚫 Ban / Unban System\n\n📊 মোট ইউজার: ${db.registeredUsers.length}\n• ব্যান ইউজার: ${db.bannedUsers.length}\n\n👉 অনুগ্রহ করে ইউজারের ID অথবা Username লিখে পাঠান:`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
@@ -104,8 +107,34 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
         delete db.userSessions[ctx.chat.id];
-        await saveDB(db);
+        await saveDB();
         showAdminDashboard(ctx, db, true);
+    });
+
+    bot.action(/^view_ans_(.+)$/, (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const data = db.linkDatabase[ctx.match[1]];
+        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
+        return ctx.answerCbQuery(data.answer ? `📩 উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
+    });
+
+    bot.action(/^view_vi_(.+)$/, async (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        const data = db.linkDatabase[linkId];
+        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
+        ctx.answerCbQuery();
+        if (!data.visitors || data.visitors.length === 0) {
+            return ctx.reply("ℹ️ লিঙ্কটি এখনও কেউ ওপেন করেনি।");
+        }
+        let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
+        data.visitors.forEach((v, index) => {
+            report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
+        });
+        if (report.length > 4000) {
+            report = report.substring(0, 3900) + "\n...[Truncated]";
+        }
+        ctx.reply(report);
     });
 };
 
@@ -118,7 +147,7 @@ const handleAdminText = async (ctx, text, session, db, saveDB, bot) => {
         });
         ctx.reply("📡 Announcement Completed.");
         delete db.userSessions[userId];
-        await saveDB(db);
+        await saveDB();
         showAdminDashboard(ctx, db, false);
         return true;
     }
@@ -138,7 +167,7 @@ const handleAdminText = async (ctx, text, session, db, saveDB, bot) => {
             ctx.reply(`🚫 ইউজার \`${targetId}\` কে BAN করা হয়েছে।`, { parse_mode: 'Markdown' });
         }
         delete db.userSessions[userId];
-        await saveDB(db);
+        await saveDB();
         showAdminDashboard(ctx, db, false);
         return true;
     }
