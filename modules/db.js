@@ -1,7 +1,7 @@
 const axios = require('axios');
 
-const BIN_ID = "6a5e6f7cda38895dfe779bd1";
-const MASTER_KEY = "$2a$10$7d4vjd6O6sxPUgHsYHbtuOyGuv70ZikFBSsFwXRLkmLL7zY6dt6im";
+const BIN_ID = process.env.JSONBIN_ID;
+const MASTER_KEY = process.env.JSONBIN_KEY;
 
 async function getDB() {
     try {
