@@ -3,9 +3,9 @@ const fs = require('fs');
 const https = require('https');
 
 const photoLocale = {
-    prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
+    prompt_image_ask: "📸 ছবি দিতে চাইলে এখানে আপলোড করুন অথবা Skip করুন।",
     loading_msg: "⏳ Uploading your image...",
-    success_msg: "📸 ছবি সফলভাবে আপলোড এবং সেভ করা হয়েছে।",
+    success_msg: "📸 ছবি সফলভাবে আপলোড হয়েছে।",
     error_upload: "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।",
     error_process: "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে।"
 };
