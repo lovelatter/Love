@@ -5,6 +5,11 @@ const { Markup } = require('telegraf');
 
 const UPLOADS_DIR = path.join(__dirname, '../uploads');
 
+const CATEGORY_CONFIGS = {
+    prompt_image_ask: "📸 ছবি যুক্ত করতে চাইলে ছবিটি এখানে পাঠান অথবা Skip করুন।"
+};
+
+
 function showImageUploadPrompt(ctx, db, saveDB, locale) {
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
