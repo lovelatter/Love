@@ -16,7 +16,6 @@ const showAdminDashboard = (ctx, db, saveDB, isEdit = false) => {
 };
 
 const setupAdminActions = (bot, db, saveDB, isAdmin) => {
-    // Maintenance Toggle
     bot.action('adm_toggle_maint', (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         db.isMaintenanceMode = !db.isMaintenanceMode;
@@ -25,7 +24,6 @@ const setupAdminActions = (bot, db, saveDB, isAdmin) => {
         showAdminDashboard(ctx, db, saveDB, true);
     });
 
-    // Broadcast
     bot.action('adm_broadcast', (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
@@ -34,7 +32,6 @@ const setupAdminActions = (bot, db, saveDB, isAdmin) => {
         ctx.reply("📢 Announcement মেসেজটি পাঠান:", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
-    // Links Management Menu
     bot.action('adm_all_links_menu', (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
@@ -45,7 +42,6 @@ const setupAdminActions = (bot, db, saveDB, isAdmin) => {
         ]));
     });
 
-    // Ban Menu
     bot.action('adm_ban_menu', (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
@@ -54,7 +50,6 @@ const setupAdminActions = (bot, db, saveDB, isAdmin) => {
         ctx.reply(`🚫 Ban / Unban System\n\n👉 ইউজার ID অথবা Username পাঠান:`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
-    // Back to Dashboard
     bot.action('adm_back_to_dashboard', (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
