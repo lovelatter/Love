@@ -4,9 +4,7 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 
-// modules/db.js থেকে ডেটাবেস ফাংশন ইমপোর্ট
 const { getDB, saveDB: remoteSaveDB } = require('./modules/db');
-
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
@@ -21,9 +19,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim()).filter(id => id !== "");
-
 const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
-
 const SERVER_URL = "https://love-bb7p.onrender.com";
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
@@ -32,7 +28,6 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 const GITHUB_MUSIC_BASE_URL = "https://raw.githubusercontent.com/lovelatter/Love/main";
-
 const AUTOMATIC_MUSIC_MAPPING = {
     love: `${GITHUB_MUSIC_BASE_URL}/love.mp3`,
     birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
@@ -40,7 +35,6 @@ const AUTOMATIC_MUSIC_MAPPING = {
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
 };
 
-// লোকাল DB ভেরিয়েবল
 let db = {
     linkDatabase: {},
     userSessions: {},
@@ -51,21 +45,21 @@ let db = {
     usernameMap: {}
 };
 
-// স্টার্টআপে ডেটাবেস লোড করা
-(async () => {
+async function initializeDB() {
     const remoteDB = await getDB();
     if (remoteDB) {
-        db = { ...db, ...remoteDB };
+        db = remoteDB;
+        console.log("Database initialized successfully from JSONBin");
+    } else {
+        console.error("Failed to load DB from JSONBin, using default empty structure");
     }
-})();
+}
 
-// রিমোট সেভ র‍্যাপার
 const saveDB = async () => {
     await remoteSaveDB(db);
 };
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
-
 const locale = {
     welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
@@ -224,9 +218,7 @@ bot.on('text', async (ctx) => {
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
-            
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
             await saveDB();
@@ -264,42 +256,8 @@ async function processFinalLinkCreation(ctx, letterText) {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
-    let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
-👤 Name: ${session.name || "User"}
-🆔 ID: ${userId}
-🏷️ Username: ${session.username || "None"}
-📂 Category: ${String(session.type || "love").toUpperCase()}
-⏳ Countdown: ${countdownDisplay}
-📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
-    if (dbImageUrl) {
-        adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
-    }
-    adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
-💌 Letter: ${letterText}
-🔗 Main Link: ${finalGeneratedUrl}`;
-    ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
-        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
-    ])).catch(() => {}));
     delete db.userSessions[userId];
     await saveDB();
-}
-
-function parseUserAgent(ua) {
-    let os = "Unknown OS";
-    let browser = "Unknown Browser";
-    if (!ua) return { os, browser };
-    if (ua.includes("Windows")) os = "Windows PC";
-    else if (ua.includes("Android")) os = "Android Mobile";
-    else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS (iPhone/iPad)";
-    else if (ua.includes("Macintosh")) os = "Mac OS";
-    else if (ua.includes("Linux")) os = "Linux PC";
-    if (ua.includes("Telegram")) browser = "Telegram App Browser";
-    else if (ua.includes("FBAN") || ua.includes("FBAV")) browser = "Facebook App Browser";
-    else if (ua.includes("Chrome")) browser = "Google Chrome";
-    else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
-    else if (ua.includes("Firefox")) browser = "Mozilla Firefox";
-    else if (ua.includes("Edge")) browser = "Microsoft Edge";
-    return { os, browser };
 }
 
 app.post('/api/get-content', async (req, res) => {
@@ -307,43 +265,6 @@ app.post('/api/get-content', async (req, res) => {
         const linkId = req.body.id;
         const data = db.linkDatabase[linkId];
         if (!data) return res.json({ success: false });
-        bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(() => {});
-        let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
-        let ip = rawIp.split(',')[0].trim();
-        if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
-        const userAgent = req.headers['user-agent'] || "";
-        const { os, browser } = parseUserAgent(userAgent);
-        const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
-        let visitorObj = {
-            time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
-        };
-        if (ip && ip !== "127.0.0.1" && ip !== "::1") {
-            https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
-                let body = "";
-                apiRes.on('data', chunk => body += chunk);
-                apiRes.on('end', () => {
-                    try {
-                        const ipData = JSON.parse(body);
-                        if (ipData.status === "success") {
-                            visitorObj.country = ipData.country || "Unknown";
-                            visitorObj.city = ipData.city || "Unknown";
-                            visitorObj.isp = ipData.isp || "Unknown";
-                        }
-                    } catch (e) {}
-                    if (!data.visitors) data.visitors = [];
-                    data.visitors.push(visitorObj);
-                    saveDB();
-                });
-            }).on('error', () => {
-                if (!data.visitors) data.visitors = [];
-                data.visitors.push(visitorObj);
-                saveDB();
-            });
-        } else {
-            if (!data.visitors) data.visitors = [];
-            data.visitors.push(visitorObj);
-            saveDB();
-        }
         if (data.countdown && new Date(data.countdown) > new Date()) {
             return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
         }
@@ -363,8 +284,6 @@ app.post('/api/submit-answer', async (req, res) => {
         if (!data) return res.json({ success: false });
         data.answer = answer;
         await saveDB();
-        const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-        bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
         return res.json({ success: true });
     } catch (err) { res.json({ success: false }); }
 });
@@ -372,7 +291,9 @@ app.post('/api/submit-answer', async (req, res) => {
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    bot.launch().catch(err => console.error(err));
-    console.log(`Server running on port ${PORT}`);
+initializeDB().then(() => {
+    app.listen(PORT, () => {
+        bot.launch().catch(err => console.error(err));
+        console.log(`Server running on port ${PORT}`);
+    });
 });
