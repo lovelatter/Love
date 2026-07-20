@@ -6,7 +6,7 @@ const CATEGORY_CONFIGS = {
 };
 
 const localeCategories = {
-    choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
+    choose_cat: "✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?",
     cat_love: CATEGORY_CONFIGS.love.label,
     cat_birthday: CATEGORY_CONFIGS.birthday.label,
     cat_sorry: CATEGORY_CONFIGS.sorry.label,
