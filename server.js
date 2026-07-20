@@ -72,7 +72,6 @@ const bot = new Telegraf(TELEGRAM_TOKEN);
 const locale = {
     welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
-    choose_cat: "✨ আপনি কোন ক্যাটাগরির লিঙ্ক করতে চান?",
     ...localeCategories,
     prompt_image_ask: "📸 আপনি কি কোনো ছবি যুক্ত করতে চান?\n\nতাহলে ছবিটি এখানে পাঠান অথবা নিচে Skip করুন।",
     btn_skip_image: "⏭️ Skip করুন",
