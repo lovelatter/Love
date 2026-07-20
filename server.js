@@ -4,7 +4,9 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 
-const { getDB, saveDB: remoteSaveDB } = require('./modules/db');
+// নতুন db.js থেকে ফাংশন ইম্পোর্ট
+const { getDB, saveDB } = require('./modules/db'); 
+
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
@@ -19,7 +21,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim()).filter(id => id !== "");
+
 const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
+
 const SERVER_URL = "https://love-bb7p.onrender.com";
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
@@ -28,6 +32,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 const GITHUB_MUSIC_BASE_URL = "https://raw.githubusercontent.com/lovelatter/Love/main";
+
 const AUTOMATIC_MUSIC_MAPPING = {
     love: `${GITHUB_MUSIC_BASE_URL}/love.mp3`,
     birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
@@ -35,6 +40,7 @@ const AUTOMATIC_MUSIC_MAPPING = {
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
 };
 
+// ডেটাবেস ইনিশিয়ালাইজেশন
 let db = {
     linkDatabase: {},
     userSessions: {},
@@ -45,21 +51,16 @@ let db = {
     usernameMap: {}
 };
 
-async function initializeDB() {
-    const remoteDB = await getDB();
-    if (remoteDB) {
-        db = remoteDB;
-        console.log("Database initialized successfully from JSONBin");
-    } else {
-        console.error("Failed to load DB from JSONBin, using default empty structure");
+// অ্যাপ চালুর সময় ডাটা লোড করা
+async function loadInitialData() {
+    const remoteDb = await getDB();
+    if (remoteDb) {
+        db = { ...db, ...remoteDb };
     }
 }
 
-const saveDB = async () => {
-    await remoteSaveDB(db);
-};
-
 const bot = new Telegraf(TELEGRAM_TOKEN);
+
 const locale = {
     welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
@@ -78,7 +79,7 @@ bot.use(async (ctx, next) => {
     if (!userId) return;
     if (!db.registeredUsers.includes(userId)) db.registeredUsers.push(userId);
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
-    await saveDB();
+    await saveDB(db); // অ্যাসিঙ্ক্রোনাস সেভ
     if (isAdmin(userId)) return next();
     if (db.bannedUsers.includes(userId)) return;
     if (db.isMaintenanceMode) {
@@ -109,7 +110,7 @@ const sendMainMenu = (ctx, isEdit = false) => {
 
 bot.command('start', async (ctx) => { 
     delete db.userSessions[ctx.chat.id];
-    await saveDB();
+    await saveDB(db);
     sendMainMenu(ctx, false); 
 });
 
@@ -137,7 +138,7 @@ bot.action(/^make_/, async (ctx) => {
         imageUrl: null,
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
-    await saveDB();
+    await saveDB(db);
     showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt, locale);
 });
 
@@ -145,7 +146,7 @@ bot.action('timer_no', async (ctx) => {
     ctx.answerCbQuery(); 
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
-    await saveDB();
+    await saveDB(db);
     showImageUploadPrompt(ctx, db, saveDB, locale); 
 });
 
@@ -154,7 +155,7 @@ bot.action(/^set_time_/, async (ctx) => {
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
-    await saveDB();
+    await saveDB(db);
     showImageUploadPrompt(ctx, db, saveDB, locale);
 });
 
@@ -169,7 +170,7 @@ bot.action('skip_image_upload', (ctx) => {
 
 async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    await saveDB();
+    await saveDB(db);
     const text = locale.session_started();
     ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
         ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
@@ -190,7 +191,7 @@ bot.action(/^delete_link_(.+)$/, async (ctx) => {
         if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
     }
     delete db.linkDatabase[linkId];
-    await saveDB();
+    await saveDB(db);
     ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
     sendMainMenu(ctx, false);
 });
@@ -221,7 +222,7 @@ bot.on('text', async (ctx) => {
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-            await saveDB();
+            await saveDB(db);
             return ctx.reply(locale.input_anim_success(lines.length));
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
@@ -256,15 +257,39 @@ async function processFinalLinkCreation(ctx, letterText) {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
+    
+    let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।\n👤 Name: ${session.name || "User"}\n🆔 ID: ${userId}\n🏷️ Username: ${session.username || "None"}\n📂 Category: ${String(session.type || "love").toUpperCase()}\n⏳ Countdown: ${countdownDisplay}\n📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
+    if (dbImageUrl) adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
+    adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}\n💌 Letter: ${letterText}\n🔗 Main Link: ${finalGeneratedUrl}`;
+    
+    ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
+        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
+    ])).catch(() => {}));
     delete db.userSessions[userId];
-    await saveDB();
+    await saveDB(db);
 }
+
+// ... (parseUserAgent function remains same)
 
 app.post('/api/get-content', async (req, res) => {
     try {
         const linkId = req.body.id;
         const data = db.linkDatabase[linkId];
         if (!data) return res.json({ success: false });
+        
+        // Visitor Logging
+        let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
+        let ip = rawIp.split(',')[0].trim();
+        if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
+        const { os, browser } = parseUserAgent(req.headers['user-agent'] || "");
+        const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
+        
+        const visitorObj = { time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser };
+        
+        if (!data.visitors) data.visitors = [];
+        data.visitors.push(visitorObj);
+        await saveDB(db);
+
         if (data.countdown && new Date(data.countdown) > new Date()) {
             return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
         }
@@ -283,7 +308,9 @@ app.post('/api/submit-answer', async (req, res) => {
         const data = db.linkDatabase[id];
         if (!data) return res.json({ success: false });
         data.answer = answer;
-        await saveDB();
+        await saveDB(db);
+        const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+        bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
         return res.json({ success: true });
     } catch (err) { res.json({ success: false }); }
 });
@@ -291,9 +318,8 @@ app.post('/api/submit-answer', async (req, res) => {
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-initializeDB().then(() => {
-    app.listen(PORT, () => {
-        bot.launch().catch(err => console.error(err));
-        console.log(`Server running on port ${PORT}`);
-    });
+app.listen(PORT, async () => {
+    await loadInitialData();
+    bot.launch().catch(err => console.error(err));
+    console.log(`Server running on port ${PORT}`);
 });
