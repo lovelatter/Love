@@ -4,6 +4,9 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 
+// modules/db.js থেকে ডেটাবেস ফাংশন ইমপোর্ট
+const { getDB, saveDB: remoteSaveDB } = require('./modules/db');
+
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
@@ -22,7 +25,6 @@ const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim
 const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 
 const SERVER_URL = "https://love-bb7p.onrender.com";
-const DB_FILE = path.join(__dirname, 'db.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -38,6 +40,7 @@ const AUTOMATIC_MUSIC_MAPPING = {
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
 };
 
+// লোকাল DB ভেরিয়েবল
 let db = {
     linkDatabase: {},
     userSessions: {},
@@ -48,22 +51,17 @@ let db = {
     usernameMap: {}
 };
 
-try {
-    if (fs.existsSync(DB_FILE)) {
-        db = { ...db, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
-    } else {
-        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+// স্টার্টআপে ডেটাবেস লোড করা
+(async () => {
+    const remoteDB = await getDB();
+    if (remoteDB) {
+        db = { ...db, ...remoteDB };
     }
-} catch (e) {
-    console.error(e);
-}
+})();
 
-const saveDB = () => {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-    } catch (e) {
-        console.error(e);
-    }
+// রিমোট সেভ র‍্যাপার
+const saveDB = async () => {
+    await remoteSaveDB(db);
 };
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
@@ -86,7 +84,7 @@ bot.use(async (ctx, next) => {
     if (!userId) return;
     if (!db.registeredUsers.includes(userId)) db.registeredUsers.push(userId);
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
-    saveDB();
+    await saveDB();
     if (isAdmin(userId)) return next();
     if (db.bannedUsers.includes(userId)) return;
     if (db.isMaintenanceMode) {
@@ -115,9 +113,9 @@ const sendMainMenu = (ctx, isEdit = false) => {
     return ctx.reply(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-bot.command('start', (ctx) => { 
+bot.command('start', async (ctx) => { 
     delete db.userSessions[ctx.chat.id];
-    saveDB();
+    await saveDB();
     sendMainMenu(ctx, false); 
 });
 
@@ -134,7 +132,7 @@ bot.action('menu_makelink', (ctx) => {
     ]));
 });
 
-bot.action(/^make_/, (ctx) => {
+bot.action(/^make_/, async (ctx) => {
     ctx.answerCbQuery();
     const cat = ctx.match.input.replace('make_', '');
     db.userSessions[ctx.chat.id] = { 
@@ -145,24 +143,24 @@ bot.action(/^make_/, (ctx) => {
         imageUrl: null,
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
-    saveDB();
+    await saveDB();
     showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt, locale);
 });
 
-bot.action('timer_no', (ctx) => { 
+bot.action('timer_no', async (ctx) => { 
     ctx.answerCbQuery(); 
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
-    saveDB();
+    await saveDB();
     showImageUploadPrompt(ctx, db, saveDB, locale); 
 });
 
-bot.action(/^set_time_/, (ctx) => {
+bot.action(/^set_time_/, async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
-    saveDB();
+    await saveDB();
     showImageUploadPrompt(ctx, db, saveDB, locale);
 });
 
@@ -175,9 +173,9 @@ bot.action('skip_image_upload', (ctx) => {
     showAnimationIntro(ctx);
 });
 
-function showAnimationIntro(ctx) {
+async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    saveDB();
+    await saveDB();
     const text = locale.session_started();
     ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
         ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
@@ -187,7 +185,7 @@ function showAnimationIntro(ctx) {
 bot.action('menu_feedback', (ctx) => handleFeedbackStart(ctx, db, saveDB));
 bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
 
-bot.action(/^delete_link_(.+)$/, (ctx) => {
+bot.action(/^delete_link_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
     if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
@@ -198,7 +196,7 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
         if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
     }
     delete db.linkDatabase[linkId];
-    saveDB();
+    await saveDB();
     ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
     sendMainMenu(ctx, false);
 });
@@ -231,7 +229,7 @@ bot.on('text', async (ctx) => {
             
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-            saveDB();
+            await saveDB();
             return ctx.reply(locale.input_anim_success(lines.length));
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
@@ -242,8 +240,7 @@ bot.on('text', async (ctx) => {
     }
 });
 
-
-function processFinalLinkCreation(ctx, letterText) {
+async function processFinalLinkCreation(ctx, letterText) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     db.totalLinksCreated = (db.totalLinksCreated || 0) + 1;
@@ -284,7 +281,7 @@ function processFinalLinkCreation(ctx, letterText) {
         [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
     ])).catch(() => {}));
     delete db.userSessions[userId];
-    saveDB();
+    await saveDB();
 }
 
 function parseUserAgent(ua) {
@@ -365,7 +362,7 @@ app.post('/api/submit-answer', async (req, res) => {
         const data = db.linkDatabase[id];
         if (!data) return res.json({ success: false });
         data.answer = answer;
-        saveDB();
+        await saveDB();
         const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
         bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
         return res.json({ success: true });
