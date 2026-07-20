@@ -1,8 +1,26 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const { Markup } = require('telegraf');
 
 const UPLOADS_DIR = path.join(__dirname, '../uploads');
+
+function showImageUploadPrompt(ctx, db, saveDB, locale) {
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
+    saveDB();
+    
+    const message = locale.prompt_image_ask;
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback(locale.btn_skip, 'skip_image_upload')],
+        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+    ]);
+
+    ctx.editMessageText(message, keyboard).catch(() => {
+        ctx.reply(message, keyboard).catch(() => {});
+    });
+}
 
 function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
     const userId = ctx.chat.id;
@@ -39,4 +57,4 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
     }
 }
 
-module.exports = { handlePhotoUpload };
+module.exports = { handlePhotoUpload, showImageUploadPrompt };
