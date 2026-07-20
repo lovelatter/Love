@@ -178,11 +178,11 @@ function showImageUploadPrompt(ctx) {
     db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
     saveDB();
     ctx.editMessageText(locale.prompt_image_ask, Markup.inlineKeyboard([
-        [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
+        [Markup.button.callback(locale.btn_skip, 'skip_image_upload')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
     ])).catch(() => {
         ctx.reply(locale.prompt_image_ask, Markup.inlineKeyboard([
-            [Markup.button.callback(locale.btn_skip_image, 'skip_image_upload')],
+            [Markup.button.callback(locale.btn_skip, 'skip_image_upload')],
             [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
         ])).catch(() => {});
     });
