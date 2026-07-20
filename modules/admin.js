@@ -1,6 +1,8 @@
 const { Markup } = require('telegraf');
+const fs = require('fs');
+const path = require('path');
 
-function showAdminDashboard(ctx, db, isEdit = false) {
+const showAdminDashboard = (ctx, db, saveDB, isEdit = false) => {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
@@ -8,39 +10,58 @@ function showAdminDashboard(ctx, db, isEdit = false) {
         [Markup.button.callback("🔗 All Links Management", "adm_all_links_menu")],
         [Markup.button.callback("🚫 Ban / Unban System", "adm_ban_menu")]
     ]);
-    const text = `👑 Master Admin Console:`;
+    const text = `👑 Welcome to the Master Admin Core Console:`;
     if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
-}
+};
 
-function handleAdminAction(ctx, db, saveDB, action, bot) {
-    const userId = ctx.chat.id;
-
-    if (action === 'adm_toggle_maint') {
+const setupAdminActions = (bot, db, saveDB, isAdmin) => {
+    // Maintenance Toggle
+    bot.action('adm_toggle_maint', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         db.isMaintenanceMode = !db.isMaintenanceMode;
         saveDB();
         ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`);
-        showAdminDashboard(ctx, db, true);
-    } 
-    else if (action === 'adm_broadcast') {
-        ctx.answerCbQuery();
-        db.userSessions[userId] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
-        saveDB();
-        ctx.reply("📢 Announcement মেসেজটি লিখুন:", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল", "adm_back_to_dashboard")]]));
-    }
-    else if (action === 'adm_all_links_menu') {
-        ctx.answerCbQuery();
-        ctx.editMessageText("🔗 লিংক ম্যানেজমেন্ট:", Markup.inlineKeyboard([
-            [Markup.button.callback("💥 ডিলিট অল লিংকস", "adm_delete_all_links_confirm")],
-            [Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]
-        ]));
-    }
-    else if (action === 'adm_back_to_dashboard') {
-        ctx.answerCbQuery();
-        delete db.userSessions[userId];
-        saveDB();
-        showAdminDashboard(ctx, db, true);
-    }
-}
+        showAdminDashboard(ctx, db, saveDB, true);
+    });
 
-module.exports = { showAdminDashboard, handleAdminAction };
+    // Broadcast
+    bot.action('adm_broadcast', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
+        saveDB();
+        ctx.reply("📢 Announcement মেসেজটি পাঠান:", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
+    });
+
+    // Links Management Menu
+    bot.action('adm_all_links_menu', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        ctx.editMessageText("🔗 All Links Management:", Markup.inlineKeyboard([
+            [Markup.button.callback("📜 View All Links", "adm_view_links_list")],
+            [Markup.button.callback("💥 Delete All Links", "adm_delete_all_links_confirm")],
+            [Markup.button.callback("🔙 Back", "adm_back_to_dashboard")]
+        ]));
+    });
+
+    // Ban Menu
+    bot.action('adm_ban_menu', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
+        saveDB();
+        ctx.reply(`🚫 Ban / Unban System\n\n👉 ইউজার ID অথবা Username পাঠান:`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
+    });
+
+    // Back to Dashboard
+    bot.action('adm_back_to_dashboard', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        delete db.userSessions[ctx.chat.id];
+        saveDB();
+        showAdminDashboard(ctx, db, saveDB, true);
+    });
+};
+
+module.exports = { showAdminDashboard, setupAdminActions };
