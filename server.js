@@ -4,7 +4,6 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 
-// মডিউল ইম্পোর্ট
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
@@ -226,8 +225,10 @@ bot.on('text', async (ctx) => {
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = text.split(/[\n,]+/).map(l => l.trim()).filter(l => l.length > 0);
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
+            
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
             saveDB();
@@ -240,6 +241,7 @@ bot.on('text', async (ctx) => {
         ctx.reply(locale.general_error).catch(() => {});
     }
 });
+
 
 function processFinalLinkCreation(ctx, letterText) {
     const userId = ctx.chat.id;
