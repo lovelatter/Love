@@ -10,12 +10,13 @@ function uploadToCatbox(fileUrl, fileExtension) {
 
             const form = new FormData();
             form.append('reqtype', 'fileupload');
+            form.append('time', '72h'); // ফাইলটি ৭২ ঘণ্টা থাকবে (Litterbox এর জন্য দরকার)
             form.append('fileToUpload', response, `file_${Date.now()}.${fileExtension}`);
 
             const requestOptions = {
                 method: 'POST',
-                host: 'catbox.moe',
-                path: '/user/api.php',
+                host: 'litterbox.catbox.moe',
+                path: '/resources/internals/api.php',
                 headers: form.getHeaders()
             };
 
@@ -26,7 +27,7 @@ function uploadToCatbox(fileUrl, fileExtension) {
                 });
                 res.on('end', () => {
                     if (res.statusCode === 200 && data.startsWith('http')) {
-                        resolve(data.trim()); // ক্যাতবক্সের সফল ডাইরেক্ট লিংক রিটার্ন করবে
+                        resolve(data.trim()); // সফল ডাইরেক্ট লিংক রিটার্ন করবে
                     } else {
                         resolve(null);
                     }
@@ -34,7 +35,7 @@ function uploadToCatbox(fileUrl, fileExtension) {
             });
 
             req.on('error', (error) => {
-                console.error('Catbox Upload Error:', error);
+                console.error('Litterbox Upload Error:', error);
                 resolve(null);
             });
 
