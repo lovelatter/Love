@@ -251,6 +251,8 @@ function processFinalLinkCreation(ctx, letterText) {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
+
+    // অ্যাডমিন নোটিফিকেশন আপডেট করা হলো (মিউজিক ডিটেইলস সহ)
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
 👤 Name: ${session.name || "User"}
 🆔 ID: ${userId}
@@ -261,9 +263,14 @@ function processFinalLinkCreation(ctx, letterText) {
     if (dbImageUrl) {
         adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
     }
+    adminNotificationText += `\n🎵 Music Included: ${finalMusicUrl ? "Yes ✅" : "No ❌"}`;
+    if (finalMusicUrl) {
+        adminNotificationText += `\n🎶 Music Link: ${finalMusicUrl}`;
+    }
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
 🔗 Main Link: ${finalGeneratedUrl}`;
+
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
         [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
     ])).catch(() => {}));
