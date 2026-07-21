@@ -1,6 +1,15 @@
 const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
 
+const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
+
+const music_set = {
+    love: `${gh_url}/love.mp3`,
+    birthday: `${gh_url}/bd.mp3`,
+    sorry: `${gh_url}/sorry.mp3`,
+    eid: `${gh_url}/eid.mp3`
+};
+
 const music_msg = {
     music_ask: "ব্যাকগ্রাউন্ড মিউজিক দিতে চাইলে এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে চাইলে ডিফল্ট বাটনে ট্যাপ করুন।"
 };
@@ -23,7 +32,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     });
 }
 
-function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set, locale) {
+function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
@@ -59,7 +68,6 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
-                // ক্যাতবক্সে আপলোড করুন
                 const catboxUrl = await uploadToCatbox(fileUrl, 'mp3');
                 
                 if (!catboxUrl) {
@@ -67,7 +75,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                     return;
                 }
 
-                db.userSessions[userId].music = catboxUrl; // ক্যাতবক্সের ডাইরেক্ট লিংক সেভ হবে
+                db.userSessions[userId].music = catboxUrl;
                 saveDB();
                 
                 if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => {});
@@ -79,4 +87,4 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
     }
 }
 
-module.exports = { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice };
+module.exports = { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set };
