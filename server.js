@@ -119,7 +119,7 @@ bot.action(/^make_/, (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
-    showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, showImageUploadPrompt, locale), locale);
+    showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, locale), locale);
 });
 
 bot.action('timer_no', (ctx) => { 
@@ -127,7 +127,7 @@ bot.action('timer_no', (ctx) => {
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
     saveDB();
-    showMusicUploadPrompt(ctx, db, saveDB, showImageUploadPrompt, locale); 
+    showMusicUploadPrompt(ctx, db, saveDB, locale); 
 });
 
 bot.action(/^set_time_/, (ctx) => {
@@ -136,11 +136,11 @@ bot.action(/^set_time_/, (ctx) => {
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
     saveDB();
-    showMusicUploadPrompt(ctx, db, saveDB, showImageUploadPrompt, locale);
+    showMusicUploadPrompt(ctx, db, saveDB, locale);
 });
 
 bot.action(['music_no', 'music_default'], (ctx) => {
-    handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set);
+    handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set, locale);
 });
 
 bot.action('skip_image_upload', (ctx) => {
@@ -180,7 +180,7 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
     sendMainMenu(ctx, false);
 });
 
-bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt));
+bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
 bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
 bot.on('text', async (ctx) => {
