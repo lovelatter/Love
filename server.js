@@ -7,6 +7,7 @@ const https = require('https');
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
+const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { CATEGORY_CONFIGS, localeCategories } = require('./modules/category');
@@ -45,7 +46,7 @@ const locale = {
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
     ...localeCategories,
     btn_skip: "⏭️ Skip",
-    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n5️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n6️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
+    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী মিউজিক সেট অথবা আপলোড করুন।\n5️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
     maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
     session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`,
@@ -118,7 +119,7 @@ bot.action(/^make_/, (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     saveDB();
-    showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt, locale);
+    showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, showImageUploadPrompt, locale), locale);
 });
 
 bot.action('timer_no', (ctx) => { 
@@ -126,7 +127,7 @@ bot.action('timer_no', (ctx) => {
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
     saveDB();
-    showImageUploadPrompt(ctx, db, saveDB, locale); 
+    showMusicUploadPrompt(ctx, db, saveDB, showImageUploadPrompt, locale); 
 });
 
 bot.action(/^set_time_/, (ctx) => {
@@ -135,7 +136,11 @@ bot.action(/^set_time_/, (ctx) => {
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
     saveDB();
-    showImageUploadPrompt(ctx, db, saveDB, locale);
+    showMusicUploadPrompt(ctx, db, saveDB, showImageUploadPrompt, locale);
+});
+
+bot.action(['music_no', 'music_default'], (ctx) => {
+    handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set);
 });
 
 bot.action('skip_image_upload', (ctx) => {
@@ -175,6 +180,7 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
     sendMainMenu(ctx, false);
 });
 
+bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt));
 bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
 bot.on('text', async (ctx) => {
@@ -230,9 +236,15 @@ function processFinalLinkCreation(ctx, letterText) {
     const uniqueId = Math.random().toString(36).substring(2, 9);
     const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
     const dbImageUrl = session.imageUrl ? `${SERVER_URL}${session.imageUrl}` : null;
+    
+    let finalMusicUrl = session.music || "";
+    if (finalMusicUrl.startsWith('/uploads/')) {
+        finalMusicUrl = `${SERVER_URL}${finalMusicUrl}`;
+    }
+
     db.linkDatabase[uniqueId] = {
         userId, name: session.name || "User", username: session.username || "None", type: session.type || "love",
-        music: session.music || "", countdown: finalCountdownIso, animations: session.animations, letter: letterText, 
+        music: finalMusicUrl, countdown: finalCountdownIso, animations: session.animations, letter: letterText, 
         answer: null, image: dbImageUrl, imagePath: session.imageUrl || null, visitors: []
     };
     ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
@@ -348,7 +360,6 @@ app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html
 
 const PORT = process.env.PORT || 3000;
 
-// Load DB first and then start server and bot
 loadDB().then(() => {
     app.listen(PORT, () => {
         bot.launch().catch(err => console.error(err));
