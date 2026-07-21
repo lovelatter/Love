@@ -22,12 +22,16 @@ const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim
 const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 
 const SERVER_URL = "https://love-bb7p.onrender.com";
-const DB_FILE = path.join(__dirname, 'db.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
+
+// JSONBin Configurations
+const BIN_ID = process.env.JSONBIN_ID;
+const MASTER_KEY = process.env.JSONBIN_KEY;
+const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 const GITHUB_MUSIC_BASE_URL = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
@@ -48,22 +52,68 @@ let db = {
     usernameMap: {}
 };
 
-try {
-    if (fs.existsSync(DB_FILE)) {
-        db = { ...db, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
-    } else {
-        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-    }
-} catch (e) {
-    console.error(e);
-}
+// JSONBin Load Function
+const loadDB = () => {
+    return new Promise((resolve) => {
+        if (!BIN_ID || !MASTER_KEY) {
+            console.log("JSONBin credentials missing, using default empty db.");
+            return resolve();
+        }
+        const url = `${API_URL}/latest`;
+        https.get(url, {
+            headers: {
+                'X-Master-Key': MASTER_KEY
+            }
+        }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    if (parsed && parsed.record) {
+                        db = { ...db, ...parsed.record };
+                        console.log("Database loaded successfully from JSONBin.");
+                    }
+                } catch (e) {
+                    console.error("Error parsing JSONBin data:", e);
+                }
+                resolve();
+            });
+        }).on('error', (err) => {
+            console.error("Error loading from JSONBin:", err);
+            resolve();
+        });
+    });
+};
 
+// JSONBin Save Function
 const saveDB = () => {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-    } catch (e) {
-        console.error(e);
-    }
+    if (!BIN_ID || !MASTER_KEY) return;
+    const dataString = JSON.stringify(db);
+    
+    const req = https.request(API_URL, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': MASTER_KEY,
+            'Content-Length': Buffer.byteLength(dataString)
+        }
+    }, (res) => {
+        let responseBody = '';
+        res.on('data', chunk => responseBody += chunk);
+        res.on('end', () => {
+            if (res.statusCode !== 200) {
+                console.error("Failed to update JSONBin, status:", res.statusCode, responseBody);
+            }
+        });
+    });
+
+    req.on('error', (e) => {
+        console.error("Error saving to JSONBin:", e);
+    });
+
+    req.write(dataString);
+    req.end();
 };
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
@@ -375,7 +425,11 @@ app.post('/api/submit-answer', async (req, res) => {
 app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    bot.launch().catch(err => console.error(err));
-    console.log(`Server running on port ${PORT}`);
+
+// Load DB first and then start server and bot
+loadDB().then(() => {
+    app.listen(PORT, () => {
+        bot.launch().catch(err => console.error(err));
+        console.log(`Server running on port ${PORT}`);
+    });
 });
