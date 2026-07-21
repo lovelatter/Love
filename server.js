@@ -4,7 +4,7 @@ const { Telegraf, Markup } = require('telegraf');
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
-const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice } = require('./modules/music');
+const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { localeCategories } = require('./modules/category');
@@ -21,15 +21,6 @@ const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim
 const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 
 const SERVER_URL = "https://love-bb7p.onrender.com";
-
-const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
-
-const music_set = {
-    love: `${gh_url}/love.mp3`,
-    birthday: `${gh_url}/bd.mp3`,
-    sorry: `${gh_url}/sorry.mp3`,
-    eid: `${gh_url}/eid.mp3`
-};
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
@@ -132,7 +123,7 @@ bot.action(/^set_time_/, async (ctx) => {
 });
 
 bot.action(['music_no', 'music_default'], (ctx) => {
-    handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set, locale);
+    handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale);
 });
 
 bot.action('skip_image_upload', async (ctx) => {
@@ -209,7 +200,6 @@ bot.on('text', async (ctx) => {
     }
 });
 
-// Setup Express Routes from modules/routes.js
 setupRoutes(app, db, saveDB, bot);
 
 const PORT = process.env.PORT || 3000;
