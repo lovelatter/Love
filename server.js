@@ -1,7 +1,5 @@
 const express = require('express');
-const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
-const https = require('https');
 
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
@@ -9,7 +7,9 @@ const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
-const { CATEGORY_CONFIGS, localeCategories } = require('./modules/category');
+const { localeCategories } = require('./modules/category');
+const { processFinalLinkCreation } = require('./modules/link');
+const { setupRoutes } = require('./modules/routes');
 
 const app = express();
 app.use(express.json());
@@ -202,155 +202,15 @@ bot.on('text', async (ctx) => {
             return ctx.reply(locale.input_anim_success(lines.length));
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            return await processFinalLinkCreation(ctx, text);
+            return await processFinalLinkCreation(ctx, text, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
         }
     } catch (error) {
         ctx.reply(locale.general_error).catch(() => {});
     }
 });
 
-
-async function processFinalLinkCreation(ctx, letterText) {
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    db.totalLinksCreated = (db.totalLinksCreated || 0) + 1;
-    let finalCountdownIso = null;
-    let countdownDisplay = "No ❌";
-    if (session.pendingMinutes) {
-        const targetDate = new Date();
-        targetDate.setMinutes(targetDate.getMinutes() + session.pendingMinutes);
-        finalCountdownIso = targetDate.toISOString();
-        countdownDisplay = `${session.pendingMinutes} Minutes ✅`;
-    }
-    const uniqueId = Math.random().toString(36).substring(2, 9);
-    const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
-    
-    const dbImageUrl = session.imageUrl || null;
-    let finalMusicUrl = session.music || "";
-
-    db.linkDatabase[uniqueId] = {
-        userId, name: session.name || "User", username: session.username || "None", type: session.type || "love",
-        music: finalMusicUrl, countdown: finalCountdownIso, animations: session.animations, letter: letterText, 
-        answer: null, image: dbImageUrl, imagePath: null, visitors: []
-    };
-
-    delete db.userSessions[userId];
-    await saveDB(); // ডাটাবেজে পার্মানেন্টলি সেভ হওয়া নিশ্চিত করার পর ইউজারকে লিংক পাঠানো হবে[span_2](start_span)[span_2](end_span)
-
-    ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
-    }).catch(() => {});
-
-    let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
-👤 Name: ${session.name || "User"}
-🆔 ID: ${userId}
-🏷️ Username: ${session.username || "None"}
-📂 Category: ${String(session.type || "love").toUpperCase()}
-⏳ Countdown: ${countdownDisplay}
-📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
-    if (dbImageUrl) {
-        adminNotificationText += `\n🖼️ IMG Link: ${dbImageUrl}`;
-    }
-    adminNotificationText += `\n🎵 Music Included: ${finalMusicUrl ? "Yes ✅" : "No ❌"}`;
-    if (finalMusicUrl) {
-        adminNotificationText += `\n🎶 Music Link: ${finalMusicUrl}`;
-    }
-    adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
-💌 Letter: ${letterText}
-🔗 Main Link: ${finalGeneratedUrl}`;
-
-    ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
-        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
-    ])).catch(() => {}));
-}
-
-function parseUserAgent(ua) {
-    let os = "Unknown OS";
-    let browser = "Unknown Browser";
-    if (!ua) return { os, browser };
-    if (ua.includes("Windows")) os = "Windows PC";
-    else if (ua.includes("Android")) os = "Android Mobile";
-    else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS (iPhone/iPad)";
-    else if (ua.includes("Macintosh")) os = "Mac OS";
-    else if (ua.includes("Linux")) os = "Linux PC";
-    if (ua.includes("Telegram")) browser = "Telegram App Browser";
-    else if (ua.includes("FBAN") || ua.includes("FBAV")) browser = "Facebook App Browser";
-    else if (ua.includes("Chrome")) browser = "Google Chrome";
-    else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
-    else if (ua.includes("Firefox")) browser = "Mozilla Firefox";
-    else if (ua.includes("Edge")) browser = "Microsoft Edge";
-    return { os, browser };
-}
-
-app.post('/api/get-content', async (req, res) => {
-    try {
-        const linkId = req.body.id;
-        const data = db.linkDatabase[linkId];
-        if (!data) return res.json({ success: false });
-        bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(() => {});
-        let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
-        let ip = rawIp.split(',')[0].trim();
-        if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
-        const userAgent = req.headers['user-agent'] || "";
-        const { os, browser } = parseUserAgent(userAgent);
-        const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
-        let visitorObj = {
-            time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
-        };
-        if (ip && ip !== "127.0.0.1" && ip !== "::1") {
-            https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
-                let body = "";
-                apiRes.on('data', chunk => body += chunk);
-                apiRes.on('end', () => {
-                    try {
-                        const ipData = JSON.parse(body);
-                        if (ipData.status === "success") {
-                            visitorObj.country = ipData.country || "Unknown";
-                            visitorObj.city = ipData.city || "Unknown";
-                            visitorObj.isp = ipData.isp || "Unknown";
-                        }
-                    } catch (e) {}
-                    if (!data.visitors) data.visitors = [];
-                    data.visitors.push(visitorObj);
-                    saveDB();
-                });
-            }).on('error', () => {
-                if (!data.visitors) data.visitors = [];
-                data.visitors.push(visitorObj);
-                saveDB();
-            });
-        } else {
-            if (!data.visitors) data.visitors = [];
-            data.visitors.push(visitorObj);
-            await saveDB();
-        }
-        if (data.countdown && new Date(data.countdown) > new Date()) {
-            return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
-        }
-        const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-        return res.json({ 
-            success: true, isLocked: false, title: config.title, music: data.music, 
-            animations: data.animations, letter: data.letter, emojis: config.emojis, 
-            question: config.question, buttons: config.buttons, image: data.image || null 
-        });
-    } catch (err) { res.json({ success: false }); }
-});
-
-app.post('/api/submit-answer', async (req, res) => {
-    try {
-        const { id, answer } = req.body;
-        const data = db.linkDatabase[id];
-        if (!data) return res.json({ success: false });
-        data.answer = answer;
-        await saveDB();
-        const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-        bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
-        return res.json({ success: true });
-    } catch (err) { res.json({ success: false }); }
-});
-
-app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+// Setup Express Routes from modules/routes.js
+setupRoutes(app, db, saveDB, bot);
 
 const PORT = process.env.PORT || 3000;
 
@@ -360,5 +220,6 @@ loadDB().then(() => {
         console.log(`Server running on port ${PORT}`);
     });
 });
+
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
