@@ -47,19 +47,19 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
     const session = db.userSessions[userId];
     
     if (session?.step === 'AWAITING_MUSIC_CHOICE') {
-        const audioFile = ctx.message.audio || ctx.message.voice;
-        
-        if (!audioFile) {
-            return ctx.reply("❌ এটি গ্রহণযোগ্য নয়! দয়া করে নিচের বাটনগুলো চাপুন অথবা একটি সঠিক অডিও ফাইল (যেমন: .mp3) আপলোড করুন। অন্য কোনো ফাইল গ্রহণযোগ্য নয়।");
+        if (!ctx.message || !ctx.message.audio) {
+            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও (Audio) ফাইল দিতে হবে। অনুগ্রহ করে একটি অডিও ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
         }
 
         return (async () => {
             const loadingMsg = await ctx.reply("⏳ Uploading audio to Catbox...").catch(() => null);
             try {
-                const fileId = audioFile.file_id;
+                const audio = ctx.message.audio;
+                const fileId = audio.file_id;
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
+                // Catbox-এ আপলোড করা হচ্ছে
                 const catboxUrl = await uploadToCatbox(fileUrl, 'mp3');
                 
                 if (catboxUrl && catboxUrl.startsWith('http')) {
@@ -68,7 +68,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                     if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => {});
                     showImageUploadPrompt(ctx, db, saveDB, locale);
                 } else {
-                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ সার্ভারে অডিও আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
+                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
                 }
             } catch (error) {
                 if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
