@@ -27,6 +27,12 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
     const session = db.userSessions[userId];
     
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
+        const userMessageId = ctx.message?.message_id;
+
+        if (!ctx.message || !ctx.message.photo) {
+            return ctx.reply("এখানে সঠিক ফরম্যাটের ছবি (Photo) পাঠাতে হবে। অনুগ্রহ করে একটি ছবি আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
+        }
+
         return (async () => {
             const loadingMsg = await ctx.reply("⏳ Uploading image to Catbox...").catch(() => null);
             try {
@@ -35,7 +41,6 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
-                // ক্যাতবক্সে আপলোড করুন
                 const catboxUrl = await uploadToCatbox(fileUrl, 'jpg');
                 
                 if (!catboxUrl) {
@@ -43,10 +48,31 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
                     return;
                 }
 
-                db.userSessions[userId].imageUrl = catboxUrl; // ক্যাতবক্সের ডাইরেক্ট লিংক সেভ হবে
+                db.userSessions[userId].imageUrl = catboxUrl;
                 saveDB();
                 
-                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "📸 ছবি সফলভাবে আপলোড হয়েছে।").catch(() => {});
+                if (userMessageId) {
+                    await bot.telegram.deleteMessage(userId, userMessageId).catch(() => {});
+                }
+
+                if (loadingMsg) {
+                    await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
+                }
+                
+                try {
+                    const messagesToDelete = [ctx.message.message_id - 1, ctx.message.message_id - 2];
+                    for (let msgId of messagesToDelete) {
+                        await bot.telegram.deleteMessage(userId, msgId).catch(() => {});
+                    }
+                } catch (e) {}
+
+                const successMsg = await ctx.reply("📸 ছবি সফলভাবে আপলোড হয়েছে।").catch(() => null);
+                if (successMsg) {
+                    setTimeout(async () => {
+                        await bot.telegram.deleteMessage(userId, successMsg.message_id).catch(() => {});
+                    }, 2000);
+                }
+
                 showAnimationIntro(ctx);
             } catch (error) {
                 if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
