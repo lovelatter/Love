@@ -127,9 +127,13 @@ async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
     const text = locale.session_started();
-    ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
-        ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
+    const sentMsg = await ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(async () => {
+        return await ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => null);
     });
+    if (sentMsg) {
+        db.userSessions[ctx.chat.id].lastPromptMsgId = sentMsg.message_id;
+        await saveDB();
+    }
 }
 
 bot.action('menu_feedback', (ctx) => handleFeedbackStart(ctx, db, saveDB));
@@ -176,10 +180,22 @@ bot.on('text', async (ctx) => {
             
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
+            
+            if (session.lastPromptMsgId) {
+                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+            }
+            await ctx.deleteMessage().catch(() => {});
+            
+            const nextPrompt = await ctx.reply(locale.input_anim_success(lines.length));
+            db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
             await saveDB();
-            return ctx.reply(locale.input_anim_success(lines.length));
+            return;
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
+            if (session.lastPromptMsgId) {
+                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+            }
+            await ctx.deleteMessage().catch(() => {});
             return await processFinalLinkCreation(ctx, text, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
         }
     } catch (error) {
