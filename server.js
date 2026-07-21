@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
+const https = require('https');
 
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
@@ -9,7 +10,6 @@ const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice } = require(
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { CATEGORY_CONFIGS, localeCategories } = require('./modules/category');
-const { uploadToCatbox } = require('./modules/catbox');
 
 const app = express();
 app.use(express.json());
@@ -51,7 +51,7 @@ bot.use(async (ctx, next) => {
     if (!userId) return;
     if (!db.registeredUsers.includes(userId)) db.registeredUsers.push(userId);
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
-    saveDB();
+    await saveDB();
     if (isAdmin(userId)) return next();
     if (db.bannedUsers.includes(userId)) return;
     if (db.isMaintenanceMode) {
@@ -70,7 +70,7 @@ bot.use(async (ctx, next) => {
 
 setupAdmin(bot, db, saveDB, isAdmin, __dirname, locale);
 
-const sendMainMenu = (ctx, isEdit = false) => {
+const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(locale.btn_make, 'menu_makelink')],
@@ -80,9 +80,9 @@ const sendMainMenu = (ctx, isEdit = false) => {
     return ctx.reply(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-bot.command('start', (ctx) => { 
+bot.command('start', async (ctx) => { 
     delete db.userSessions[ctx.chat.id];
-    saveDB();
+    await saveDB();
     sendMainMenu(ctx, false); 
 });
 
@@ -99,7 +99,7 @@ bot.action('menu_makelink', (ctx) => {
     ]));
 });
 
-bot.action(/^make_/, (ctx) => {
+bot.action(/^make_/, async (ctx) => {
     ctx.answerCbQuery();
     const cat = ctx.match.input.replace('make_', '');
     db.userSessions[ctx.chat.id] = { 
@@ -110,24 +110,24 @@ bot.action(/^make_/, (ctx) => {
         imageUrl: null,
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
-    saveDB();
+    await saveDB();
     showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, locale), locale);
 });
 
-bot.action('timer_no', (ctx) => { 
+bot.action('timer_no', async (ctx) => { 
     ctx.answerCbQuery(); 
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
-    saveDB();
+    await saveDB();
     showMusicUploadPrompt(ctx, db, saveDB, locale); 
 });
 
-bot.action(/^set_time_/, (ctx) => {
+bot.action(/^set_time_/, async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
-    saveDB();
+    await saveDB();
     showMusicUploadPrompt(ctx, db, saveDB, locale);
 });
 
@@ -135,18 +135,19 @@ bot.action(['music_no', 'music_default'], (ctx) => {
     handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set, locale);
 });
 
-bot.action('skip_image_upload', (ctx) => {
+bot.action('skip_image_upload', async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     if (db.userSessions[userId]) {
         db.userSessions[userId].imageUrl = null;
     }
+    await saveDB();
     showAnimationIntro(ctx);
 });
 
-function showAnimationIntro(ctx) {
+async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    saveDB();
+    await saveDB();
     const text = locale.session_started();
     ctx.editMessageText(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {
         ctx.reply(text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]], { parse_mode: 'Markdown' })).catch(() => {});
@@ -156,14 +157,14 @@ function showAnimationIntro(ctx) {
 bot.action('menu_feedback', (ctx) => handleFeedbackStart(ctx, db, saveDB));
 bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
 
-bot.action(/^delete_link_(.+)$/, (ctx) => {
+bot.action(/^delete_link_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
     if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
     if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
     ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
     delete db.linkDatabase[linkId];
-    saveDB();
+    await saveDB();
     ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
     sendMainMenu(ctx, false);
 });
@@ -197,11 +198,11 @@ bot.on('text', async (ctx) => {
             
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-            saveDB();
+            await saveDB();
             return ctx.reply(locale.input_anim_success(lines.length));
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            return processFinalLinkCreation(ctx, text);
+            return await processFinalLinkCreation(ctx, text);
         }
     } catch (error) {
         ctx.reply(locale.general_error).catch(() => {});
@@ -209,7 +210,7 @@ bot.on('text', async (ctx) => {
 });
 
 
-function processFinalLinkCreation(ctx, letterText) {
+async function processFinalLinkCreation(ctx, letterText) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     db.totalLinksCreated = (db.totalLinksCreated || 0) + 1;
@@ -224,7 +225,6 @@ function processFinalLinkCreation(ctx, letterText) {
     const uniqueId = Math.random().toString(36).substring(2, 9);
     const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
     
-    // ক্যাতবক্সের লিংক সরাসরি ব্যবহার করা হচ্ছে
     const dbImageUrl = session.imageUrl || null;
     let finalMusicUrl = session.music || "";
 
@@ -233,12 +233,15 @@ function processFinalLinkCreation(ctx, letterText) {
         music: finalMusicUrl, countdown: finalCountdownIso, animations: session.animations, letter: letterText, 
         answer: null, image: dbImageUrl, imagePath: null, visitors: []
     };
+
+    delete db.userSessions[userId];
+    await saveDB(); // ডাটাবেজে পার্মানেন্টলি সেভ হওয়া নিশ্চিত করার পর ইউজারকে লিংক পাঠানো হবে[span_2](start_span)[span_2](end_span)
+
     ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
 
-    // অ্যাডমিন নোটিফিকেশন আপডেট করা হলো
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
 👤 Name: ${session.name || "User"}
 🆔 ID: ${userId}
@@ -260,8 +263,6 @@ function processFinalLinkCreation(ctx, letterText) {
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
         [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
     ])).catch(() => {}));
-    delete db.userSessions[userId];
-    saveDB();
 }
 
 function parseUserAgent(ua) {
@@ -322,7 +323,7 @@ app.post('/api/get-content', async (req, res) => {
         } else {
             if (!data.visitors) data.visitors = [];
             data.visitors.push(visitorObj);
-            saveDB();
+            await saveDB();
         }
         if (data.countdown && new Date(data.countdown) > new Date()) {
             return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
@@ -342,7 +343,7 @@ app.post('/api/submit-answer', async (req, res) => {
         const data = db.linkDatabase[id];
         if (!data) return res.json({ success: false });
         data.answer = answer;
-        saveDB();
+        await saveDB();
         const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
         bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে।\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
         return res.json({ success: true });
