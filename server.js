@@ -29,13 +29,13 @@ if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-const GITHUB_MUSIC_BASE_URL = "https://raw.githubusercontent.com/lovelatter/Love/main";
+const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
 const AUTOMATIC_MUSIC_MAPPING = {
-    love: `${GITHUB_MUSIC_BASE_URL}/love.mp3`,
-    birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
-    sorry: `${GITHUB_MUSIC_BASE_URL}/sorry.mp3`,
-    eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
+    love: `${gh_url}/love.mp3`,
+    birthday: `${gh_url}/bd.mp3`,
+    sorry: `${gh_url}/sorry.mp3`,
+    eid: `${gh_url}/eid.mp3`
 };
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
