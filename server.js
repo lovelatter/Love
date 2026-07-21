@@ -53,6 +53,7 @@ let db = {
 };
 
 // JSONBin Load Function
+// JSONBin Load Function
 const loadDB = () => {
     return new Promise((resolve) => {
         if (!BIN_ID || !MASTER_KEY) {
@@ -71,8 +72,16 @@ const loadDB = () => {
                 try {
                     const parsed = JSON.parse(data);
                     if (parsed && parsed.record) {
-                        db = { ...db, ...parsed.record };
-                        console.log("Database loaded successfully from JSONBin.");
+                        // JSONBin এর ডেটা লোকাল db এর সাথে সঠিকভাবে মার্জ করার জন্য
+                        db.linkDatabase = parsed.record.linkDatabase || {};
+                        db.userSessions = parsed.record.userSessions || {};
+                        db.totalLinksCreated = parsed.record.totalLinksCreated || 0;
+                        db.isMaintenanceMode = parsed.record.isMaintenanceMode || false;
+                        db.bannedUsers = parsed.record.bannedUsers || [];
+                        db.registeredUsers = parsed.record.registeredUsers || [];
+                        db.usernameMap = parsed.record.usernameMap || {};
+                        
+                        console.log("Database loaded successfully from JSONBin. Total Users:", db.registeredUsers.length);
                     }
                 } catch (e) {
                     console.error("Error parsing JSONBin data:", e);
