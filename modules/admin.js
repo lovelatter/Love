@@ -47,7 +47,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             [Markup.button.callback("📜 All Links List", "adm_view_links_list")],
             [Markup.button.callback("💥 Delete All Links", "adm_delete_all_links_confirm")],
             [Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]
-        ]));
+        ])).catch(() => {});
     });
 
     bot.action('adm_view_links_list', (ctx) => {
@@ -55,7 +55,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         ctx.answerCbQuery();
         const keys = Object.keys(db.linkDatabase);
         if (!keys.length) {
-            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]]));
+            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]])).catch(() => {});
         }
         ctx.reply("📜 সকল লিংক:");
         keys.forEach(key => {
@@ -92,7 +92,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         });
         db.linkDatabase = {};
         saveDB();
-        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]]));
+        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]])).catch(() => {});
     });
 
     bot.action('adm_ban_menu', (ctx) => {
