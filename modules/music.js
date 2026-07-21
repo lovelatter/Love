@@ -32,7 +32,7 @@ function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set, lo
     if (action === 'music_no') {
         session.music = "";
         saveDB();
-        ctx.answerCbQuery("কোনো ব্যাকগ্রাউন্ড মিউজিক রাখা হয়নি।");
+.       ctx.answerCbQuery("কোনো ব্যাকগ্রাউন্ড মিউজিক রাখা হয়নি।");
         showImageUploadPrompt(ctx, db, saveDB, locale);
     } else if (action === 'music_default') {
         session.music = music_set[session.type] || "";
@@ -48,7 +48,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
     
     if (session?.step === 'AWAITING_MUSIC_CHOICE') {
         if (!ctx.message || !ctx.message.audio) {
-            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও (Audio) ফাইল দিতে হবে। অনুগ্রহ করে একটি অডিও ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
+            return ctx.reply("⚠️ এখানে শুধু audio ফরম্যাট ফাইল ইনপুট নিতে হবে। অডিও ব্যতিরেকে অন্য কোনো কিছু (যেমন: text, document, video, img বা voice) এখানে গ্রহণযোগ্য নয়।");
         }
 
         return (async () => {
@@ -59,7 +59,6 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
-                // Catbox-এ আপলোড করা হচ্ছে
                 const catboxUrl = await uploadToCatbox(fileUrl, 'mp3');
                 
                 if (catboxUrl && catboxUrl.startsWith('http')) {
