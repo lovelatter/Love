@@ -4,6 +4,7 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const https = require('https');
 
+const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
@@ -28,11 +29,6 @@ if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// JSONBin Configurations
-const BIN_ID = process.env.JSONBIN_ID;
-const MASTER_KEY = process.env.JSONBIN_KEY;
-const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-
 const GITHUB_MUSIC_BASE_URL = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
 const AUTOMATIC_MUSIC_MAPPING = {
@@ -40,89 +36,6 @@ const AUTOMATIC_MUSIC_MAPPING = {
     birthday: `${GITHUB_MUSIC_BASE_URL}/bd.mp3`,
     sorry: `${GITHUB_MUSIC_BASE_URL}/sorry.mp3`,
     eid: `${GITHUB_MUSIC_BASE_URL}/eid.mp3`
-};
-
-let db = {
-    linkDatabase: {},
-    userSessions: {},
-    totalLinksCreated: 0,
-    isMaintenanceMode: false,
-    bannedUsers: [],
-    registeredUsers: [],
-    usernameMap: {}
-};
-
-// JSONBin Load Function
-// JSONBin Load Function
-const loadDB = () => {
-    return new Promise((resolve) => {
-        if (!BIN_ID || !MASTER_KEY) {
-            console.log("JSONBin credentials missing, using default empty db.");
-            return resolve();
-        }
-        const url = `${API_URL}/latest`;
-        https.get(url, {
-            headers: {
-                'X-Master-Key': MASTER_KEY
-            }
-        }, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    const parsed = JSON.parse(data);
-                    if (parsed && parsed.record) {
-                        // JSONBin এর ডেটা লোকাল db এর সাথে সঠিকভাবে মার্জ করার জন্য
-                        db.linkDatabase = parsed.record.linkDatabase || {};
-                        db.userSessions = parsed.record.userSessions || {};
-                        db.totalLinksCreated = parsed.record.totalLinksCreated || 0;
-                        db.isMaintenanceMode = parsed.record.isMaintenanceMode || false;
-                        db.bannedUsers = parsed.record.bannedUsers || [];
-                        db.registeredUsers = parsed.record.registeredUsers || [];
-                        db.usernameMap = parsed.record.usernameMap || {};
-                        
-                        console.log("Database loaded successfully from JSONBin. Total Users:", db.registeredUsers.length);
-                    }
-                } catch (e) {
-                    console.error("Error parsing JSONBin data:", e);
-                }
-                resolve();
-            });
-        }).on('error', (err) => {
-            console.error("Error loading from JSONBin:", err);
-            resolve();
-        });
-    });
-};
-
-// JSONBin Save Function
-const saveDB = () => {
-    if (!BIN_ID || !MASTER_KEY) return;
-    const dataString = JSON.stringify(db);
-    
-    const req = https.request(API_URL, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': MASTER_KEY,
-            'Content-Length': Buffer.byteLength(dataString)
-        }
-    }, (res) => {
-        let responseBody = '';
-        res.on('data', chunk => responseBody += chunk);
-        res.on('end', () => {
-            if (res.statusCode !== 200) {
-                console.error("Failed to update JSONBin, status:", res.statusCode, responseBody);
-            }
-        });
-    });
-
-    req.on('error', (e) => {
-        console.error("Error saving to JSONBin:", e);
-    });
-
-    req.write(dataString);
-    req.end();
 };
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
@@ -444,4 +357,3 @@ loadDB().then(() => {
 });
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
