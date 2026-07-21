@@ -1,14 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
 const { Markup } = require('telegraf');
-
-const UPLOADS_DIR = path.join(__dirname, '../uploads');
+const { uploadToCatbox } = require('./catbox');
 
 const img_msg = {
     img_ask: "📸 ছবি যুক্ত করতে চাইলে ছবিটি এখানে পাঠান অথবা Skip করুন।"
 };
-
 
 function showImageUploadPrompt(ctx, db, saveDB, locale) {
     const userId = ctx.chat.id;
@@ -33,28 +28,24 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
     
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
         return (async () => {
-            const loadingMsg = await ctx.reply("⏳ Uploading image...").catch(() => null);
+            const loadingMsg = await ctx.reply("⏳ Uploading image to Catbox...").catch(() => null);
             try {
                 const photoArray = ctx.message.photo;
                 const fileId = photoArray[photoArray.length - 1].file_id;
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
-                const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 5)}.jpg`;
-                const localPath = path.join(UPLOADS_DIR, filename);
                 
-                const fileStream = fs.createWriteStream(localPath);
-                https.get(fileUrl, (response) => {
-                    response.pipe(fileStream);
-                    fileStream.on('finish', () => {
-                        fileStream.close();
-                        db.userSessions[userId].imageUrl = `/uploads/${filename}`;
-                        saveDB();
-                        if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "📸 ছবি সফলভাবে আপলোড হয়েছে।").catch(() => {});
-                        showAnimationIntro(ctx);
-                    });
-                }).on('error', () => {
+                // Catbox-এ আপলোড করা হচ্ছে
+                const catboxUrl = await uploadToCatbox(fileUrl, 'jpg');
+                
+                if (catboxUrl && catboxUrl.startsWith('http')) {
+                    db.userSessions[userId].imageUrl = catboxUrl;
+                    saveDB();
+                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "📸 ছবি সফলভাবে আপলোড হয়েছে।").catch(() => {});
+                    showAnimationIntro(ctx);
+                } else {
                     if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
-                });
+                }
             } catch (error) {
                 if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ইমেজ প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
             }
