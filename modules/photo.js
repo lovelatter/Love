@@ -27,6 +27,11 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
     const session = db.userSessions[userId];
     
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
+        // যদি ছবি বা ফটো ফরম্যাট না হয়ে অন্য কিছু (টেক্সট, ডকুমেন্ট, অডিও, ভিডিও ইত্যাদি) হয়
+        if (!ctx.message || !ctx.message.photo) {
+            return ctx.reply("⚠️ এখানে শুধু img (ছবি) ফরম্যাট ফাইল ইনপুট নিতে হবে। ছবি ব্যতিরেকে অন্য কোনো কিছু (যেমন: text, document, video, audio বা voice) এখানে গ্রহণযোগ্য নয়। অনুগ্রহ করে একটি ছবি পাঠান অথবা Skip করুন।");
+        }
+
         return (async () => {
             const loadingMsg = await ctx.reply("⏳ Uploading image to Catbox...").catch(() => null);
             try {
@@ -35,7 +40,6 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
-                // Catbox-এ আপলোড করা হচ্ছে
                 const catboxUrl = await uploadToCatbox(fileUrl, 'jpg');
                 
                 if (catboxUrl && catboxUrl.startsWith('http')) {
