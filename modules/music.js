@@ -71,7 +71,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
             }
             await ctx.deleteMessage().catch(() => {});
 
-            const loadingMsg = await ctx.reply("⏳ Uploading audio to Catbox...").catch(() => null);
+            const loadingMsg = await ctx.reply("⏳ Uploading audio...").catch(() => null);
             try {
                 const audio = ctx.message.audio;
                 const fileId = audio.file_id;
@@ -94,7 +94,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                         try {
                             await bot.telegram.deleteMessage(ctx.chat.id, loadingMsg.message_id);
                         } catch (e) {}
-                    }, 3000);
+                    }, 2000);
                 }
                 
                 showImageUploadPrompt(ctx, db, saveDB, locale);
