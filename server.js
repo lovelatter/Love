@@ -174,6 +174,7 @@ bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUpload
 bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
 bot.on('text', async (ctx) => {
+bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
@@ -191,6 +192,17 @@ bot.on('text', async (ctx) => {
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
+
+    // মিউজিক স্টেপে টেক্সট দিলে সতর্কবার্তা
+    if (session.step === 'AWAITING_MUSIC_CHOICE') {
+        return ctx.reply("❌ এটি গ্রহণযোগ্য নয়! দয়া করে নিচের বাটনগুলো চাপুন অথবা একটি সঠিক অডিও ফাইল (যেমন: .mp3) আপলোড করুন। টেক্সট বা অন্য কোনো ফাইল গ্রহণযোগ্য নয়।");
+    }
+
+    // ইমেজ স্টেপে টেক্সট দিলে সতর্কবার্তা
+    if (session.step === 'AWAITING_IMAGE_UPLOAD') {
+        return ctx.reply("❌ এটি গ্রহণযোগ্য নয়! দয়া করে নিচের 'Skip' বাটন চাপুন অথবা একটি সঠিক ছবি (Photo) আপলোড করুন। টেক্সট বা অন্য কোনো ফাইল গ্রহণযোগ্য নয়।");
+    }
+
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
