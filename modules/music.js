@@ -59,16 +59,19 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
+                // ক্যাতবক্সে আপলোড করুন
                 const catboxUrl = await uploadToCatbox(fileUrl, 'mp3');
                 
-                if (catboxUrl && catboxUrl.startsWith('http')) {
-                    db.userSessions[userId].music = catboxUrl;
-                    saveDB();
-                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => {});
-                    showImageUploadPrompt(ctx, db, saveDB, locale);
-                } else {
+                if (!catboxUrl) {
                     if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
+                    return;
                 }
+
+                db.userSessions[userId].music = catboxUrl; // ক্যাতবক্সের ডাইরেক্ট লিংক সেভ হবে
+                saveDB();
+                
+                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => {});
+                showImageUploadPrompt(ctx, db, saveDB, locale);
             } catch (error) {
                 if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
             }
