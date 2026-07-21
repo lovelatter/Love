@@ -17,8 +17,14 @@ function showImageUploadPrompt(ctx, db, saveDB, locale) {
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
     ]);
 
-    ctx.editMessageText(message, keyboard).catch(() => {
-        ctx.reply(message, keyboard).catch(() => {});
+    ctx.editMessageText(message, keyboard).then((sentMsg) => {
+        db.userSessions[userId].lastPromptMessageId = sentMsg.message_id;
+        saveDB();
+    }).catch(() => {
+        ctx.reply(message, keyboard).then((sentMsg) => {
+            db.userSessions[userId].lastPromptMessageId = sentMsg.message_id;
+            saveDB();
+        }).catch(() => {});
     });
 }
 
@@ -28,6 +34,7 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
     
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
         const userMessageId = ctx.message?.message_id;
+        const promptMsgId = session.lastPromptMessageId;
 
         if (!ctx.message || !ctx.message.photo) {
             return ctx.reply("এখানে সঠিক ফরম্যাটের ছবি (Photo) পাঠাতে হবে। অনুগ্রহ করে একটি ছবি আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
@@ -55,16 +62,13 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
                     await bot.telegram.deleteMessage(userId, userMessageId).catch(() => {});
                 }
 
+                if (promptMsgId) {
+                    await bot.telegram.deleteMessage(userId, promptMsgId).catch(() => {});
+                }
+
                 if (loadingMsg) {
                     await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
                 }
-                
-                try {
-                    const messagesToDelete = [ctx.message.message_id - 1, ctx.message.message_id - 2];
-                    for (let msgId of messagesToDelete) {
-                        await bot.telegram.deleteMessage(userId, msgId).catch(() => {});
-                    }
-                } catch (e) {}
 
                 const successMsg = await ctx.reply("📸 ছবি সফলভাবে আপলোড হয়েছে।").catch(() => null);
                 if (successMsg) {
