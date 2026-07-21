@@ -174,7 +174,6 @@ bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUpload
 bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
 bot.on('text', async (ctx) => {
-bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
