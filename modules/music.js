@@ -89,7 +89,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 saveDB();
                 
                 if (loadingMsg) {
-                    await bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => {});
+                    await bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও আপলোড হয়েছে।").catch(() => {});
                     setTimeout(async () => {
                         try {
                             await bot.telegram.deleteMessage(ctx.chat.id, loadingMsg.message_id);
