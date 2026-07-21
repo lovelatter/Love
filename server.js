@@ -173,24 +173,6 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
 bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
-bot.on(['photo', 'document', 'video', 'sticker', 'text'], (ctx) => {
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    
-    if (session?.step === 'AWAITING_MUSIC_CHOICE') {
-        return ctx.reply("❌ এটি গ্রহণযোগ্য নয়! দয়া করে নিচের বাটনগুলো চাপুন অথবা একটি সঠিক অডিও ফাইল (যেমন: .mp3) আপলোড করুন। টেক্সট বা অন্য কোনো ফাইল এখানে গ্রহণযোগ্য নয়।");
-    }
-});
-
-bot.on(['audio', 'voice', 'document', 'video', 'sticker', 'text'], (ctx) => {
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    
-    if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
-        return ctx.reply("❌ এটি গ্রহণযোগ্য নয়! দয়া করে নিচের 'Skip' বাটন চাপুন অথবা একটি সঠিক ছবি (Photo) আপলোড করুন। টেক্সট বা অন্য কোনো ফাইল এখানে গ্রহণযোগ্য নয়।");
-    }
-});
-
 bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
