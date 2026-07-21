@@ -55,34 +55,38 @@ const loadDB = () => {
     });
 };
 
-// JSONBin Save Function
+// JSONBin Save Function (Promiseified for safety)
 const saveDB = () => {
-    if (!BIN_ID || !MASTER_KEY) return;
-    const dataString = JSON.stringify(db);
-    
-    const req = https.request(API_URL, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': MASTER_KEY,
-            'Content-Length': Buffer.byteLength(dataString)
-        }
-    }, (res) => {
-        let responseBody = '';
-        res.on('data', chunk => responseBody += chunk);
-        res.on('end', () => {
-            if (res.statusCode !== 200) {
-                console.error("Failed to update JSONBin, status:", res.statusCode, responseBody);
+    return new Promise((resolve) => {
+        if (!BIN_ID || !MASTER_KEY) return resolve();
+        const dataString = JSON.stringify(db);
+        
+        const req = https.request(API_URL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': MASTER_KEY,
+                'Content-Length': Buffer.byteLength(dataString)
             }
+        }, (res) => {
+            let responseBody = '';
+            res.on('data', chunk => responseBody += chunk);
+            res.on('end', () => {
+                if (res.statusCode !== 200) {
+                    console.error("Failed to update JSONBin, status:", res.statusCode, responseBody);
+                }
+                resolve();
+            });
         });
-    });
 
-    req.on('error', (e) => {
-        console.error("Error saving to JSONBin:", e);
-    });
+        req.on('error', (e) => {
+            console.error("Error saving to JSONBin:", e);
+            resolve();
+        });
 
-    req.write(dataString);
-    req.end();
+        req.write(dataString);
+        req.end();
+    });
 };
 
 module.exports = {
