@@ -173,7 +173,6 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
 bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
-// অন্যান্য ফাইল বা মিডিয়া ফরম্যাট (যেমন: document, video, voice, sticker ইত্যাদি) ভুল স্টেপে আসলে ওয়ার্নিং দেওয়ার জন্য হ্যান্ডলার
 bot.on(['document', 'video', 'voice', 'video_note', 'sticker'], (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
@@ -191,12 +190,10 @@ bot.on('text', async (ctx) => {
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
     
-    // মিউজিক চাজার স্টেপে টেক্সট দিলে ওয়ার্নিং
     if (session?.step === 'AWAITING_MUSIC_CHOICE') {
         return ctx.reply("⚠️ এখানে শুধু audio ফরম্যাট ফাইল ইনপুট নিতে হবে। অডিও ব্যতিরেকে টেক্সট বা অন্য কিছু দেওয়া যাবে না। অনুগ্রহ করে একটি অডিও ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
     }
 
-    // ছবি চাওয়ার স্টেপে টেক্সট দিলে ওয়ার্নিং
     if (session?.step === 'AWAITING_IMAGE_UPLOAD') {
         return ctx.reply("⚠️ এখানে শুধু img (ছবি) ফরম্যাট ফাইল ইনপুট নিতে হবে। ছবি ব্যতিরেকে টেক্সট বা অন্য কিছু দেওয়া যাবে না। অনুগ্রহ করে একটি ছবি পাঠান অথবা Skip করুন।");
     }
@@ -232,7 +229,6 @@ bot.on('text', async (ctx) => {
         ctx.reply(locale.general_error).catch(() => {});
     }
 });
-
 
 function processFinalLinkCreation(ctx, letterText) {
     const userId = ctx.chat.id;
