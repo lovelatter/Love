@@ -7,9 +7,9 @@ const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
-const { localeCategories } = require('./modules/category');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
+const { locale } = require('./modules/locale');
 
 const app = express();
 app.use(express.json());
@@ -23,19 +23,6 @@ const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 const SERVER_URL = "https://love-bb7p.onrender.com";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
-
-const locale = {
-    welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
-    btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
-    ...localeCategories,
-    btn_skip: "⏭️ Skip",
-    help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী মিউজিক সেট অথবা আপলোড করুন।\n5️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
-    invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
-    maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
-    session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`,
-    input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
-    general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন."
-};
 
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
