@@ -9,7 +9,7 @@ const music_msg = {
     music_ask: "ব্যাকগ্রাউন্ড মিউজিক দিতে চাইলে এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে চাইলে ডিফল্ট বাটনে ট্যাপ করুন।"
 };
 
-function showMusicUploadPrompt(ctx, db, saveDB, showImageUploadPrompt, locale) {
+function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_MUSIC_CHOICE';
@@ -27,7 +27,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, showImageUploadPrompt, locale) {
     });
 }
 
-function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set) {
+function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set, locale) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
@@ -46,7 +46,7 @@ function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, music_set) {
     }
 }
 
-function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt) {
+function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     
