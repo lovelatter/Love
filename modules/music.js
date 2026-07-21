@@ -27,15 +27,31 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
     ]);
 
-    ctx.editMessageText(message, keyboard).catch(() => {
-        ctx.reply(message, keyboard).catch(() => {});
+    ctx.editMessageText(message, keyboard).catch(async () => {
+        const sentMsg = await ctx.reply(message, keyboard).catch(() => null);
+        if (sentMsg) {
+            db.userSessions[userId].lastMusicPromptMsgId = sentMsg.message_id;
+            saveDB();
+        }
+        return;
     });
+    
+    // যদি editMessageText সফল হয়, তবে সেটির message_id সেভ করার জন্য
+    ctx.session = ctx.session || {};
 }
 
 function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
+
+    // বাটন ক্লিক করলে মিউজিক প্রম্পট মেসেজটি ডিলিট করে দেওয়া
+    if (session.lastMusicPromptMsgId) {
+        bot.telegram.deleteMessage(userId, session.lastMusicPromptMsgId).catch(() => {});
+        session.lastMusicPromptMsgId = null;
+    } else {
+        ctx.deleteMessage().catch(() => {});
+    }
 
     const action = ctx.callbackQuery.data;
     if (action === 'music_no') {
@@ -69,9 +85,22 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 await bot.telegram.deleteMessage(userId, session.lastWarningMsgId).catch(() => {});
                 db.userSessions[userId].lastWarningMsgId = null;
             }
+            
+            // ব্যাকগ্রাউন্ড মিউজিক চাওয়ার মূল প্রম্পট মেসেজটি ডিলিট করা
+            if (session.lastMusicPromptMsgId) {
+                await bot.telegram.deleteMessage(userId, session.lastMusicPromptMsgId).catch(() => {});
+                db.userSessions[userId].lastMusicPromptMsgId = null;
+            } else {
+                // যদি মেসেজ আইডি সেভ না থাকে তবে রিসেন্ট বট মেসেজ ডিলিট করার চেষ্টা করবে
+                try {
+                    await ctx.deleteMessage(ctx.message.message_id - 1).catch(() => {});
+                } catch (e) {}
+            }
+
+            // ইউজারের পাঠানো অডিও ফাইল বা মেসেজটি ডিলিট করা
             await ctx.deleteMessage().catch(() => {});
 
-            const loadingMsg = await ctx.reply("⏳ Uploading audio...").catch(() => null);
+            const loadingMsg = await ctx.reply("⏳ Uploading audio to Catbox...").catch(() => null);
             try {
                 const audio = ctx.message.audio;
                 const fileId = audio.file_id;
@@ -89,12 +118,12 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 saveDB();
                 
                 if (loadingMsg) {
-                    await bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও আপলোড হয়েছে।").catch(() => {});
+                    await bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => {});
                     setTimeout(async () => {
                         try {
                             await bot.telegram.deleteMessage(ctx.chat.id, loadingMsg.message_id);
                         } catch (e) {}
-                    }, 2000);
+                    }, 3000);
                 }
                 
                 showImageUploadPrompt(ctx, db, saveDB, locale);
