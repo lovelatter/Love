@@ -15,7 +15,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("❌ No Music", 'music_no')],
         [Markup.button.callback("🎵 Default Music", 'music_default')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+        [Markup.button.callback("🔙 Back", 'menu_makelink')]
     ]);
 
     ctx.editMessageText(message, keyboard).catch(() => {
@@ -48,24 +48,22 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
     
     if (session?.step === 'AWAITING_MUSIC_CHOICE') {
         if (!ctx.message || !ctx.message.audio) {
-            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও (Audio) ফাইল দিতে হবে। অনুগ্রহ করে একটি অডিও ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
+            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
         }
 
         return (async () => {
-            const loadingMsg = await ctx.reply("⏳ Uploading audio to Catbox...").catch(() => null);
+            const loadingMsg = await ctx.reply("⏳ Uploading audio...").catch(() => null);
             try {
                 const audio = ctx.message.audio;
                 const fileId = audio.file_id;
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
-                
-                // Catbox-এ আপলোড করা হচ্ছে
                 const catboxUrl = await uploadToCatbox(fileUrl, 'mp3');
                 
                 if (catboxUrl && catboxUrl.startsWith('http')) {
                     db.userSessions[userId].music = catboxUrl;
                     saveDB();
-                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => {});
+                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "🎵 অডিও আপলোড হয়েছে।").catch(() => {});
                     showImageUploadPrompt(ctx, db, saveDB, locale);
                 } else {
                     if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
