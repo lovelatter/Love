@@ -16,19 +16,12 @@ const app = express();
 app.use(express.json());
 app.set('trust proxy', true);
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim()).filter(id => id !== "");
 
 const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 
 const SERVER_URL = "https://love-bb7p.onrender.com";
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-
-if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
@@ -48,7 +41,7 @@ const locale = {
     btn_skip: "⏭️ Skip",
     help_text: `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি (Love, Birthday, etc.) সিলেক্ট করুন।\n3️⃣ লিঙ্কটি কতক্ষণ পর আনলক হবে তার জন্য একটি টাইম কাউন্টডাউন সিলেক্ট করুন।\n4️⃣ বটের ইচ্ছে অনুযায়ী মিউজিক সেট অথবা আপলোড করুন।\n5️⃣ বটের ইচ্ছে অনুযায়ী একটি ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ বটের নির্দেশনা অনুযায়ী 😊 অ্যানিমেশন টেক্সট এবং খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ সবশেষে বট আপনাকে একটি ইউনিক লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`,
     invalid_cmd: (cmd) => `❌ ভুল ইনপুট বা আদেশ: \`${cmd}\` নম্বর বা কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,
-    maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
+    maint_msg: "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।",
     session_started: () => `✨ অ্যানিমেশন মেসেজ লিখুন।\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`,
     input_anim_success: (count) => `✅ চমৎকার! আপনি ${count} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।`,
     general_error: "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন."
@@ -170,10 +163,7 @@ bot.action(/^delete_link_(.+)$/, (ctx) => {
     if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
     if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
     ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
-    if (data.imagePath) {
-        const fullImgPath = path.join(__dirname, data.imagePath);
-        if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
-    }
+    
     delete db.linkDatabase[linkId];
     saveDB();
     ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
@@ -235,24 +225,21 @@ function processFinalLinkCreation(ctx, letterText) {
     }
     const uniqueId = Math.random().toString(36).substring(2, 9);
     const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
-    const dbImageUrl = session.imageUrl ? `${SERVER_URL}${session.imageUrl}` : null;
     
+    // session.imageUrl এখন সরাসরি Catbox এর ডাইরেক্ট লিংক ধারণ করছে
+    const dbImageUrl = session.imageUrl || null;
     let finalMusicUrl = session.music || "";
-    if (finalMusicUrl.startsWith('/uploads/')) {
-        finalMusicUrl = `${SERVER_URL}${finalMusicUrl}`;
-    }
 
     db.linkDatabase[uniqueId] = {
         userId, name: session.name || "User", username: session.username || "None", type: session.type || "love",
         music: finalMusicUrl, countdown: finalCountdownIso, animations: session.animations, letter: letterText, 
-        answer: null, image: dbImageUrl, imagePath: session.imageUrl || null, visitors: []
+        answer: null, image: dbImageUrl, visitors: []
     };
     ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
     }).catch(() => {});
 
-    // অ্যাডমিন নোটিফিকেশন আপডেট করা হলো (মিউজিক ডিটেইলস সহ)
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
 👤 Name: ${session.name || "User"}
 🆔 ID: ${userId}
