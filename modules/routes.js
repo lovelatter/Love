@@ -11,7 +11,12 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
             
-            bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(() => {});
+            const sentMsg = await bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(() => null);
+            if (sentMsg) {
+                if (!data.openMessageIds) data.openMessageIds = {};
+                data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
+                await saveDB();
+            }
             
             let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
             let ip = rawIp.split(',')[0].trim();
@@ -75,6 +80,16 @@ function setupRoutes(app, db, saveDB, bot) {
             if (!data) return res.json({ success: false });
             
             data.answer = answer;
+            
+            if (data.openMessageIds) {
+                const clientIp = req.ip || 'default';
+                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
+                if (msgId) {
+                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
+                    delete data.openMessageIds[clientIp];
+                }
+            }
+            
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
