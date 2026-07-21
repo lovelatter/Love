@@ -125,7 +125,15 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         ctx.answerCbQuery();
         if (!data.visitors || data.visitors.length === 0) {
-            return ctx.reply("ℹ️ লিঙ্কটি এখনও কেউ ওপেন করেনি।");
+            const emptyMsg = await ctx.reply("ℹ️ লিঙ্কটি এখনও কেউ ওপেন করেনি।").catch(() => null);
+            if (emptyMsg) {
+                setTimeout(async () => {
+                    try {
+                        await bot.telegram.deleteMessage(ctx.chat.id, emptyMsg.message_id);
+                    } catch (e) {}
+                }, 10000);
+            }
+            return;
         }
         let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
         data.visitors.forEach((v, index) => {
@@ -134,7 +142,14 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (report.length > 4000) {
             report = report.substring(0, 3900) + "\n...[Truncated]";
         }
-        ctx.reply(report);
+        const sentMsg = await ctx.reply(report).catch(() => null);
+        if (sentMsg) {
+            setTimeout(async () => {
+                try {
+                    await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
+                } catch (e) {}
+            }, 10000);
+        }
     });
 };
 
