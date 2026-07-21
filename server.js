@@ -31,7 +31,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
-const AUTOMATIC_MUSIC_MAPPING = {
+const music_set = {
     love: `${gh_url}/love.mp3`,
     birthday: `${gh_url}/bd.mp3`,
     sorry: `${gh_url}/sorry.mp3`,
@@ -113,7 +113,7 @@ bot.action(/^make_/, (ctx) => {
         type: cat, 
         name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim() || "User",
         username: ctx.from.username ? `@${ctx.from.username}` : "None",
-        music: AUTOMATIC_MUSIC_MAPPING[cat] || "",
+        music: music_set[cat] || "",
         imageUrl: null,
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
