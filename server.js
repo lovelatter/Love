@@ -174,13 +174,13 @@ async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
     const session = db.userSessions[userId];
     const text = "জেনারেট করা অ্যানিমেশন টেক্সট:\n\n" + session.currentAnimList.join('\n');
     let buttons = [
-        [Markup.button.callback("eti rakhbo", 'anim_keep')],
-        [Markup.button.callback("poriborton", 'anim_change')]
+        [Markup.button.callback("এটি রাখবো", 'anim_keep')],
+        [Markup.button.callback("পরিবর্তন", 'anim_change')]
     ];
     if (showPrevBtn) {
         buttons = [
-            [Markup.button.callback("eti rakhbo", 'anim_keep')],
-            [Markup.button.callback("ager ta", 'anim_prev'), Markup.button.callback("poriborton", 'anim_change')]
+            [Markup.button.callback("এটি রাখবো", 'anim_keep')],
+            [Markup.button.callback("আগেরটা", 'anim_prev'), Markup.button.callback("পরিবর্তন", 'anim_change')]
         ];
     }
     const keyboard = Markup.inlineKeyboard(buttons);
