@@ -180,8 +180,9 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
 
         showImageUploadPrompt(ctx, db, saveDB, locale);
 
-    } catch (error) {
-        await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড করা সম্ভব হয়নি। অন্য লিংক চেষ্টা করুন।").catch(() => {});
+        } catch (error) {
+        console.error("YouTube Error:", error);
+        await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ এরর: ${error.message}`).catch(() => {});
     }
 }
 
