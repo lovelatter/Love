@@ -237,7 +237,7 @@ bot.on('text', async (ctx) => {
 
 setupRoutes(app, db, saveDB, bot);
 
-The PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 loadDB().then(() => {
     app.listen(PORT, () => {
