@@ -1,6 +1,5 @@
 const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
-const ytdl = require('@distube/ytdl-core');
 const FormData = require('form-data');
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
@@ -118,31 +117,34 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
     const userMessageId = ctx.message?.message_id;
     const promptMsgId = session.lastPromptMessageId;
 
-    if (!ytdl.validateURL(text)) {
+    if (!text.includes('youtube.com') && !text.includes('youtu.be')) {
         return ctx.reply("⚠️ এটি কোনো সঠিক ইউটিউব লিংক নয়। দয়া করে সঠিক লিংক অথবা অডিও ফাইল দিন।");
     }
 
     const loadingMsg = await ctx.reply("⏳Downloading audio");
 
     try {
-        const info = await ytdl.getInfo(text);
-        const durationSeconds = parseInt(info.videoDetails.lengthSeconds, 10);
+        const apiRes = await fetch('https://apis.davidcyriltech.my.id/youtube/mp3', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: text })
+        });
+        const apiData = await apiRes.json();
 
-        if (durationSeconds > 600) {
+        if (!apiData || !apiData.success || !apiData.result || !apiData.result.downloadUrl) {
+            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড করা সম্ভব হয়নি। অন্য লিংক চেষ্টা করুন।").catch(() => {});
+            return;
+        }
+
+        const downloadUrl = apiData.result.downloadUrl;
+
+        const audioRes = await fetch(downloadUrl);
+        const buffer = await audioRes.buffer();
+
+        if (buffer.length > 15 * 1024 * 1024) {
             await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
             return ctx.reply("⚠️ এত বড় গানের লিংক দেওয়া যাবে না। ১০ মিনিটের কম এমন মিউজিক লিংক দিতে হবে।");
         }
-
-        const audioStream = ytdl(text, {
-            quality: 'highestaudio',
-            filter: 'audioonly'
-        });
-
-        const chunks = [];
-        for await (let chunk of audioStream) {
-            chunks.push(chunk);
-        }
-        const buffer = Buffer.concat(chunks);
 
         const form = new FormData();
         form.append('reqtype', 'fileupload');
