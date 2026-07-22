@@ -4,7 +4,7 @@ const { Telegraf, Markup } = require('telegraf');
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
-const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set } = require('./modules/music');
+const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, handleYouTubeLinkInput, music_set } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
@@ -147,7 +147,6 @@ bot.action('random_anim_start', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম অ্যানিমেশন জেনারেট করে প্রিভিউ দেখাবে[span_0](start_span)[span_0](end_span)
     session.animHistory = [];
     session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
@@ -225,7 +224,6 @@ bot.action('random_letter_start', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম চিঠি জেনারেট করে প্রিভিউ দেখাবে[span_1](start_span)[span_1](end_span)
     session.letterHistory = [];
     session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
@@ -324,6 +322,11 @@ bot.on('text', async (ctx) => {
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
     
+    if (session?.step === 'AWAITING_MUSIC_CHOICE') {
+        const isYT = await handleYouTubeLinkInput(ctx, text, bot, db, saveDB, showImageUploadPrompt, locale);
+        if (isYT) return;
+    }
+
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
         if (text.length < 5) {
             await ctx.deleteMessage().catch(() => {});
