@@ -1,52 +1,43 @@
 const FormData = require('form-data');
-const https = require('https');
+const axios = require('axios');
 
-function uploadToCatbox(fileUrl, fileExtension) {
-    return new Promise((resolve, reject) => {
-        https.get(fileUrl, (response) => {
-            if (response.statusCode !== 200) {
-                return resolve(null);
-            }
+async function uploadToCatbox(fileUrl, fileExtension) {
+    try {
+        // ১. প্রথমে টেলিগ্রাম বা অন্য সোর্স থেকে ফাইলটি অ্যারে বাফার (arraybuffer) হিসেবে ডাউনলোড করুন
+        const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+        
+        if (response.status !== 200) {
+            return null;
+        }
 
-            const form = new FormData();
-            form.append('reqtype', 'fileupload');
-            // Catbox এর মূল এপিআই-তে কোনো 'time' প্যারামিটার লাগে না
-            form.append('fileToUpload', response, `file_${Date.now()}.${fileExtension}`);
-
-            const requestOptions = {
-                method: 'POST',
-                host: 'catbox.moe', // সঠিক হোস্ট ডোমেইন
-                path: '/user/api.php',   // সঠিক এপিআই পাথ
-                headers: form.getHeaders()
-            };
-
-            const req = https.request(requestOptions, (res) => {
-                let data = '';
-                res.on('data', (chunk) => {
-                    data += chunk;
-                });
-                res.on('end', () => {
-                    // সফল হলে সরাসরি ক্যাটবক্সের ফাইল লিংক রিটার্ন করবে
-                    if (res.statusCode === 200 && data.startsWith('http')) {
-                        resolve(data.trim()); 
-                    } else {
-                        console.error('Catbox Response Error:', data);
-                        resolve(null);
-                    }
-                });
-            });
-
-            req.on('error', (error) => {
-                console.error('Catbox Upload Error:', error);
-                resolve(null);
-            });
-
-            form.pipe(req);
-        }).on('error', (error) => {
-            console.error('File Download Error:', error);
-            resolve(null);
+        const form = new FormData();
+        form.append('reqtype', 'fileupload');
+        
+        // ২. বাফার ডেটা দিয়ে ফর্ম ফাইল যুক্ত করুন
+        form.append('fileToUpload', Buffer.from(response.data), {
+            filename: `file_${Date.now()}.${fileExtension}`
         });
-    });
+
+        // ৩. Axios দিয়ে সরাসরি Catbox এ পোস্ট রিকোয়েস্ট পাঠান
+        const uploadResponse = await axios.post('https://catbox.moe/user/api.php', form, {
+            headers: {
+                ...form.getHeaders()
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
+        });
+
+        if (uploadResponse.status === 200 && typeof uploadResponse.data === 'string' && uploadResponse.data.startsWith('http')) {
+            return uploadResponse.data.trim();
+        } else {
+            console.error('Catbox Response Error:', uploadResponse.data);
+            return null;
+        }
+
+    } catch (error) {
+        console.error('Catbox Upload Error:', error.message);
+        return null;
+    }
 }
 
 module.exports = { uploadToCatbox };
