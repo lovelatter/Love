@@ -10,22 +10,17 @@ async function generateAIAnimation(category, name = null) {
     }
 
     try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetch('https://r.jina.ai/', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer gsk_free_public_proxy_fallback' 
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                messages: [{ role: 'user', content: prompt }]
-            })
+            body: JSON.stringify({ prompt: prompt })
         });
         
-        if (!response.ok) throw new Error("AI failed");
-
         const data = await response.json();
-        const text = data.choices?.[0]?.message?.content || "";
+        const text = data?.data?.content || "";
         const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5);
         
         if (lines.length === 0) throw new Error("AI failed");
@@ -47,22 +42,17 @@ async function generateAILetter(category, name = null) {
     }
 
     try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetch('https://r.jina.ai/', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer gsk_free_public_proxy_fallback' 
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                messages: [{ role: 'user', content: prompt }]
-            })
+            body: JSON.stringify({ prompt: prompt })
         });
 
-        if (!response.ok) throw new Error("AI failed");
-
         const data = await response.json();
-        let text = data.choices?.[0]?.message?.content || "";
+        let text = data?.data?.content || "";
         if (!text) throw new Error("AI failed");
         
         if (text.length > 100) text = text.substring(0, 100);
