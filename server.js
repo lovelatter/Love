@@ -156,10 +156,10 @@ bot.action('ai_anim_start', async (ctx) => {
 
 bot.action('ai_anim_skip', async (ctx) => {
     ctx.answerCbQuery();
-    await processAIAnimationGeneration(ctx, null);
+    await processAIAnimationGeneration(ctx, null, true);
 });
 
-async function processAIAnimationGeneration(ctx, name) {
+async function processAIAnimationGeneration(ctx, name, isEdit = false) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const category = session?.type || 'love';
@@ -175,6 +175,9 @@ async function processAIAnimationGeneration(ctx, name) {
             [Markup.button.callback("✅ এটি রাখুন", 'ai_anim_keep'), Markup.button.callback("🔄 পরিবর্তন", 'ai_anim_change')]
         ]);
 
+        if (isEdit && ctx.callbackQuery) {
+            return await ctx.editMessageText(previewText, { reply_markup: keyboard.reply_markup }).catch(() => {});
+        }
         await ctx.reply(previewText, keyboard);
     } catch (error) {
         await ctx.reply(error.message);
@@ -201,10 +204,10 @@ bot.action('ai_anim_keep', async (ctx) => {
 });
 
 bot.action('ai_anim_change', async (ctx) => {
-    ctx.answerCbQuery();
+    ctx.answerCbQuery("নতুন অ্যানিমেশন তৈরি করা হচ্ছে...");
     const userId = ctx.chat.id;
     const name = db.userSessions[userId].aiName || null;
-    await processAIAnimationGeneration(ctx, name);
+    await processAIAnimationGeneration(ctx, name, true);
 });
 
 bot.action('ai_letter_start', async (ctx) => {
@@ -313,7 +316,7 @@ bot.on('text', async (ctx) => {
         if (session.step === 'AWAITING_AI_ANIM_NAME') {
             db.userSessions[userId].aiName = text;
             await ctx.deleteMessage().catch(() => {});
-            return await processAIAnimationGeneration(ctx, text);
+            return await processAIAnimationGeneration(ctx, text, false);
         }
         if (session.step === 'AWAITING_AI_LETTER_NAME') {
             await ctx.deleteMessage().catch(() => {});
