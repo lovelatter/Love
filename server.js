@@ -146,24 +146,10 @@ bot.action('random_anim_start', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    session.step = 'AWAITING_RANDOM_ANIM_NAME';
-    await saveDB();
-    const promptText = "karo nam diye animation txt likhte chaile nam likhun ba skip korun";
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("⏭️ Skip", 'random_anim_skip')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ]);
-    await ctx.editMessageText(promptText, { reply_markup: keyboard.reply_markup }).catch(() => {});
-});
-
-bot.action('random_anim_skip', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    session.randomName = null;
+    
+    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম অ্যানিমেশন জেনারেট করে প্রিভিউ দেখাবে[span_0](start_span)[span_0](end_span)
     session.animHistory = [];
-    session.currentAnimList = await generateRandomAnimation(session.type, null, session.animHistory);
+    session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
     session.step = 'PREVIEW_RANDOM_ANIM';
     await saveDB();
@@ -193,7 +179,7 @@ bot.action('anim_change', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     session.prevAnimList = [...session.currentAnimList];
-    session.currentAnimList = await generateRandomAnimation(session.type, session.randomName, session.animHistory);
+    session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
     await saveDB();
     await renderRandomAnimPreview(ctx, userId, true);
@@ -238,24 +224,10 @@ bot.action('random_letter_start', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    session.step = 'AWAITING_RANDOM_LETTER_NAME';
-    await saveDB();
-    const promptText = "karo nam diye chiti likhte chaile nam likhun ba skip korun";
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("⏭️ Skip", 'random_letter_skip')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ]);
-    await ctx.editMessageText(promptText, { reply_markup: keyboard.reply_markup }).catch(() => {});
-});
-
-bot.action('random_letter_skip', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    session.randomLetterName = null;
+    
+    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম চিঠি জেনারেট করে প্রিভিউ দেখাবে[span_1](start_span)[span_1](end_span)
     session.letterHistory = [];
-    session.currentLetterText = await generateRandomLetter(session.type, null, session.letterHistory);
+    session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
     session.step = 'PREVIEW_RANDOM_LETTER';
     await saveDB();
@@ -285,7 +257,7 @@ bot.action('letter_change', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     session.prevLetterText = session.currentLetterText;
-    session.currentLetterText = await generateRandomLetter(session.type, session.randomLetterName, session.letterHistory);
+    session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
     await saveDB();
     await renderRandomLetterPreview(ctx, userId, true);
@@ -384,44 +356,6 @@ bot.on('text', async (ctx) => {
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
-        if (session.step === 'AWAITING_RANDOM_ANIM_NAME') {
-            session.randomName = text;
-            session.animHistory = [];
-            session.currentAnimList = await generateRandomAnimation(session.type, session.randomName, session.animHistory);
-            session.animHistory.push(...session.currentAnimList);
-            session.step = 'PREVIEW_RANDOM_ANIM';
-            await saveDB();
-            await ctx.deleteMessage().catch(() => {});
-            if (session.lastPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-            }
-            const sentMsg = await ctx.reply("জেনারেট করা অ্যানিমেশন টেক্সট:\n\n" + session.currentAnimList.join('\n'), Markup.inlineKeyboard([
-                [Markup.button.callback("eti rakhbo", 'anim_keep')],
-                [Markup.button.callback("poriborton", 'anim_change')]
-            ]));
-            session.lastPromptMsgId = sentMsg.message_id;
-            await saveDB();
-            return;
-        }
-        if (session.step === 'AWAITING_RANDOM_LETTER_NAME') {
-            session.randomLetterName = text;
-            session.letterHistory = [];
-            session.currentLetterText = await generateRandomLetter(session.type, session.randomLetterName, session.letterHistory);
-            session.letterHistory.push(session.currentLetterText);
-            session.step = 'PREVIEW_RANDOM_LETTER';
-            await saveDB();
-            await ctx.deleteMessage().catch(() => {});
-            if (session.lastPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-            }
-            const sentMsg = await ctx.reply("জেনারেট করা চিঠি:\n\n" + session.currentLetterText, Markup.inlineKeyboard([
-                [Markup.button.callback("eti rakhbo", 'letter_keep')],
-                [Markup.button.callback("poriborton", 'letter_change')]
-            ]));
-            session.lastPromptMsgId = sentMsg.message_id;
-            await saveDB();
-            return;
-        }
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
