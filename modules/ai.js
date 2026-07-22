@@ -1,26 +1,19 @@
+const fetch = require('node-fetch');
+
 async function generateAIAnimation(category, name = null) {
     let categoryContext = "romantic and loving";
     if (category === 'birthday') categoryContext = "birthday celebration and happy wishes";
     if (category === 'sorry') categoryContext = "apology, regret, and asking for forgiveness";
     if (category === 'eid') categoryContext = "Eid Mubarak and festive greetings";
 
-    let prompt = `Write 5 short ${categoryContext} animation lines in Bengali, each on a new line. Only return the lines, nothing else.`;
+    let prompt = `Write 5 short ${categoryContext} animation lines in Bengali, each on a new line.`;
     if (name) {
-        prompt = `Write 5 short ${categoryContext} animation lines in Bengali, specifically mentioning the name "${name}" in them, each on a new line. Only return the lines, nothing else.`;
+        prompt = `Write 5 short ${categoryContext} animation lines in Bengali, mentioning the name "${name}", each on a new line.`;
     }
 
     try {
-        const response = await fetch('https://r.jina.ai/', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ prompt: prompt })
-        });
-        
-        const data = await response.json();
-        const text = data?.data?.content || "";
+        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+        const text = await response.text();
         const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5);
         
         if (lines.length === 0) throw new Error("AI failed");
@@ -36,23 +29,14 @@ async function generateAILetter(category, name = null) {
     if (category === 'sorry') categoryContext = "sincere apology letter";
     if (category === 'eid') categoryContext = "warm Eid Mubarak greeting letter";
 
-    let prompt = `Write a ${categoryContext} in Bengali within 100 characters. Only return the text.`;
+    let prompt = `Write a ${categoryContext} in Bengali within 100 characters.`;
     if (name) {
-        prompt = `Write a ${categoryContext} in Bengali within 100 characters, mentioning the name "${name}". Only return the text.`;
+        prompt = `Write a ${categoryContext} in Bengali within 100 characters, mentioning the name "${name}".`;
     }
 
     try {
-        const response = await fetch('https://r.jina.ai/', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ prompt: prompt })
-        });
-
-        const data = await response.json();
-        let text = data?.data?.content || "";
+        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+        let text = await response.text();
         if (!text) throw new Error("AI failed");
         
         if (text.length > 100) text = text.substring(0, 100);
