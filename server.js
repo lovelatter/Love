@@ -139,7 +139,7 @@ async function showAnimationIntro(ctx) {
 bot.action('menu_feedback', async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    await ctx.editMessageText(locale.welcome(`${ctx.from?.first_name || ""}`), { reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    await ctx.deleteMessage().catch(() => {});
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
     const sentMsg = await ctx.reply(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:");
