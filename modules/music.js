@@ -124,15 +124,15 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
     const loadingMsg = await ctx.reply("⏳Downloading audio");
 
     try {
-        const apiRes = await fetch(`https://apis.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(text)}`);
+        const apiRes = await fetch(`https://kaiz-apis.gleeze.com/api/ytdl?url=${encodeURIComponent(text)}`);
         const apiData = await apiRes.json();
 
-        if (!apiData || !apiData.status || !apiData.result || !apiData.result.downloadUrl) {
+        let downloadUrl = apiData.audio || apiData.downloadUrl || apiData.url || (apiData.result && (apiData.result.downloadUrl || apiData.result.audio));
+
+        if (!downloadUrl) {
             await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড লিংক পাওয়া যায়নি।").catch(() => {});
             return;
         }
-
-        const downloadUrl = apiData.result.downloadUrl;
 
         const audioRes = await fetch(downloadUrl);
         const buffer = await audioRes.buffer();
