@@ -11,7 +11,7 @@ const music_set = {
 };
 
 const music_msg = {
-    music_ask: "ব্যাকগ্রাউন্ড মিউজিক দিতে চাইলে এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে চাইলে ডিফল্ট বাটনে ট্যাপ করুন।"
+    music_ask: "ব্যাকগ্রাউন্ড মিউজিক এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে ডিফল্ট বাটনে ট্যাপ করুন।"
 };
 
 function showMusicUploadPrompt(ctx, db, saveDB, locale) {
@@ -24,7 +24,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("❌ No Music", 'music_no')],
         [Markup.button.callback("🎵 Default Music", 'music_default')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+        [Markup.button.callback("🔙 Back", 'menu_makelink')]
     ]);
 
     ctx.editMessageText(message, keyboard).then((sentMsg) => {
@@ -68,11 +68,11 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
         const promptMsgId = session.lastPromptMessageId;
 
         if (!ctx.message || !ctx.message.audio) {
-            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও (Audio) ফাইল দিতে হবে। অনুগ্রহ করে একটি অডিও ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
+            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও (Audio) ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
         }
 
         return (async () => {
-            const loadingMsg = await ctx.reply("⏳ Uploading audio to Catbox...").catch(() => null);
+            const loadingMsg = await ctx.reply("⏳ Uploading audio...").catch(() => null);
             
             try {
                 const audio = ctx.message.audio;
@@ -102,11 +102,11 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                     await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
                 }
 
-                const successMsg = await ctx.reply("🎵 অডিও সফলভাবে আপলোড হয়েছে।").catch(() => null);
+                const successMsg = await ctx.reply("🎵 অডিও আপলোড হয়েছে।").catch(() => null);
                 if (successMsg) {
                     setTimeout(async () => {
                         await bot.telegram.deleteMessage(userId, successMsg.message_id).catch(() => {});
-                    }, 2000);
+                    }, 5000);
                 }
 
                 showImageUploadPrompt(ctx, db, saveDB, locale);
