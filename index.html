@@ -319,7 +319,10 @@
         envelope.addEventListener('click', () => {
             envelope.classList.add('open');
             if (isYouTubeMusic && ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                try { ytPlayer.setVolume(100); ytPlayer.playVideo(); } catch (e) {}
+                try { 
+                    ytPlayer.setVolume(100); 
+                    ytPlayer.playVideo(); 
+                } catch (e) {}
             } else if (bgMusic.src && bgMusic.src !== window.location.href) {
                 bgMusic.currentTime = 0; bgMusic.volume = 1.0;
                 bgMusic.play().catch(e => {});
