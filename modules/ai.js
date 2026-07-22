@@ -12,18 +12,21 @@ async function generateAIAnimation(category, name = null) {
     }
 
     try {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=YOUR_PUBLIC_API_KEY', {
+        // এখানে আমরা একটি ফ্রি পাবলিক এআই প্রক্সি বা এন্ডপয়েন্ট ব্যবহার করছি যাতে কোনো কী লাগে না
+        const response = await fetch('https://text.pollinations.ai/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
+                messages: [{ role: 'user', content: prompt }],
+                model: 'openai',
+                jsonMode: false
             })
         });
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        
+        const text = await response.text();
         const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5);
         
-        if (lines.length === 0) throw new Error("AI failed to generate text");
+        if (lines.length === 0) throw new Error("AI failed");
         return lines;
     } catch (error) {
         throw new Error("এআই ফেইল হয়েছে, দয়া করে নিজে থেকে লিখুন।");
@@ -42,19 +45,21 @@ async function generateAILetter(category, name = null) {
     }
 
     try {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=YOUR_PUBLIC_API_KEY', {
+        const response = await fetch('https://text.pollinations.ai/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
+                messages: [{ role: 'user', content: prompt }],
+                model: 'openai',
+                jsonMode: false
             })
         });
-        const data = await response.json();
-        let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        if (!text) throw new Error("AI failed to generate text");
+
+        let text = await response.text();
+        if (!text) throw new Error("AI failed");
         
         if (text.length > 100) text = text.substring(0, 100);
-        return text;
+        return text.trim();
     } catch (error) {
         throw new Error("এআই ফেইল হয়েছে, দয়া করে নিজে থেকে লিখুন।");
     }
