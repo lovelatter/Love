@@ -10,7 +10,7 @@ const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
 const { locale } = require('./modules/locale');
-const { generateAIAnimation, generateAILetter } = require('./modules/ai');
+const { generateRandomAnimation, generateRandomLetter } = require('./modules/random');
 
 const app = express();
 app.use(express.json());
@@ -121,128 +121,54 @@ bot.action('skip_image_upload', async (ctx) => {
         db.userSessions[userId].imageUrl = null;
     }
     await saveDB();
-    showAnimationIntro(ctx);
+    await generateRandomContentForSession(ctx, userId);
 });
 
-async function showAnimationIntro(ctx) {
-    db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    await saveDB();
-    const text = locale.session_started();
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("🤖 AI দিয়ে অ্যানিমেশন লিখুন", 'ai_anim_start')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-    ]);
-    const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
-        return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
-    });
-    if (sentMsg) {
-        db.userSessions[ctx.chat.id].lastPromptMsgId = sentMsg.message_id;
-        await saveDB();
-    }
-}
-
-bot.action('ai_anim_start', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    db.userSessions[userId].step = 'AWAITING_AI_ANIM_NAME';
-    await saveDB();
-    
-    const msg = await ctx.reply(
-        "কারো নাম দিয়ে করে অ্যানিমেশন txt লিখতে চাইলে এখানে নামটি লিখে পাঠান বা স্কিপ করুন।",
-        Markup.inlineKeyboard([[Markup.button.callback(locale.btn_skip || "স্কিপ করুন", 'ai_anim_skip')]])
-    );
-    db.userSessions[userId].lastPromptMsgId = msg.message_id;
-});
-
-bot.action('ai_anim_skip', async (ctx) => {
-    ctx.answerCbQuery();
-    await processAIAnimationGeneration(ctx, null, true);
-});
-
-async function processAIAnimationGeneration(ctx, name, isEdit = false) {
-    const userId = ctx.chat.id;
+async function generateRandomContentForSession(ctx, userId) {
     const session = db.userSessions[userId];
-    const category = session?.type || 'love';
+    if (!session) return;
+
+    const cat = session.type || 'love';
+    const lines = await generateRandomAnimation(cat, session.name, []);
+    const letter = await generateRandomLetter(cat, session.name, []);
+
+    db.userSessions[userId].animations = lines;
+    db.userSessions[userId].letter = letter;
+
+    const resultText = "✨ *র‍্যান্ডম অ্যানিমেশন টেক্সট:*\n\n" + lines.join('\n') + "\n\n💌 *র‍্যান্ডম লাভ লেটার:*\n\n" + letter;
+    
+    let buttons = [
+        [
+            Markup.button.callback('✅ এটি রাখুন', 'save_random_content'),
+            Markup.button.callback('🔄 পরিবর্তন', 'change_random_content')
+        ]
+    ];
+
+    db.userSessions[userId].step = 'AWAITING_RANDOM_CONFIRMATION';
+    await saveDB();
 
     try {
-        const lines = await generateAIAnimation(category, name);
-        db.userSessions[userId].aiGeneratedAnimations = lines;
-        db.userSessions[userId].step = 'AWAITING_AI_ANIM_CHOICE';
-        await saveDB();
-
-        const previewText = `🤖 AI দ্বারা তৈরিকৃত অ্যানিমেশন টেক্সট:\n\n${lines.join('\n')}\n\nএটি কি রাখতে চান, নাকি পরিবর্তন করবেন?`;
-        const keyboard = Markup.inlineKeyboard([
-            [Markup.button.callback("✅ এটি রাখুন", 'ai_anim_keep'), Markup.button.callback("🔄 পরিবর্তন", 'ai_anim_change')]
-        ]);
-
-        if (isEdit && ctx.callbackQuery) {
-            return await ctx.editMessageText(previewText, { reply_markup: keyboard.reply_markup }).catch(() => {});
-        }
-        await ctx.reply(previewText, keyboard);
-    } catch (error) {
-        await ctx.reply(error.message);
-        showAnimationIntro(ctx);
+        await ctx.editMessageText(resultText, { parse_mode: 'Markdown', ...Markup.inlineKeyboard(buttons) });
+    } catch (err) {
+        await ctx.reply(resultText, { parse_mode: 'Markdown', ...Markup.inlineKeyboard(buttons) });
     }
 }
 
-bot.action('ai_anim_keep', async (ctx) => {
+bot.action('change_random_content', async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    await generateRandomContentForSession(ctx, userId);
+});
+
+bot.action('save_random_content', async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
-    db.userSessions[userId].animations = session.aiGeneratedAnimations;
-    db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-    await saveDB();
-    
-    const letterPromptMsg = await ctx.reply(
-        "এখন আপনার চিঠির টেক্সট দিন বা নিচের AI বাটন ব্যবহার করুন:",
-        Markup.inlineKeyboard([
-            [Markup.button.callback("🤖 AI দিয়ে চিঠি লিখুন", 'ai_letter_start')],
-            [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
-        ])
-    );
-    db.userSessions[userId].lastPromptMsgId = letterPromptMsg.message_id;
+    if (!session) return;
+
+    const letterText = session.letter || "";
+    await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
 });
-
-bot.action('ai_anim_change', async (ctx) => {
-    ctx.answerCbQuery("নতুন অ্যানিমেশন তৈরি করা হচ্ছে...");
-    const userId = ctx.chat.id;
-    const name = db.userSessions[userId].aiName || null;
-    await processAIAnimationGeneration(ctx, name, true);
-});
-
-bot.action('ai_letter_start', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    db.userSessions[userId].step = 'AWAITING_AI_LETTER_NAME';
-    await saveDB();
-    
-    const msg = await ctx.reply(
-        "কারো নাম দিয়ে করে চিঠি লিখতে চাইলে এখানে নামটি লিখে পাঠান বা স্কিপ করুন।",
-        Markup.inlineKeyboard([[Markup.button.callback(locale.btn_skip || "স্কিপ করুন", 'ai_letter_skip')]])
-    );
-    db.userSessions[userId].lastPromptMsgId = msg.message_id;
-});
-
-bot.action('ai_letter_skip', async (ctx) => {
-    ctx.answerCbQuery();
-    await processAILetterGeneration(ctx, null);
-});
-
-async function processAILetterGeneration(ctx, name) {
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    const category = session?.type || 'love';
-
-    try {
-        const letterText = await generateAILetter(category, name);
-        db.userSessions[userId].aiGeneratedLetter = letterText;
-        await saveDB();
-
-        return await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
-    } catch (error) {
-        await ctx.reply(error.message);
-    }
-}
 
 bot.action('menu_feedback', async (ctx) => {
     ctx.answerCbQuery();
@@ -274,7 +200,11 @@ bot.action(/^delete_link_(.+)$/, async (ctx) => {
 });
 
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
-bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
+bot.on('photo', async (ctx) => {
+    await handlePhotoUpload(ctx, bot, db, saveDB, async (c) => {
+        await generateRandomContentForSession(c, c.chat.id);
+    });
+});
 
 bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
@@ -313,40 +243,7 @@ bot.on('text', async (ctx) => {
         return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
-        if (session.step === 'AWAITING_AI_ANIM_NAME') {
-            db.userSessions[userId].aiName = text;
-            await ctx.deleteMessage().catch(() => {});
-            return await processAIAnimationGeneration(ctx, text, false);
-        }
-        if (session.step === 'AWAITING_AI_LETTER_NAME') {
-            await ctx.deleteMessage().catch(() => {});
-            return await processAILetterGeneration(ctx, text);
-        }
-        if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            
-            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
-            
-            db.userSessions[userId].animations = lines;
-            db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-            
-            if (session.lastPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            
-            const nextPrompt = await ctx.reply(locale.input_anim_success(lines.length));
-            db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
-            await saveDB();
-            return;
-        }
-        if (session.step === 'AWAITING_LETTER_TEXT') {
-            if (session.lastPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            return await processFinalLinkCreation(ctx, text, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
-        }
+        ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
     } catch (error) {
         ctx.reply(locale.general_error).catch(() => {});
     }
