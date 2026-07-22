@@ -1,32 +1,69 @@
-async function processAIAnimationGeneration(ctx, name, isEdit = false) {
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    const category = session?.type || 'love';
+const fetch = require('node-fetch');
+
+async function generateAIAnimation(category, name = null) {
+    let categoryContext = "romantic and loving";
+    if (category === 'birthday') categoryContext = "birthday celebration and happy wishes";
+    if (category === 'sorry') categoryContext = "apology, regret, and asking for forgiveness";
+    if (category === 'eid') categoryContext = "Eid Mubarak and festive greetings";
+
+    let prompt = `Write 5 short ${categoryContext} animation lines in Bengali, each on a new line. Only return the lines, nothing else.`;
+    if (name) {
+        prompt = `Write 5 short ${categoryContext} animation lines in Bengali, specifically mentioning the name "${name}" in them, each on a new line. Only return the lines, nothing else.`;
+    }
 
     try {
-        const lines = await generateAIAnimation(category, name);
-        db.userSessions[userId].aiGeneratedAnimations = lines;
-        db.userSessions[userId].step = 'AWAITING_AI_ANIM_CHOICE';
-        await saveDB();
-
-        const previewText = `🤖 AI দ্বারা তৈরিকৃত অ্যানিমেশন টেক্সট:\n\n${lines.join('\n')}\n\nএটি কি রাখতে চান, নাকি পরিবর্তন করবেন?`;
-        const keyboard = Markup.inlineKeyboard([
-            [Markup.button.callback("✅ এটি রাখুন", 'ai_anim_keep'), Markup.button.callback("🔄 পরিবর্তন", 'ai_anim_change')]
-        ]);
-
-        if (isEdit && ctx.callbackQuery) {
-            return await ctx.editMessageText(previewText, { reply_markup: keyboard.reply_markup }).catch(() => {});
-        }
-        await ctx.reply(previewText, keyboard);
+        const response = await fetch('https://apis.deepinfra.com/v1/openai/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: "meta-llama/Meta-Llama-3-70B-Instruct",
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7
+            })
+        });
+        
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content || "";
+        const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5);
+        
+        if (lines.length === 0) throw new Error("AI failed");
+        return lines;
     } catch (error) {
-        await ctx.reply(error.message);
-        showAnimationIntro(ctx);
+        throw new Error("এআই ফেইল হয়েছে, দয়া করে নিজে থেকে লিখুন।");
     }
 }
 
-bot.action('ai_anim_change', async (ctx) => {
-    ctx.answerCbQuery("নতুন অ্যানিমেশন তৈরি করা হচ্ছে...");
-    const userId = ctx.chat.id;
-    const name = db.userSessions[userId].aiName || null;
-    await processAIAnimationGeneration(ctx, name, true); // true দেওয়ার কারণে এটি আগের মেসেজটিকেই এডিট করবে
-});
+async function generateAILetter(category, name = null) {
+    let categoryContext = "sweet loving letter";
+    if (category === 'birthday') categoryContext = "heartfelt birthday wish letter";
+    if (category === 'sorry') categoryContext = "sincere apology letter";
+    if (category === 'eid') categoryContext = "warm Eid Mubarak greeting letter";
+
+    let prompt = `Write a ${categoryContext} in Bengali within 100 characters. Only return the text.`;
+    if (name) {
+        prompt = `Write a ${categoryContext} in Bengali within 100 characters, mentioning the name "${name}". Only return the text.`;
+    }
+
+    try {
+        const response = await fetch('https://apis.deepinfra.com/v1/openai/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: "meta-llama/Meta-Llama-3-70B-Instruct",
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        let text = data.choices?.[0]?.message?.content || "";
+        if (!text) throw new Error("AI failed");
+        
+        if (text.length > 100) text = text.substring(0, 100);
+        return text.trim();
+    } catch (error) {
+        throw new Error("এআই ফেইল হয়েছে, দয়া করে নিজে থেকে লিখুন।");
+    }
+}
+
+module.exports = { generateAIAnimation, generateAILetter };
