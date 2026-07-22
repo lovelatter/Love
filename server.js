@@ -217,6 +217,22 @@ bot.action('anim_keep', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     session.animations = session.currentAnimList;
+    
+    // যদি অ্যানিমেশনে নাম দেওয়া হয়ে থাকে, তবে চিঠির জন্য আলাদা করে নাম না চেয়ে সরাসরি রেন্ডম চিঠি জেনারেট করে প্রিভিউ দেখাবে
+    if (session.randomName) {
+        session.randomLetterName = session.randomName;
+        session.letterHistory = [];
+        session.currentLetterText = await generateRandomLetter(session.type, session.randomLetterName, session.letterHistory);
+        session.letterHistory.push(session.currentLetterText);
+        session.step = 'PREVIEW_RANDOM_LETTER';
+        await saveDB();
+        if (session.lastPromptMsgId) {
+            await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+        }
+        await renderRandomLetterPreview(ctx, userId);
+        return;
+    }
+
     session.step = 'AWAITING_LETTER_TEXT';
     await saveDB();
     const text = locale.input_anim_success(session.animations.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
