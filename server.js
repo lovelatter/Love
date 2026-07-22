@@ -137,7 +137,11 @@ async function showAnimationIntro(ctx) {
 }
 
 bot.action('menu_feedback', (ctx) => handleFeedbackStart(ctx, db, saveDB));
-bot.action('menu_help', (ctx) => { ctx.answerCbQuery(); ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); });
+
+bot.action('menu_help', (ctx) => { 
+    ctx.answerCbQuery(); 
+    ctx.editMessageText(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
+});
 
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
