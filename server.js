@@ -266,13 +266,13 @@ async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
     const session = db.userSessions[userId];
     const text = "জেনারেট করা চিঠি:\n\n" + session.currentLetterText;
     let buttons = [
-        [Markup.button.callback("eti rakhbo", 'letter_keep')],
-        [Markup.button.callback("poriborton", 'letter_change')]
+        [Markup.button.callback("এটি রাখবো", 'letter_keep')],
+        [Markup.button.callback("পরিবর্তন", 'letter_change')]
     ];
     if (showPrevBtn) {
         buttons = [
-            [Markup.button.callback("eti rakhbo", 'letter_keep')],
-            [Markup.button.callback("ager ta", 'letter_prev'), Markup.button.callback("poriborton", 'letter_change')]
+            [Markup.button.callback("এটি রাখবো", 'letter_keep')],
+            [Markup.button.callback("আগেরটা", 'letter_prev'), Markup.button.callback("পরিবর্তন", 'letter_change')]
         ];
     }
     const keyboard = Markup.inlineKeyboard(buttons);
