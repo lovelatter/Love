@@ -3,7 +3,6 @@ const axios = require('axios');
 
 async function uploadToCatbox(fileUrl, fileExtension) {
     try {
-        // ১. প্রথমে টেলিগ্রাম বা অন্য সোর্স থেকে ফাইলটি অ্যারে বাফার (arraybuffer) হিসেবে ডাউনলোড করুন
         const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
         
         if (response.status !== 200) {
@@ -13,12 +12,10 @@ async function uploadToCatbox(fileUrl, fileExtension) {
         const form = new FormData();
         form.append('reqtype', 'fileupload');
         
-        // ২. বাফার ডেটা দিয়ে ফর্ম ফাইল যুক্ত করুন
         form.append('fileToUpload', Buffer.from(response.data), {
             filename: `file_${Date.now()}.${fileExtension}`
         });
 
-        // ৩. Axios দিয়ে সরাসরি Catbox এ পোস্ট রিকোয়েস্ট পাঠান
         const uploadResponse = await axios.post('https://catbox.moe/user/api.php', form, {
             headers: {
                 ...form.getHeaders()
