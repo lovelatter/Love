@@ -124,7 +124,6 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
     const loadingMsg = await ctx.reply("⏳Downloading audio");
 
     try {
-        // Cobalt API ব্যবহার করা হচ্ছে যা অত্যন্ত নির্ভরযোগ্য
         const apiRes = await fetch('https://api.cobalt.tools/api/json', {
             method: 'POST',
             headers: {
@@ -140,7 +139,7 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         const apiData = await apiRes.json();
 
         if (!apiData || !apiData.url) {
-            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড করা সম্ভব হয়নি। অন্য লিংক চেষ্টা করুন।").catch(() => {});
+            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ API Error: ${JSON.stringify(apiData)}`).catch(() => {});
             return;
         }
 
@@ -160,7 +159,7 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         const catboxUrl = await response.text();
 
         if (!catboxUrl || !catboxUrl.startsWith('http')) {
-            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব অডিও প্রসেস বা আপলোড করতে সমস্যা হয়েছে।").catch(() => {});
+            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ Catbox আপলোড করতে সমস্যা হয়েছে।").catch(() => {});
             return;
         }
 
@@ -180,9 +179,9 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
 
         showImageUploadPrompt(ctx, db, saveDB, locale);
 
-        } catch (error) {
-        console.error("YouTube Error:", error);
-        await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ এরর: ${error.message}`).catch(() => {});
+    } catch (error) {
+        console.error("YouTube Error Details:", error);
+        await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ কোড এরর: ${error.message}`).catch(() => {});
     }
 }
 
