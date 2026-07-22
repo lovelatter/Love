@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 async function generateAIAnimation(category, name = null) {
     let categoryContext = "romantic and loving";
     if (category === 'birthday') categoryContext = "birthday celebration and happy wishes";
@@ -24,7 +22,6 @@ async function generateAIAnimation(category, name = null) {
             })
         });
         
-        // যদি এক্সটার্নাল এপিআইতে কোনো কারণে সমস্যা হয়, আমরা ব্যাকআপ হিসেবে প্রমিজ থ্রো করব
         if (!response.ok) throw new Error("AI failed");
 
         const data = await response.json();
@@ -34,7 +31,6 @@ async function generateAIAnimation(category, name = null) {
         if (lines.length === 0) throw new Error("AI failed");
         return lines;
     } catch (error) {
-        // ফেইল করলে সরাসরি আপনার চাওয়ার মেসেজটি দেখাবে
         throw new Error("এআই ফেইল হয়েছে, দয়া করে নিজে থেকে লিখুন।");
     }
 }
