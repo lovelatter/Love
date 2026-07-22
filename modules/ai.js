@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const axios = require('axios');
 
 async function generateAIAnimation(category, name = null) {
     let categoryContext = "romantic and loving";
@@ -12,8 +12,12 @@ async function generateAIAnimation(category, name = null) {
     }
 
     try {
-        const response = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-        const text = await response.text();
+        const response = await axios.post('https://api.airforce.unlimited.net/v1/chat/completions', {
+            model: "meta-llama/Llama-3-70B-Instruct",
+            messages: [{ role: "user", content: prompt }]
+        });
+
+        const text = response.data?.choices?.[0]?.message?.content || "";
         const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5);
         
         if (lines.length === 0) throw new Error("AI failed");
@@ -35,8 +39,12 @@ async function generateAILetter(category, name = null) {
     }
 
     try {
-        const response = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-        let text = await response.text();
+        const response = await axios.post('https://api.airforce.unlimited.net/v1/chat/completions', {
+            model: "meta-llama/Llama-3-70B-Instruct",
+            messages: [{ role: "user", content: prompt }]
+        });
+
+        let text = response.data?.choices?.[0]?.message?.content || "";
         if (!text) throw new Error("AI failed");
         
         if (text.length > 100) text = text.substring(0, 100);
