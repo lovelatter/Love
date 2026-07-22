@@ -136,7 +136,17 @@ async function showAnimationIntro(ctx) {
     }
 }
 
-bot.action('menu_feedback', (ctx) => handleFeedbackStart(ctx, db, saveDB));
+bot.action('menu_feedback', async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    await ctx.editMessageText(locale.welcome(`${ctx.from?.first_name || ""}`), { reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
+    const sentMsg = await ctx.reply(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:");
+    db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
+    db.userSessions[userId].feedbackWarningMsgId = null;
+    await saveDB();
+});
 
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
@@ -164,7 +174,25 @@ bot.on('text', async (ctx) => {
     const text = ctx.message.text.trim();
     
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
+        if (text.length < 5) {
+            await ctx.deleteMessage().catch(() => {});
+            if (session.feedbackWarningMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+            }
+            const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
+            db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
+            await saveDB();
+            return;
+        } else {
+            if (session.feedbackWarningMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+            }
+            if (session.feedbackPromptMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
+            }
+            await ctx.deleteMessage().catch(() => {});
+            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
+        }
     }
 
     if (isAdmin(userId) && session) {
