@@ -125,27 +125,21 @@ function getRandomItems(arr, count) {
     return shuffled.slice(0, count);
 }
 
-async function generateRandomAnimation(category, name = null, history = []) {
+async function generateRandomAnimation(category, history = []) {
     const cat = animationPool[category] ? category : 'love';
     let availableLines = animationPool[cat];
     let filtered = availableLines.filter(item => !history.includes(item));
     if (filtered.length < 5) filtered = availableLines;
     let lines = getRandomItems(filtered, 5);
-    if (name) {
-        lines = lines.map(line => `${name}, ${line}`);
-    }
     return lines;
 }
 
-async function generateRandomLetter(category, name = null, history = []) {
+async function generateRandomLetter(category, history = []) {
     const cat = letterPool[category] ? category : 'love';
     let availableLetters = letterPool[cat];
     let filtered = availableLetters.filter(item => !history.includes(item));
     if (filtered.length === 0) filtered = availableLetters;
     let text = filtered[Math.floor(Math.random() * filtered.length)];
-    if (name) {
-        text = `প্রিয় ${name},\n\n${text}`;
-    }
     return text;
 }
 
