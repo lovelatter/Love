@@ -1,5 +1,5 @@
 const FormData = require('form-data');
-const https = require('https');
+const https = https = require('https'); // অথবা 'http' যদি ইউআরএল http হয়
 
 function uploadToCatbox(fileUrl, fileExtension) {
     return new Promise((resolve, reject) => {
@@ -10,13 +10,13 @@ function uploadToCatbox(fileUrl, fileExtension) {
 
             const form = new FormData();
             form.append('reqtype', 'fileupload');
-            form.append('time', '72h'); // ফাইলটি ৭২ ঘণ্টা থাকবে (Litterbox এর জন্য দরকার)
+            // Catbox এর মূল এপিআই-তে কোনো 'time' প্যারামিটার লাগে না
             form.append('fileToUpload', response, `file_${Date.now()}.${fileExtension}`);
 
             const requestOptions = {
                 method: 'POST',
-                host: 'litterbox.catbox.moe',
-                path: '/resources/internals/api.php',
+                host: 'catbox.moe', // সঠিক হোস্ট ডোমেইন
+                path: '/user/api.php',   // সঠিক এপিআই পাথ
                 headers: form.getHeaders()
             };
 
@@ -26,16 +26,18 @@ function uploadToCatbox(fileUrl, fileExtension) {
                     data += chunk;
                 });
                 res.on('end', () => {
+                    // সফল হলে সরাসরি ক্যাটবক্সের ফাইল লিংক রিটার্ন করবে
                     if (res.statusCode === 200 && data.startsWith('http')) {
-                        resolve(data.trim()); // সফল ডাইরেক্ট লিংক রিটার্ন করবে
+                        resolve(data.trim()); 
                     } else {
+                        console.error('Catbox Response Error:', data);
                         resolve(null);
                     }
                 });
             });
 
             req.on('error', (error) => {
-                console.error('Litterbox Upload Error:', error);
+                console.error('Catbox Upload Error:', error);
                 resolve(null);
             });
 
