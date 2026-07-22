@@ -124,27 +124,30 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
     const loadingMsg = await ctx.reply("⏳Downloading audio");
 
     try {
-        const apiRes = await fetch('https://apis.davidcyriltech.my.id/youtube/mp3', {
+        // Cobalt API ব্যবহার করা হচ্ছে যা অত্যন্ত নির্ভরযোগ্য
+        const apiRes = await fetch('https://api.cobalt.tools/api/json', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: text })
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url: text,
+                downloadMode: 'audio',
+                audioFormat: 'mp3'
+            })
         });
         const apiData = await apiRes.json();
 
-        if (!apiData || !apiData.success || !apiData.result || !apiData.result.downloadUrl) {
+        if (!apiData || !apiData.url) {
             await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড করা সম্ভব হয়নি। অন্য লিংক চেষ্টা করুন।").catch(() => {});
             return;
         }
 
-        const downloadUrl = apiData.result.downloadUrl;
+        const downloadUrl = apiData.url;
 
         const audioRes = await fetch(downloadUrl);
         const buffer = await audioRes.buffer();
-
-        if (buffer.length > 15 * 1024 * 1024) {
-            await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
-            return ctx.reply("⚠️ এত বড় গানের লিংক দেওয়া যাবে না। ১০ মিনিটের কম এমন মিউজিক লিংক দিতে হবে।");
-        }
 
         const form = new FormData();
         form.append('reqtype', 'fileupload');
