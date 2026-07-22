@@ -124,26 +124,15 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
     const loadingMsg = await ctx.reply("⏳Downloading audio");
 
     try {
-        const apiRes = await fetch('https://api.cobalt.tools/api/json', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                url: text,
-                downloadMode: 'audio',
-                audioFormat: 'mp3'
-            })
-        });
+        const apiRes = await fetch(`https://apis.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(text)}`);
         const apiData = await apiRes.json();
 
-        if (!apiData || !apiData.url) {
-            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ API Error: ${JSON.stringify(apiData)}`).catch(() => {});
+        if (!apiData || !apiData.status || !apiData.result || !apiData.result.downloadUrl) {
+            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড লিংক পাওয়া যায়নি।").catch(() => {});
             return;
         }
 
-        const downloadUrl = apiData.url;
+        const downloadUrl = apiData.result.downloadUrl;
 
         const audioRes = await fetch(downloadUrl);
         const buffer = await audioRes.buffer();
