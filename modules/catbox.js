@@ -1,5 +1,5 @@
 const FormData = require('form-data');
-const https = https = require('https'); // অথবা 'http' যদি ইউআরএল http হয়
+const https = require('https');
 
 function uploadToCatbox(fileUrl, fileExtension) {
     return new Promise((resolve, reject) => {
