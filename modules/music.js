@@ -1,5 +1,8 @@
 const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
+const ytdl = require('@distube/ytdl-core');
+const FormData = require('form-data');
+const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
@@ -11,7 +14,7 @@ const music_set = {
 };
 
 const music_msg = {
-    music_ask: "ব্যাকগ্রাউন্ড মিউজিক সেট করতে নিচের অপশনগুলো ব্যবহার করুন:\n\n১. সরাসরি কোনো অডিও ফাইল আপলোড করুন।\n২. অথবা কোনো YouTube লিংকের লিংক এখানে পেস্ট করুন।\n৩. অথবা নিচের বাটন থেকে ডিফল্ট বা নো মিউজিক সিলেক্ট করুন।"
+    music_ask: "ব্যাকগ্রাউন্ড মিউজিক এখানে আপলোড করুন অথবা কোনো ইউটিউব লিংক দিন। ডিফল্ট মিউজিক রাখতে ডিফল্ট বাটনে ট্যাপ করুন।"
 };
 
 function showMusicUploadPrompt(ctx, db, saveDB, locale) {
@@ -27,11 +30,11 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
         [Markup.button.callback("🔙 Back", 'menu_makelink')]
     ]);
 
-    ctx.editMessageText(message, keyboard, { parse_mode: 'Markdown' }).then((sentMsg) => {
+    ctx.editMessageText(message, keyboard).then((sentMsg) => {
         db.userSessions[userId].lastPromptMessageId = sentMsg.message_id;
         saveDB();
     }).catch(() => {
-        ctx.reply(message, keyboard, { parse_mode: 'Markdown' }).then((sentMsg) => {
+        ctx.reply(message, keyboard).then((sentMsg) => {
             db.userSessions[userId].lastPromptMessageId = sentMsg.message_id;
             saveDB();
         }).catch(() => {});
@@ -68,7 +71,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
         const promptMsgId = session.lastPromptMessageId;
 
         if (!ctx.message || !ctx.message.audio) {
-            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও ফাইল অথবা ইউটিউব লিংক দিন।");
+            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও ফাইল আপলোড করুন অথবা ইউটিউব লিংক দিন।");
         }
 
         return (async () => {
@@ -94,11 +97,11 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 if (promptMsgId) await bot.telegram.deleteMessage(userId, promptMsgId).catch(() => {});
                 if (loadingMsg) await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
 
-                const successMsg = await ctx.reply("🎵 অডিও সফলভাবে সেট হয়েছে!").catch(() => null);
+                const successMsg = await ctx.reply("🎵 অডিও আপলোড হয়েছে।").catch(() => null);
                 if (successMsg) {
                     setTimeout(async () => {
                         await bot.telegram.deleteMessage(userId, successMsg.message_id).catch(() => {});
-                    }, 3000);
+                    }, 5000);
                 }
 
                 showImageUploadPrompt(ctx, db, saveDB, locale);
@@ -109,34 +112,72 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
     }
 }
 
-async function handleYouTubeLinkInput(ctx, text, bot, db, saveDB, showImageUploadPrompt, locale) {
+async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUploadPrompt, locale) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
+    const userMessageId = ctx.message?.message_id;
+    const promptMsgId = session.lastPromptMessageId;
 
-    const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = text.match(ytRegex);
+    if (!ytdl.validateURL(text)) {
+        return ctx.reply("⚠️ এটি কোনো সঠিক ইউটিউব লিংক নয়। দয়া করে সঠিক লিংক অথবা অডিও ফাইল দিন।");
+    }
 
-    if (match) {
-        const ytUrl = `https://www.youtube.com/watch?v=${match[1]}`;
-        session.music = ytUrl;
+    const loadingMsg = await ctx.reply("⏳Downloading audio");
+
+    try {
+        const info = await ytdl.getInfo(text);
+        const durationSeconds = parseInt(info.videoDetails.lengthSeconds, 10);
+
+        if (durationSeconds > 600) {
+            await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
+            return ctx.reply("⚠️ এত বড় গানের লিংক দেওয়া যাবে না। ১০ মিনিটের কম এমন মিউজিক লিংক দিতে হবে।");
+        }
+
+        const audioStream = ytdl(text, {
+            quality: 'highestaudio',
+            filter: 'audioonly'
+        });
+
+        const chunks = [];
+        for await (let chunk of audioStream) {
+            chunks.push(chunk);
+        }
+        const buffer = Buffer.concat(chunks);
+
+        const form = new FormData();
+        form.append('reqtype', 'fileupload');
+        form.append('fileToUpload', buffer, { filename: 'audio.mp3', contentType: 'audio/mpeg' });
+
+        const response = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: form
+        });
+        const catboxUrl = await response.text();
+
+        if (!catboxUrl || !catboxUrl.startsWith('http')) {
+            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব অডিও প্রসেস বা আপলোড করতে সমস্যা হয়েছে।").catch(() => {});
+            return;
+        }
+
+        db.userSessions[userId].music = catboxUrl.trim();
         saveDB();
 
-        if (session.lastPromptMessageId) {
-            await bot.telegram.deleteMessage(userId, session.lastPromptMessageId).catch(() => {});
-        }
-        await ctx.deleteMessage().catch(() => {});
+        if (userMessageId) await bot.telegram.deleteMessage(userId, userMessageId).catch(() => {});
+        if (promptMsgId) await bot.telegram.deleteMessage(userId, promptMsgId).catch(() => {});
+        await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
 
-        const successMsg = await ctx.reply("📺 ইউটিউব মিউজিক সফলভাবে সেট হয়েছে!").catch(() => null);
+        const successMsg = await ctx.reply("🎵 ইউটিউব থেকে অডিও সফলভাবে যুক্ত হয়েছে।").catch(() => null);
         if (successMsg) {
             setTimeout(async () => {
                 await bot.telegram.deleteMessage(userId, successMsg.message_id).catch(() => {});
-            }, 3000);
+            }, 5000);
         }
 
         showImageUploadPrompt(ctx, db, saveDB, locale);
-        return true;
+
+    } catch (error) {
+        await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড করা সম্ভব হয়নি। অন্য লিংক চেষ্টা করুন।").catch(() => {});
     }
-    return false;
 }
 
-module.exports = { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, handleYouTubeLinkInput, music_set };
+module.exports = { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set, handleYouTubeLinkText };
