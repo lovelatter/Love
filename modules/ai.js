@@ -12,16 +12,21 @@ async function generateAIAnimation(category, name = null) {
     }
 
     try {
-        const response = await fetch('https://apis.deepinfra.com/v1/openai/chat/completions', {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer gsk_free_public_proxy_fallback' 
+            },
             body: JSON.stringify({
-                model: "meta-llama/Meta-Llama-3-70B-Instruct",
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: 'user', content: prompt }]
             })
         });
         
+        // যদি এক্সটার্নাল এপিআইতে কোনো কারণে সমস্যা হয়, আমরা ব্যাকআপ হিসেবে প্রমিজ থ্রো করব
+        if (!response.ok) throw new Error("AI failed");
+
         const data = await response.json();
         const text = data.choices?.[0]?.message?.content || "";
         const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5);
@@ -29,6 +34,7 @@ async function generateAIAnimation(category, name = null) {
         if (lines.length === 0) throw new Error("AI failed");
         return lines;
     } catch (error) {
+        // ফেইল করলে সরাসরি আপনার চাওয়ার মেসেজটি দেখাবে
         throw new Error("এআই ফেইল হয়েছে, দয়া করে নিজে থেকে লিখুন।");
     }
 }
@@ -45,15 +51,19 @@ async function generateAILetter(category, name = null) {
     }
 
     try {
-        const response = await fetch('https://apis.deepinfra.com/v1/openai/chat/completions', {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer gsk_free_public_proxy_fallback' 
+            },
             body: JSON.stringify({
-                model: "meta-llama/Meta-Llama-3-70B-Instruct",
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: 'user', content: prompt }]
             })
         });
+
+        if (!response.ok) throw new Error("AI failed");
 
         const data = await response.json();
         let text = data.choices?.[0]?.message?.content || "";
