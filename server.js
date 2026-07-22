@@ -4,7 +4,7 @@ const { Telegraf, Markup } = require('telegraf');
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
-const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, handleYouTubeLinkInput, music_set } = require('./modules/music');
+const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set, handleYouTubeLinkText } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
@@ -323,8 +323,12 @@ bot.on('text', async (ctx) => {
     const text = ctx.message.text.trim();
     
     if (session?.step === 'AWAITING_MUSIC_CHOICE') {
-        const isYT = await handleYouTubeLinkInput(ctx, text, bot, db, saveDB, showImageUploadPrompt, locale);
-        if (isYT) return;
+        if (text.includes('youtube.com') || text.includes('youtu.be')) {
+            await ctx.deleteMessage().catch(() => {});
+            return handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUploadPrompt, locale);
+        } else {
+            return ctx.reply("⚠️ দয়া করে একটি সঠিক ইউটিউব লিংক দিন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
+        }
     }
 
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
