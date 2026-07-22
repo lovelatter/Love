@@ -6,13 +6,13 @@ async function generateAIAnimation(category, name = null) {
     if (category === 'sorry') categoryContext = "apology, regret, and asking for forgiveness";
     if (category === 'eid') categoryContext = "Eid Mubarak and festive greetings";
 
-    let prompt = `Write 5 short ${categoryContext} animation lines in Bengali, each on a new line.`;
+    let prompt = `Write 5 short ${categoryContext} animation lines in Bengali, each on a new line. Only return the lines.`;
     if (name) {
-        prompt = `Write 5 short ${categoryContext} animation lines in Bengali, mentioning the name "${name}", each on a new line.`;
+        prompt = `Write 5 short ${categoryContext} animation lines in Bengali, mentioning the name "${name}", each on a new line. Only return the lines.`;
     }
 
     try {
-        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+        const response = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
         const text = await response.text();
         const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5);
         
@@ -35,7 +35,7 @@ async function generateAILetter(category, name = null) {
     }
 
     try {
-        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+        const response = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
         let text = await response.text();
         if (!text) throw new Error("AI failed");
         
