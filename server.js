@@ -139,12 +139,10 @@ async function showAnimationIntro(ctx) {
 bot.action('menu_feedback', async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
-    await ctx.deleteMessage().catch(() => {});
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
-    const sentMsg = await ctx.reply(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:");
-    db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
     db.userSessions[userId].feedbackWarningMsgId = null;
+    await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
     await saveDB();
 });
 
@@ -186,9 +184,6 @@ bot.on('text', async (ctx) => {
         } else {
             if (session.feedbackWarningMsgId) {
                 await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
-            }
-            if (session.feedbackPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
             return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
