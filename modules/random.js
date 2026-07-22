@@ -1,25 +1,25 @@
 const animationPool = {
     love: [
-        "তুমি আমার সবচেয়ে সুন্দর অনুভূতি ❤️",
+        "তুমি আমাদের সবচেয়ে সুন্দর অনুভূতি ❤️",
         "তোমার হাসিতে পৃথিবী আলোকময় ✨",
         "মন শুধু তোমাকেই খুঁজে 🌹",
         "তুমি পাশে থাকলে সব কষ্ট দূর 🥰",
         "সারাজীবন তোমাকে ভালোবাসতে চাই ♾️",
         "আমার সকালের প্রথম ভাবনা তুমি 🌅",
-        "তুমি আমার জীবনের শ্রেষ্ঠ অধ্যায় 📖",
+        "তুমি আমাদের জীবনের শ্রেষ্ঠ অধ্যায় 📖",
         "চোখ বন্ধ করলে তোমাকেই দেখি 💭",
         "তোমাকে ভালোবাসার শেষ নেই 💕",
         "আমার সুখের নাম হলো তুমি 🌻",
         "এক মুহূর্তও তোমায় ছাড়া ভালো লাগে না ⏰",
         "হৃদয়ের প্রতি স্পন্দনে তোমার নাম 💓",
-        "তুমি আমার জীবনের সেরা উপহার 🎁",
+        "তুমি আমাদের জীবনের সেরা উপহার 🎁",
         "তোমার সাথে কাটানো সময় পবিত্র 🌸",
         "সব সুখ আর তোমার ভালোবাসা ⚖️",
         "তোমার হাত ধরে পথ চলতে চাই 🤝",
-        "তুমি আমার মিষ্টি সকাল ও রাত 🌙",
+        "তুমি আমাদের মিষ্টি সকাল ও রাত 🌙",
         "আমার সব গল্পের নায়িকা তুমি 👑",
         "তোমাকে হারানোর ভয় সবচেয়ে বেশি 🔐",
-        "তুমি আমার বর্তমান ও ভবিষ্যৎ 🕊️"
+        "তুমি আমাদের বর্তমান ও ভবিষ্যৎ 🕊️"
     ],
     birthday: [
         "শুভ জন্মদিন! দিনটি আনন্দে কাটুক 🎂",
@@ -120,38 +120,29 @@ const letterPool = {
     ]
 };
 
-// রেন্ডম আইটেম সিলেক্ট করার ফাংশন
 function getRandomItems(arr, count) {
     const shuffled = [...arr].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, count);
 }
 
-// ৫ লাইন অ্যানিমেশন জেনারেট (ছোট ছোট লাইন)
 async function generateRandomAnimation(category, name = null, history = []) {
     const cat = animationPool[category] ? category : 'love';
     let availableLines = animationPool[cat];
-    
     let filtered = availableLines.filter(item => !history.includes(item));
     if (filtered.length < 5) filtered = availableLines;
-    
     let lines = getRandomItems(filtered, 5);
-    
     if (name) {
         lines = lines.map(line => `${name}, ${line}`);
     }
     return lines;
 }
 
-// বড় চিঠি জেনারেট (১০০ অক্ষর বা তার বেশি)
 async function generateRandomLetter(category, name = null, history = []) {
     const cat = letterPool[category] ? category : 'love';
     let availableLetters = letterPool[cat];
-    
     let filtered = availableLetters.filter(item => !history.includes(item));
     if (filtered.length === 0) filtered = availableLetters;
-    
     let text = filtered[Math.floor(Math.random() * filtered.length)];
-    
     if (name) {
         text = `প্রিয় ${name},\n\n${text}`;
     }
