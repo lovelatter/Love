@@ -19,7 +19,6 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     
     const dbImageUrl = session.imageUrl || null;
     let finalMusicUrl = session.music || "";
-    const enableMovement = session.enableMovement || false; // মুভমেন্ট চয়েস যুক্ত করা হলো[span_0](start_span)[span_0](end_span)
 
     db.linkDatabase[uniqueId] = {
         userId, 
@@ -32,10 +31,11 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
         letter: letterText, 
         answer: null, 
         visitorMessage: null,
+        buttonMovementCount: 0,
+        buttonMovementStatus: "no",
         image: dbImageUrl, 
         imagePath: null, 
-        visitors: [],
-        enableMovement: enableMovement // ডাটাবেজে সেভ করা হলো[span_1](start_span)[span_1](end_span)
+        visitors: []
     };
 
     delete db.userSessions[userId];
@@ -61,13 +61,10 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     if (finalMusicUrl) {
         adminNotificationText += `\n🎶 Music Link: ${finalMusicUrl}`;
     }
-    
-    // অ্যাডমিন নোটিফিকেশনে Batton movement যুক্ত করা হলো
-    adminNotificationText += `\n🎛️ Batton movement: ${enableMovement ? "yes" : "no"}`;
-
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
-🔗 Main Link: ${finalGeneratedUrl}`;
+🔗 Main Link: ${finalGeneratedUrl}
+Batton movement: no`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
         [
