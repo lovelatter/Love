@@ -45,8 +45,7 @@
         .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height: 42px; }
         .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index: 5; }
         .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
-        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
-        .btn-no:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(231,76,60,0.5); }
+        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; position: relative; transition: none; }
         
         .msg-input-wrapper { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
         .msg-input-box { width: 100%; padding: 10px 14px; border: 1px solid #ff758f; border-radius: 10px; font-size: 0.95rem; outline: none; background: #fff; color: #333; resize: none; font-family: inherit; }
@@ -128,6 +127,9 @@
         let arrayIndex = 0, audioCtx = null;
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
         let selectedAnswer = null;
+        let noMoveCount = 0;
+        let hasStartedMoving = false;
+        let targetMoveLimit = 0;
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
@@ -194,14 +196,26 @@
                             
                             if(idx === 0) {
                                 btn.classList.add('btn-yes');
-                                btn.onclick = () => handleAnswerClick(`${btnText} ✅`);
+                                btn.onclick = () => handleFinalAnswerClick(`${btnText} ✅`, false);
                             } else {
                                 btn.classList.add('btn-no');
                                 btn.id = 'noBtn';
-                                btn.onclick = () => handleAnswerClick(`${btnText} ❌`);
+                                btn.onclick = () => {
+                                    if (noMoveCount < targetMoveLimit) {
+                                        triggerNoMovement();
+                                    } else {
+                                        handleFinalAnswerClick(`${btnText} ❌`, true);
+                                    }
+                                };
+                                btn.onmouseenter = () => {
+                                    if (noMoveCount < targetMoveLimit) {
+                                        triggerNoMovement();
+                                    }
+                                };
                             }
                             btnGroup.appendChild(btn);
                         });
+                        targetMoveLimit = Math.floor(Math.random() * (10 - 5 + 1)) + 5;
                     }
 
                     if(data.animations && data.animations.length > 0) textArray = data.animations;
@@ -213,6 +227,28 @@
                 letterTitle.innerText = "কিছু কথা";
             }
         });
+
+        function triggerNoMovement() {
+            const noBtn = document.getElementById('noBtn');
+            if (!noBtn) return;
+            
+            if (!hasStartedMoving) {
+                hasStartedMoving = true;
+                sendMovementStatusToServer(noMoveCount + 1, "yes");
+            }
+
+            noMoveCount++;
+            
+            const randomX = (Math.random() - 0.5) * 160;
+            const randomY = (Math.random() - 0.5) * 100;
+            noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+
+            if (noMoveCount >= targetMoveLimit) {
+                setTimeout(() => {
+                    noBtn.style.transform = 'translate(0px, 0px)';
+                }, 300);
+            }
+        }
 
         function handleTimeLock(countdownTime) {
             lockScreen.style.display = 'flex';
@@ -317,9 +353,9 @@
             document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
         }
 
-        function handleAnswerClick(answer) {
+        function handleFinalAnswerClick(answer, isNoButtonClicked) {
             selectedAnswer = answer;
-            sendResponseToServer(answer, null);
+            sendResponseToServer(answer, null, noMoveCount, isNoButtonClicked);
 
             questionBox.innerHTML = `
                 <h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>
@@ -343,19 +379,30 @@
             sentBtn.addEventListener('click', () => {
                 const textVal = visitorMsg.value.trim();
                 if(!textVal) return;
-                sendResponseToServer(selectedAnswer, textVal);
+                sendResponseToServer(selectedAnswer, textVal, noMoveCount, isNoButtonClicked);
                 document.getElementById('msgWrapper').innerHTML = `<p style="color:#2ecc71; font-weight:bold; font-size:1rem; margin-top:5px;">আপনার মেসেজটি সফলভাবে পাঠানো হয়েছে! ✅</p>`;
             });
         }
 
-        function sendResponseToServer(answer, message) {
+        function sendMovementStatusToServer(count, status) {
+            const pathParts = window.location.pathname.split('/');
+            const id = pathParts[pathParts.length - 1];
+
+            fetch('/api/button-movement', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, count: count, status: status })
+            }).catch(error => {});
+        }
+
+        function sendResponseToServer(answer, message, movementCount, isNoButtonClicked) {
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
 
             fetch('/api/submit-answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: answer, message: message, id: id })
+                body: JSON.stringify({ answer: answer, message: message, id: id, movementCount: movementCount, isNoButtonClicked: isNoButtonClicked })
             }).catch(error => {});
         }
     </script>
