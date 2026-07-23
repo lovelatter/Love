@@ -75,11 +75,14 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-answer', async (req, res) => {
         try {
-            const { id, answer } = req.body;
+            const { id, answer, message } = req.body;
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
             
             data.answer = answer;
+            if (message) {
+                data.visitorMessage = message;
+            }
             
             if (data.openMessageIds) {
                 const clientIp = req.ip || 'default';
@@ -93,7 +96,14 @@ function setupRoutes(app, db, saveDB, bot) {
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে!").catch(() => {});
+            
+            let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`;
+            if (message) {
+                replyText += `\n\nআপনার তৈরি করা লিংক থেকে মেসেজ এসেছে।\nMsg: ${message}`;
+            }
+            
+            bot.telegram.sendMessage(data.userId, replyText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
             
             return res.json({ success: true });
         } catch (err) { 
