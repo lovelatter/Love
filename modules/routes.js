@@ -66,7 +66,7 @@ function setupRoutes(app, db, saveDB, bot) {
             return res.json({ 
                 success: true, isLocked: false, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: config.question, buttons: config.buttons, image: data.image || null 
+                question: data.question, buttons: data.buttons, image: data.image || null 
             });
         } catch (err) { 
             res.json({ success: false }); 
