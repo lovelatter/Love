@@ -64,9 +64,9 @@ function setupRoutes(app, db, saveDB, bot) {
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
             return res.json({ 
-                success: true, isLocked: false, title: config.title, music: data.music, 
+                success: true, isLocked: false, title: data.title || config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: data.question, buttons: data.buttons, image: data.image || null 
+                question: data.question || config.question, buttons: data.buttons || config.buttons, image: data.image || null, theme: data.theme || 'classic'
             });
         } catch (err) { 
             res.json({ success: false }); 
@@ -105,8 +105,9 @@ function setupRoutes(app, db, saveDB, bot) {
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            const currentQuestion = data.question || config.question;
             
-            let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`;
+            let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${currentQuestion}\nAns: ${answer}`;
             if (message) {
                 replyText += `\n\nআপনার তৈরি করা লিংক থেকে মেসেজ এসেছে。\nMsg: ${message}`;
             }
