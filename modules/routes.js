@@ -73,6 +73,19 @@ function setupRoutes(app, db, saveDB, bot) {
         }
     });
 
+    app.post('/api/open-envelope', async (req, res) => {
+        try {
+            const { id } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+
+            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে!").catch(() => {});
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
+    });
+
     app.post('/api/submit-answer', async (req, res) => {
         try {
             const { id, answer, message } = req.body;
@@ -84,23 +97,14 @@ function setupRoutes(app, db, saveDB, bot) {
                 data.visitorMessage = message;
             }
             
-            if (data.openMessageIds) {
-                const clientIp = req.ip || 'default';
-                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
-                if (msgId) {
-                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
-                    delete data.openMessageIds[clientIp];
-                }
-            }
-            
-            if (data.lastReplyMessageId) {
-                bot.telegram.deleteMessage(data.userId, data.lastReplyMessageId).catch(() => {});
+            if (message && data.lastReplyMessageId) {
+                await bot.telegram.deleteMessage(data.userId, data.lastReplyMessageId).catch(() => {});
+                data.lastReplyMessageId = null;
             }
             
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে!").catch(() => {});
             
             let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`;
             if (message) {
@@ -113,7 +117,7 @@ function setupRoutes(app, db, saveDB, bot) {
                 Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])
             ).catch(() => null);
 
-            if (sentReplyMsg) {
+            if (sentReplyMsg && !message) {
                 data.lastReplyMessageId = sentReplyMsg.message_id;
                 await saveDB();
             }
