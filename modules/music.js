@@ -1,7 +1,6 @@
 const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
 const FormData = require('form-data');
-const ytdlp = require('yt-dlp-exec');
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
@@ -122,21 +121,17 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         return ctx.reply("⚠️ এটি কোনো সঠিক ইউটিউব লিংক নয়। দয়া করে সঠিক লিংক অথবা অডিও ফাইল দিন।");
     }
 
-    const loadingMsg = await ctx.reply("⏳Downloading audio...");
+    const loadingMsg = await ctx.reply("⏳Downloading audio from YouTube...");
 
     try {
-        // yt-dlp ব্যবহার করে সরাসরি অডিও স্ট্রিম বা ডাইরেক্ট ডাউনলোডের জন্য লিংক ফেচ করা
-        const output = await ytdlp(text, {
-            dumpSingleJson: true,
-            noCheckCertificates: true,
-            noWarnings: true,
-            preferFreeFormats: true,
-            format: 'bestaudio',
-        });
+        // একটিভ এবং রিলায়েবল পাবলিক ইউটিউব ডাউনলোডার এপিআই
+        const apiRes = await fetch(`https://apis.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(text)}`);
+        const apiData = await apiRes.json();
 
-        const downloadUrl = output.url;
+        let downloadUrl = apiData.result?.body?.audio || apiData.result?.downloadUrl || apiData.audio;
+
         if (!downloadUrl) {
-            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও লিংক পাওয়া যায়নি।").catch(() => {});
+            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও ডাউনলোড লিংক পাওয়া যায়নি।").catch(() => {});
             return;
         }
 
@@ -175,7 +170,7 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         showImageUploadPrompt(ctx, db, saveDB, locale);
 
     } catch (error) {
-        console.error("YT-DLP Error:", error);
+        console.error("API Error Details:", error);
         await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ ডাউনলোড এরর: ${error.message}`).catch(() => {});
     }
 }
