@@ -11,7 +11,7 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
             
-            const sentMsg = await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে!").catch(() => null);
+            const sentMsg = await bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(() => null);
             if (sentMsg) {
                 if (!data.openMessageIds) data.openMessageIds = {};
                 data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
@@ -84,6 +84,15 @@ function setupRoutes(app, db, saveDB, bot) {
                 data.visitorMessage = message;
             }
             
+            if (data.openMessageIds) {
+                const clientIp = req.ip || 'default';
+                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
+                if (msgId) {
+                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
+                    delete data.openMessageIds[clientIp];
+                }
+            }
+            
             if (data.lastReplyMessageId) {
                 bot.telegram.deleteMessage(data.userId, data.lastReplyMessageId).catch(() => {});
             }
@@ -91,6 +100,7 @@ function setupRoutes(app, db, saveDB, bot) {
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে!").catch(() => {});
             
             let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`;
             if (message) {
