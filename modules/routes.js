@@ -64,64 +64,74 @@ function setupRoutes(app, db, saveDB, bot) {
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
             return res.json({ 
-                success: true, isLocked: false, title: data.title || config.title, music: data.music, 
+                success: true, isLocked: false, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: data.question || config.question, buttons: data.buttons || config.buttons, image: data.image || null, theme: data.theme || 'classic'
+                question: config.question, buttons: config.buttons, image: data.image || null 
             });
         } catch (err) { 
             res.json({ success: false }); 
         }
     });
 
-    app.post('/api/open-envelope', async (req, res) => {
+    app.post('/api/button-movement', async (req, res) => {
         try {
-            const { id } = req.body;
+            const { id, count, status } = req.body;
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
 
-            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে!").catch(() => {});
+            data.buttonMovementCount = count;
+            data.buttonMovementStatus = status;
+            await saveDB();
+
+            await bot.telegram.sendMessage(data.userId, "যাকে লিংক পাঠিয়েছেন সে no তে ক্লিক করার চেষ্টা করছেন আর বাটনটি মুভমেন্ট করছে।").catch(() => {});
             return res.json({ success: true });
         } catch (err) {
-            res.json({ success: false });
+            return res.json({ success: false });
         }
     });
 
     app.post('/api/submit-answer', async (req, res) => {
         try {
-            const { id, answer, message } = req.body;
+            const { id, answer, message, movementCount, isNoButtonClicked } = req.body;
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
             
             data.answer = answer;
+            if (movementCount !== undefined) {
+                data.buttonMovementCount = movementCount;
+            }
             if (message) {
                 data.visitorMessage = message;
             }
             
-            if (message && data.lastReplyMessageId) {
-                await bot.telegram.deleteMessage(data.userId, data.lastReplyMessageId).catch(() => {});
-                data.lastReplyMessageId = null;
+            if (data.openMessageIds) {
+                const clientIp = req.ip || 'default';
+                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
+                if (msgId) {
+                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
+                    delete data.openMessageIds[clientIp];
+                }
             }
             
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            const currentQuestion = data.question || config.question;
+            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে!").catch(() => {});
             
-            let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${currentQuestion}\nAns: ${answer}`;
-            if (message) {
-                replyText += `\n\nআপনার তৈরি করা লিংক থেকে মেসেজ এসেছে。\nMsg: ${message}`;
+            let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\n`;
+            if (movementCount > 0 && isNoButtonClicked) {
+                replyText += `${movementCount} bar no batton movement koreche ar apnar uttor holo no.`;
+            } else if (movementCount > 0 && !isNoButtonClicked) {
+                replyText += `${movementCount} bar no batton movement koreche tarpor tini yes e click korechen.`;
+            } else {
+                replyText += `Ans: ${answer}`;
             }
-            
-            const sentReplyMsg = await bot.telegram.sendMessage(
-                data.userId, 
-                replyText, 
-                Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])
-            ).catch(() => null);
 
-            if (sentReplyMsg && !message) {
-                data.lastReplyMessageId = sentReplyMsg.message_id;
-                await saveDB();
+            if (message) {
+                replyText += `\n\nআপনার তৈরি করা লিংক থেকে মেসেজ এসেছে।\nMsg: ${message}`;
             }
+            
+            bot.telegram.sendMessage(data.userId, replyText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
             
             return res.json({ success: true });
         } catch (err) { 
