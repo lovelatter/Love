@@ -27,10 +27,9 @@
         .envelope-container.open .envelope-flap { transform:rotateX(180deg); z-index:1; border-top-color:#ff5c7a; }
         .envelope-container.open .envelope-heart, .envelope-container.open .envelope-label { opacity:0; transform:translate(-50%, -50%) scale(0) !important; }
         
-        .love-letter { position:absolute; background:#fff0f5; padding:25px; border-radius:15px; text-align:center; max-width:380px; width:85%; box-shadow:0 15px 40px rgba(0,0,0,0.4); color:#333; z-index:2; transform:translateY(20px) scale(0.85); opacity:0; transition:all 1.2s cubic-bezier(0.1, 1, 0.2, 1); pointer-events:none; }
-        .letter-popout { opacity:1 !important; transform:translateY(-50px) scale(1) !important; z-index:12 !important; pointer-events:auto !important; }
+        .love-letter { position:absolute; background:#fff0f5; padding:25px; border-radius:15px; text-align:center; max-width:380px; width:85%; box-shadow:0 15px 40px rgba(0,0,0,0.4); color:#333; z-index:2; transform:translateY(20px) scale(0.85); opacity:0; transition:all 1.2s cubic-bezier(0.1, 1, 0.2, 1); pointer-events:none; max-height: 90vh; overflow-y: auto; }
+        .letter-popout { opacity:1 !important; transform:translateY(-20px) scale(1) !important; z-index:12 !important; pointer-events:auto !important; }
         
-        /* 📸 ডাইনামিক ইমেজ স্টাইল */
         .dynamic-letter-img { width:105px; height:105px; object-fit:cover; border-radius:50%; border:4px solid #ff4d6d; margin:0 auto 15px auto; display:block; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
         body.theme-neon .dynamic-letter-img { border-color: #00f3ff; }
         body.theme-gold .dynamic-letter-img { border-color: #ffd700; }
@@ -49,6 +48,12 @@
         .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
         .btn-no:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(231,76,60,0.5); }
         
+        .msg-input-wrapper { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+        .msg-input-box { width: 100%; padding: 10px 14px; border: 1px solid #ff758f; border-radius: 10px; font-size: 0.95rem; outline: none; background: #fff; color: #333; resize: none; font-family: inherit; }
+        .msg-input-box:focus { border-color: #ff4d6d; box-shadow: 0 0 5px rgba(255, 77, 109, 0.3); }
+        .sent-msg-btn { align-self: flex-end; background-color: #ff4d6d; color: #fff; border: none; padding: 8px 20px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 0.95rem; box-shadow: 0 3px 8px rgba(255, 77, 109, 0.3); transition: background 0.2s; }
+        .sent-msg-btn:hover { background-color: #e6425e; }
+
         .heart { position:absolute; color:#ff4d6d; font-size:24px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index: 1; }
         @keyframes floatUp { 0% { transform:translateY(100vh) scale(0); opacity:0; } 10% { opacity:0.8; } 90% { opacity:0.8; } 100% { transform:translateY(-10vh) scale(1.5); opacity:0; } }
         .fade-in { opacity:1 !important; transform:scale(1) !important; transition:all 0.8s ease; }
@@ -122,6 +127,7 @@
         let textArray = ["...", "আপনার জন্য বার্তা..."];
         let arrayIndex = 0, audioCtx = null;
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
+        let selectedAnswer = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
@@ -188,12 +194,11 @@
                             
                             if(idx === 0) {
                                 btn.classList.add('btn-yes');
-                                btn.onclick = () => sendResponse(`${btnText} ✅`);
+                                btn.onclick = () => handleAnswerClick(`${btnText} ✅`);
                             } else {
                                 btn.classList.add('btn-no');
                                 btn.id = 'noBtn';
-                                // নড়াচড়ার ইভেন্টগুলো (moveNoButton) পুরোপুরি বাদ দেওয়া হলো
-                                btn.onclick = () => sendResponse(`${btnText} ❌`);
+                                btn.onclick = () => handleAnswerClick(`${btnText} ❌`);
                             }
                             btnGroup.appendChild(btn);
                         });
@@ -206,7 +211,7 @@
                 }
             } catch(e) { 
                 console.log('Content fetch error');
-                letterTitle.innerText = "कुछ কথা";
+                letterTitle.innerText = "কিছু কথা";
             }
         });
 
@@ -304,16 +309,45 @@
             document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
         }
 
-        function sendResponse(answer) {
-            questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>`;
+        function handleAnswerClick(answer) {
+            selectedAnswer = answer;
+            sendResponseToServer(answer, null);
 
+            questionBox.innerHTML = `
+                <h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>
+                <div class="msg-input-wrapper" id="msgWrapper">
+                    <textarea class="msg-input-box" id="visitorMsg" placeholder="msg লিখে পাঠান"></textarea>
+                    <button class="sent-msg-btn" id="sentBtn" style="display:none;">sent</button>
+                </div>
+            `;
+
+            const visitorMsg = document.getElementById('visitorMsg');
+            const sentBtn = document.getElementById('sentBtn');
+
+            visitorMsg.addEventListener('input', () => {
+                if(visitorMsg.value.trim().length > 0) {
+                    sentBtn.style.display = 'block';
+                } else {
+                    sentBtn.style.display = 'none';
+                }
+            });
+
+            sentBtn.addEventListener('click', () => {
+                const textVal = visitorMsg.value.trim();
+                if(!textVal) return;
+                sendResponseToServer(selectedAnswer, textVal);
+                document.getElementById('msgWrapper').innerHTML = `<p style="color:#2ecc71; font-weight:bold; font-size:1rem; margin-top:5px;">আপনার মেসেজটি সফলভাবে পাঠানো হয়েছে! ✅</p>`;
+            });
+        }
+
+        function sendResponseToServer(answer, message) {
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
 
             fetch('/api/submit-answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: answer, id: id })
+                body: JSON.stringify({ answer: answer, message: message, id: id })
             }).catch(error => console.log('Error sending response'));
         }
     </script>
