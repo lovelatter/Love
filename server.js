@@ -121,7 +121,36 @@ bot.action('skip_image_upload', async (ctx) => {
         db.userSessions[userId].imageUrl = null;
     }
     await saveDB();
-    showAnimationIntro(ctx);
+    showButtonMovementPrompt(ctx);
+});
+
+async function showButtonMovementPrompt(ctx) {
+    const userId = ctx.chat.id;
+    db.userSessions[userId].step = 'AWAITING_BUTTON_MOVEMENT_CHOICE';
+    await saveDB();
+    const text = "আপনি কি No বাটনে মাউস নিলে বা ক্লিক করলে বাটন মুভমেন্ট (Button Movement) করাতে চান?";
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback("Yes ✅", 'btn_mov_yes'), Markup.button.callback("No ❌", 'btn_mov_no')]
+    ]);
+    const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(async () => {
+        return await ctx.reply(text, { reply_markup: keyboard.reply_markup }).catch(() => null);
+    });
+    if (sentMsg) {
+        db.userSessions[userId].lastPromptMsgId = sentMsg.message_id;
+        await saveDB();
+    }
+}
+
+bot.action(/^btn_mov_(yes|no)$/, async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    if (!session) return;
+    session.buttonMovement = ctx.match[1] === 'yes';
+    if (session.lastPromptMsgId) {
+        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+    }
+    await showAnimationIntro(ctx);
 });
 
 async function showAnimationIntro(ctx) {
@@ -146,8 +175,6 @@ bot.action('random_anim_start', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম অ্যানিমেশন জেনারেট করে প্রিভিউ দেখাবে[span_0](start_span)[span_0](end_span)
     session.animHistory = [];
     session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
@@ -224,8 +251,6 @@ bot.action('random_letter_start', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম চিঠি জেনারেট করে প্রিভিউ দেখাবে[span_1](start_span)[span_1](end_span)
     session.letterHistory = [];
     session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
@@ -293,7 +318,6 @@ bot.action('menu_feedback', async (ctx) => {
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
     db.userSessions[userId].feedbackWarningMsgId = null;
-    
     const sentMsg = await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
     db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
     await saveDB();
@@ -317,7 +341,7 @@ bot.action(/^delete_link_(.+)$/, async (ctx) => {
 });
 
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
-bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
+bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showButtonMovementPrompt));
 
 bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
