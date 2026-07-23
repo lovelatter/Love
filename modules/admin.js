@@ -115,7 +115,18 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const data = db.linkDatabase[ctx.match[1]];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-        return ctx.answerCbQuery(data.answer ? `📩 উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
+        
+        if (!data.answer) {
+            return ctx.answerCbQuery("⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
+        }
+
+        let ansText = "";
+        if (data.movementCount && data.movementCount > 0) {
+            ansText = `no batton movement: ${data.movementCount}\nUttor: ${data.answer}`;
+        } else {
+            ansText = `📩 উত্তর: ${data.answer}`;
+        }
+        return ctx.answerCbQuery(ansText, { show_alert: true });
     });
 
     bot.action(/^view_msg_(.+)$/, async (ctx) => {
