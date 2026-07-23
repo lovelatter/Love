@@ -116,15 +116,15 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         const data = db.linkDatabase[ctx.match[1]];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         
-        if (!data.answer) {
-            return ctx.answerCbQuery("⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
-        }
-
         let ansText = "";
-        if (data.movementCount && data.movementCount > 0) {
-            ansText = `no batton movement: ${data.movementCount}\nUttor: ${data.answer}`;
+        if (data.buttonMovementCount && data.buttonMovementCount > 0) {
+            if (data.answer && data.answer.includes("❌")) {
+                ansText = `no batton movement: ${data.buttonMovementCount}\nUttor: no`;
+            } else {
+                ansText = `no batton movement: ${data.buttonMovementCount}\nUttor: yes`;
+            }
         } else {
-            ansText = `📩 উত্তর: ${data.answer}`;
+            ansText = data.answer ? `📩 উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!";
         }
         return ctx.answerCbQuery(ansText, { show_alert: true });
     });
@@ -167,7 +167,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         ctx.answerCbQuery();
         
         if (!data.visitors || data.visitors.length === 0) {
-            const emptyMsg = await ctx.reply("ℹ️ লিঙ্কটি এখনও কেউ ওপেন করেনি।").catch(() => null);
+            const emptyMsg = await ctx.reply("ℹ️ লিঙ্কটি লিঙ্কটি এখনও কেউ ওপেন করেনি।").catch(() => null);
             if (emptyMsg) {
                 setTimeout(async () => {
                     try {
