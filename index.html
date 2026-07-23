@@ -210,7 +210,6 @@
                     document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
             } catch(e) { 
-                console.log('Content fetch error');
                 letterTitle.innerText = "কিছু কথা";
             }
         });
@@ -284,16 +283,25 @@
             openBtn.classList.add('blast-out');
             if(bgMusic.src && bgMusic.src !== window.location.href) {
                 bgMusic.volume = 0; bgMusic.muted = true;
-                bgMusic.play().then(() => { bgMusic.muted = false; bgMusic.volume = 0.001; }).catch(e => console.log("Audio unlock retry"));
+                bgMusic.play().then(() => { bgMusic.muted = false; bgMusic.volume = 0.001; }).catch(e => {});
             }
             setTimeout(() => { openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence(); }, 800);
         });
         
         envelope.addEventListener('click', () => {
             envelope.classList.add('open');
+            
+            const pathParts = window.location.pathname.split('/');
+            const id = pathParts[pathParts.length - 1];
+            fetch('/api/open-envelope', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            }).catch(error => {});
+
             if(bgMusic.src && bgMusic.src !== window.location.href) {
                 bgMusic.currentTime = 0; bgMusic.volume = 1.0;
-                bgMusic.play().catch(e => console.log("Final play blocked"));
+                bgMusic.play().catch(e => {});
             }
             setTimeout(() => {
                 loveLetter.style.display = 'block';
@@ -348,7 +356,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ answer: answer, message: message, id: id })
-            }).catch(error => console.log('Error sending response'));
+            }).catch(error => {});
         }
     </script>
 </body>
