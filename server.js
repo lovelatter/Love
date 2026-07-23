@@ -147,7 +147,6 @@ bot.action('random_anim_start', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম অ্যানিমেশন জেনারেট করে প্রিভিউ দেখাবে[span_0](start_span)[span_0](end_span)
     session.animHistory = [];
     session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
@@ -225,7 +224,6 @@ bot.action('random_letter_start', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম চিঠি জেনারেট করে প্রিভিউ দেখাবে[span_1](start_span)[span_1](end_span)
     session.letterHistory = [];
     session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
@@ -275,16 +273,55 @@ bot.action('letter_prev', async (ctx) => {
     await renderRandomLetterPreview(ctx, userId, true);
 });
 
+// চিঠি নিশ্চিত হওয়ার পর মুভমেন্ট প্রম্পট দেখানোর ধাপ
 bot.action('letter_keep', async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    const letterText = session.currentLetterText;
+    session.letter = session.currentLetterText;
+    session.step = 'AWAITING_MOVEMENT_CHOICE';
+    await saveDB();
+    
+    const text = "no বাটনের উপর মাউস নিলে বা ক্লিক করলে বাটন মুভমেন্ট করবে এরকম চান?";
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback("Yes", 'movement_yes'), Markup.button.callback("No", 'movement_no')]
+    ]);
+    
     if (session.lastPromptMsgId) {
         await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
     }
-    await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
+    const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(async () => {
+        return await ctx.reply(text, { reply_markup: keyboard.reply_markup }).catch(() => null);
+    });
+    if (sentMsg) {
+        session.lastPromptMsgId = sentMsg.message_id;
+        await saveDB();
+    }
+});
+
+bot.action('movement_yes', async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    if (!session) return;
+    session.enableMovement = true;
+    if (session.lastPromptMsgId) {
+        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+    }
+    await processFinalLinkCreation(ctx, session.letter, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
+});
+
+bot.action('movement_no', async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    if (!session) return;
+    session.enableMovement = false;
+    if (session.lastPromptMsgId) {
+        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+    }
+    await processFinalLinkCreation(ctx, session.letter, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
 });
 
 bot.action('menu_feedback', async (ctx) => {
@@ -378,7 +415,20 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            return await processFinalLinkCreation(ctx, text, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
+            
+            // সরাসরি লিঙ্ক তৈরির বদলে এখন মুভমেন্ট অপশন দেখাবে
+            session.letter = text;
+            session.step = 'AWAITING_MOVEMENT_CHOICE';
+            await saveDB();
+            
+            const promptText = "no বাটনের উপর মাউস নিলে বা ক্লিক করলে বাটন মুভমেন্ট করবে এরকম চান?";
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback("Yes", 'movement_yes'), Markup.button.callback("No", 'movement_no')]
+            ]);
+            const sentMsg = await ctx.reply(promptText, { reply_markup: keyboard.reply_markup });
+            session.lastPromptMsgId = sentMsg.message_id;
+            await saveDB();
+            return;
         }
     } catch (error) {
         ctx.reply(locale.general_error).catch(() => {});
