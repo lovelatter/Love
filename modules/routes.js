@@ -93,6 +93,10 @@ function setupRoutes(app, db, saveDB, bot) {
                 }
             }
             
+            if (data.lastReplyMessageId) {
+                bot.telegram.deleteMessage(data.userId, data.lastReplyMessageId).catch(() => {});
+            }
+            
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
@@ -100,10 +104,19 @@ function setupRoutes(app, db, saveDB, bot) {
             
             let replyText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`;
             if (message) {
-                replyText += `\n\nআপনার তৈরি করা লিংক থেকে মেসেজ এসেছে।\nMsg: ${message}`;
+                replyText += `\n\nআপনার তৈরি করা লিংক থেকে মেসেজ এসেছে。\nMsg: ${message}`;
             }
             
-            bot.telegram.sendMessage(data.userId, replyText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+            const sentReplyMsg = await bot.telegram.sendMessage(
+                data.userId, 
+                replyText, 
+                Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])
+            ).catch(() => null);
+
+            if (sentReplyMsg) {
+                data.lastReplyMessageId = sentReplyMsg.message_id;
+                await saveDB();
+            }
             
             return res.json({ success: true });
         } catch (err) { 
