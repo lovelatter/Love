@@ -1,7 +1,6 @@
 const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
 const FormData = require('form-data');
-const ytdlp = require('yt-dlp-exec');
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
@@ -122,20 +121,22 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         return ctx.reply("⚠️ এটি কোনো সঠিক ইউটিউব লিংক নয়। দয়া করে সঠিক লিংক অথবা অডিও ফাইল দিন।");
     }
 
+    // ইউটিউব লিংক থেকে ভিডিও আইডি আলাদা করার রেগুলার এক্সপ্রেশন
+    const match = text.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    if (!match || !match[1]) {
+        return ctx.reply("⚠️ ভিডিও আইডি খুঁজে পাওয়া যায়নি। সঠিক লিংক দিন।");
+    }
+
+    const videoId = match[1];
     const loadingMsg = await ctx.reply("⏳ Fetching audio from YouTube...");
 
     try {
-        // yt-dlp ব্যবহার করে ডাইরেক্ট স্ট্রিম লিংক বের করা
-        const output = await ytdlp(text, {
-            dumpSingleJson: true,
-            noCheckCertificates: true,
-            noWarnings: true,
-            preferFreeFormats: true,
-            format: 'bestaudio',
-            extractorArgs: 'youtube:player_client=android' // বট প্রটেকশন বাইপাস করার জন্য অ্যান্ড্রয়েড ক্লায়েন্ট সিমুলেট করা
-        });
+        const apiUrl = `https://api.download-lagu-mp3.com/@api/json/mp3/${videoId}`;
+        const apiRes = await fetch(apiUrl);
+        const apiData = await apiRes.json();
 
-        const downloadUrl = output.url;
+        const downloadUrl = apiData.link || apiData.dlink || apiData.audio;
+
         if (!downloadUrl) {
             await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও লিংক পাওয়া যায়নি।").catch(() => {});
             return;
@@ -176,7 +177,7 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         showImageUploadPrompt(ctx, db, saveDB, locale);
 
     } catch (error) {
-        console.error("YT-DLP Error:", error);
+        console.error("API Error:", error);
         await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ ডাউনলোড এরর: ${error.message}`).catch(() => {});
     }
 }
