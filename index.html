@@ -305,11 +305,11 @@
             }
             setTimeout(() => {
                 loveLetter.style.display = 'block';
-                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(createHeart, 300); }, 50);
+                setTimeout(() => { loveLetter.classList.add('letter-popout'); setInterval(databaseHearts, 300); }, 50);
             }, 550);
         });
         
-        function createHeart() {
+        function databaseHearts() {
             if(flyingEmojis.length === 0) return;
             const heart = document.createElement('div'); heart.classList.add('heart');
             heart.innerText = flyingEmojis[Math.floor(Math.random() * flyingEmojis.length)];
