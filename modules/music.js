@@ -1,7 +1,7 @@
 const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
 const FormData = require('form-data');
-const { ytmp3 } = require('y2mate-dl'); // y2mate এর ফ্রি রিলায়েবল প্যাকেজ
+const ytdlp = require('yt-dlp-exec');
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
@@ -122,18 +122,25 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         return ctx.reply("⚠️ এটি কোনো সঠিক ইউটিউব লিংক নয়। দয়া করে সঠিক লিংক অথবা অডিও ফাইল দিন।");
     }
 
-    const loadingMsg = await ctx.reply("⏳ Downloading & Converting from YouTube...");
+    const loadingMsg = await ctx.reply("⏳ Fetching audio from YouTube...");
 
     try {
-        // y2mate ভিত্তিক সার্ভিস ব্যবহার করে এমপিথ্রি লিংক ও ডাটা ফেচ করা
-        const res = await ytmp3(text);
+        // yt-dlp ব্যবহার করে ডাইরেক্ট স্ট্রিম লিংক বের করা
+        const output = await ytdlp(text, {
+            dumpSingleJson: true,
+            noCheckCertificates: true,
+            noWarnings: true,
+            preferFreeFormats: true,
+            format: 'bestaudio',
+            extractorArgs: 'youtube:player_client=android' // বট প্রটেকশন বাইপাস করার জন্য অ্যান্ড্রয়েড ক্লায়েন্ট সিমুলেট করা
+        });
 
-        if (!res || !res.status || !res.mp3) {
-            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও কনভার্ট করা যায়নি।").catch(() => {});
+        const downloadUrl = output.url;
+        if (!downloadUrl) {
+            await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, "⚠️ ইউটিউব থেকে অডিও লিংক পাওয়া যায়নি।").catch(() => {});
             return;
         }
 
-        const downloadUrl = res.mp3;
         const audioRes = await fetch(downloadUrl);
         const buffer = await audioRes.buffer();
 
@@ -169,8 +176,8 @@ async function handleYouTubeLinkText(ctx, text, bot, db, saveDB, showImageUpload
         showImageUploadPrompt(ctx, db, saveDB, locale);
 
     } catch (error) {
-        console.error("Y2Mate Error:", error);
-        await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ কনভার্ট এরর: ${error.message}`).catch(() => {});
+        console.error("YT-DLP Error:", error);
+        await bot.telegram.editMessageText(userId, loadingMsg.message_id, null, `⚠️ ডাউনলোড এরর: ${error.message}`).catch(() => {});
     }
 }
 
