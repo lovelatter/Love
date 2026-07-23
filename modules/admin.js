@@ -118,12 +118,43 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         return ctx.answerCbQuery(data.answer ? `📩 উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
     });
 
+    bot.action(/^view_msg_(.+)$/, async (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        const data = db.linkDatabase[linkId];
+        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
+        ctx.answerCbQuery();
+        
+        if (!data.visitorMessage) {
+            const emptyMsg = await ctx.reply("ℹ️ এই লিংক থেকে কোনো msg আসেনি।").catch(() => null);
+            if (emptyMsg) {
+                setTimeout(async () => {
+                    try {
+                        await bot.telegram.deleteMessage(ctx.chat.id, emptyMsg.message_id);
+                    } catch (e) {}
+                }, 2000);
+            }
+            return;
+        }
+
+        const msgText = `💬 Visitor Message for Link [ ${linkId} ]:\n\n${data.visitorMessage}`;
+        const sentMsg = await ctx.reply(msgText).catch(() => null);
+        if (sentMsg) {
+            setTimeout(async () => {
+                try {
+                    await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
+                } catch (e) {}
+            }, 10000);
+        }
+    });
+
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         ctx.answerCbQuery();
+        
         if (!data.visitors || data.visitors.length === 0) {
             const emptyMsg = await ctx.reply("ℹ️ লিঙ্কটি এখনও কেউ ওপেন করেনি।").catch(() => null);
             if (emptyMsg) {
@@ -131,10 +162,11 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
                     try {
                         await bot.telegram.deleteMessage(ctx.chat.id, emptyMsg.message_id);
                     } catch (e) {}
-                }, 10000);
+                }, 2000);
             }
             return;
         }
+
         let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
         data.visitors.forEach((v, index) => {
             report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
