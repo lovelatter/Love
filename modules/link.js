@@ -19,7 +19,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     
     const dbImageUrl = session.imageUrl || null;
     let finalMusicUrl = session.music || "";
-    const isButtonMovement = session.buttonMovement || false;
+    const buttonMovement = session.buttonMovement || false;
 
     db.linkDatabase[uniqueId] = {
         userId, 
@@ -30,11 +30,10 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
         countdown: finalCountdownIso, 
         animations: session.animations, 
         letter: letterText, 
-        buttonMovement: isButtonMovement,
         answer: null, 
-        visitorMessage: null,
         image: dbImageUrl, 
         imagePath: null, 
+        buttonMovement: buttonMovement,
         visitors: []
     };
 
@@ -52,7 +51,6 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
 🏷️ Username: ${session.username || "None"}
 📂 Category: ${String(session.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
-🔘 Button movement: ${isButtonMovement ? "Yes" : "No"}
 📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
     
     if (dbImageUrl) {
@@ -64,14 +62,11 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
+Batton movement: ${buttonMovement ? "yes" : "no"}
 🔗 Main Link: ${finalGeneratedUrl}`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
-        [
-            Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`),
-            Markup.button.callback("💬 Check Msg", `view_msg_${uniqueId}`),
-            Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)
-        ]
+        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("💬 Check Msg", `view_msg_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
     ])).catch(() => {}));
 }
 
