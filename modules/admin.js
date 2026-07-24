@@ -186,9 +186,9 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
             
             notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
-👤 Name: ${data.name || "User"}
+👤 Name: ${data.name || "No name"}
 🆔 ID: ${data.userId}
-🏷️ Username: ${data.username || "None"}
+🏷️ Username: ${data.username || "No username"}
 📂 Category: ${String(data.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
@@ -202,7 +202,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             }
             notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
 💌 Letter: ${data.letter}
-Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
+🔘 Batton movement: ${data.config?.enableMovement ? "Yes ✅" : "No ❌"}
 🔗 Main Link: ${finalGeneratedUrl}`;
         }
 
@@ -225,9 +225,9 @@ Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
             let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
             
             let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [OFF 🔴]
-👤 Name: ${data.name || "User"}
+👤 Name: ${data.name || "No name"}
 🆔 ID: ${data.userId}
-🏷️ Username: ${data.username || "None"}
+🏷️ Username: ${data.username || "No username"}
 📂 Category: ${String(data.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
@@ -241,7 +241,7 @@ Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
             }
             notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
 💌 Letter: ${data.letter}
-Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
+🔘 Batton movement: ${data.config?.enableMovement ? "Yes ✅" : "No ❌"}
 🔗 Main Link: ${finalGeneratedUrl}
 
 ℹ️ এই লিংকটি অফ করে দেওয়া হয়েছে।`;
@@ -271,9 +271,9 @@ Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
             let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
             
             let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [User Banned 🚫]
-👤 Name: ${data.name || "User"}
+👤 Name: ${data.name || "No name"}
 🆔 ID: ${data.userId}
-🏷️ Username: ${data.username || "None"}
+🏷️ Username: ${data.username || "No username"}
 📂 Category: ${String(data.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
@@ -287,7 +287,7 @@ Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
             }
             notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
 💌 Letter: ${data.letter}
-Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
+🔘 Batton movement: ${data.config?.enableMovement ? "Yes ✅" : "No ❌"}
 🔗 Main Link: ${finalGeneratedUrl}
 
 ℹ️ এই লিংকের ইউজারকে সফলভাবে ব্যান করা হয়েছে।`;
