@@ -55,7 +55,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         ctx.answerCbQuery();
         const keys = Object.keys(db.linkDatabase);
         if (!keys.length) {
-            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]]))[span_1](start_span)[span_1](end_span).catch(() => {});
+            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]])).catch(() => {});
         }
         ctx.reply("📜 সকল লিংক:");
         keys.forEach(key => {
@@ -92,7 +92,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         });
         db.linkDatabase = {};
         saveDB();
-        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]]))[span_2](start_span)[span_2](end_span).catch(() => {});
+        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]])).catch(() => {});
     });
 
     bot.action('adm_ban_menu', (ctx) => {
@@ -168,14 +168,14 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
         const linkId = ctx.match[1];
-        // কন্ট্রোল প্যানেলের ব্যাক বাটন ক্লিক করলে যেন ড্যাশবোর্ডে না গিয়ে পুনরায় মূল নোটিফিকেশন মেসেজ বা প্যানেলে ফিরে যায়
+        // কন্ট্রোল প্যানেল ওপেন করার সময় নোটিফিকেশন মেসেজটি এডিট করে কন্ট্রোল প্যানেল দেখানো হবে
         ctx.editMessageText(`⚙️ Control Panel for Link [ ${linkId} ]:`, Markup.inlineKeyboard([
             [Markup.button.callback("🔴 Link Off", `adm_off_link_${linkId}`), Markup.button.callback("🚫 Ban User", `adm_ban_creator_${linkId}`)],
             [Markup.button.callback("🔙 ব্যাক", `adm_back_to_notif_${linkId}`)]
         ])).catch(() => {});
     });
 
-    // নতুন ব্যাক হ্যান্ডলার যা কন্ট্রোল প্যানেল থেকে আগের নোটিফিকেশন টেক্সটে ফিরিয়ে নিয়ে যাবে
+    // ব্যাক বাটনে ক্লিক করলে আবার আগের নোটিফিকেশন বাটনগুলো ফিরিয়ে আনা হবে
     bot.action(/^adm_back_to_notif_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
@@ -184,7 +184,12 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         
         let notifText = `📌 Link Control Panel Info\n🔗 Link ID: ${linkId}`;
         if (data) {
-            notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে / কন্ট্রোল প্যানেল\n👤 Name: ${data.name || "User"}\n🆔 ID: ${data.userId}\n📂 Category: ${String(data.type || "love").toUpperCase()}\n🔗 Link ID: ${linkId}`;
+            notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
+👤 Name: ${data.name || "User"}
+🆔 ID: ${data.userId}
+🏷️ Username: ${data.username || "None"}
+📂 Category: ${String(data.type || "love").toUpperCase()}
+🔗 Link ID: ${linkId}`;
         } else {
             notifText = `⚠️ লিংকটি ডাটাবেজে পাওয়া যায়নি বা ডিলিট করা হয়েছে।\n🔗 Link ID: ${linkId}`;
         }
