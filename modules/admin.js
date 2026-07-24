@@ -116,42 +116,40 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         const data = db.linkDatabase[ctx.match[1]];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         
-        let ansText = "⏳ এখনও উত্তর দেয়নি!";
-        if (data.answer) {
-            if (data.buttonMovement) {
-                ansText = `Total movement: ${data.movementCount || 0} \nFinal ans: ${data.answer}`;
-            } else {
-                ansText = `উত্তর: ${data.answer}`;
-            }
+        if (data.buttonMovement === 'yes') {
+            const totalMov = data.noAttempts || 0;
+            const finalAns = data.answer || "⏳ এখনও উত্তর দেয়নি!";
+            return ctx.answerCbQuery(`Total movement: ${totalMov}\nFinal ans: ${finalAns}`, { show_alert: true });
+        } else {
+            return ctx.answerCbQuery(data.answer ? `📩 উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
         }
-        return ctx.answerCbQuery(ansText, { show_alert: true });
     });
 
     bot.action(/^view_msg_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        const data = db.linkDatabase[ctx.match[1]];
+        const linkId = ctx.match[1];
+        const data = db.linkDatabase[linkId];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         ctx.answerCbQuery();
-        
-        if (!data.visitorMessage) {
-            const emptyMsg = await ctx.reply("এই লিংক থেকে কোনো মেসেজ আসেনি").catch(() => null);
-            if (emptyMsg) {
+
+        if (data.visitorCustomMessage) {
+            const sentMsg = await ctx.reply(`Visitor Msg: ${data.visitorCustomMessage}`).catch(() => null);
+            if (sentMsg) {
                 setTimeout(async () => {
                     try {
-                        await bot.telegram.deleteMessage(ctx.chat.id, emptyMsg.message_id);
+                        await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
+                    } catch (e) {}
+                }, 5000);
+            }
+        } else {
+            const sentMsg = await ctx.reply("ei link theke kuno msg aseni").catch(() => null);
+            if (sentMsg) {
+                setTimeout(async () => {
+                    try {
+                        await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
                     } catch (e) {}
                 }, 2000);
             }
-            return;
-        }
-
-        const msgObj = await ctx.reply(`ভিজিটরের মেসেজ:\n${data.visitorMessage}`).catch(() => null);
-        if (msgObj) {
-            setTimeout(async () => {
-                try {
-                    await bot.telegram.deleteMessage(ctx.chat.id, msgObj.message_id);
-                } catch (e) {}
-            }, 10000);
         }
     });
 
@@ -185,7 +183,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
                 try {
                     await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
                 } catch (e) {}
-            }, 10000);
+            }, 5000);
         }
     });
 };
