@@ -24,30 +24,49 @@ function handleFeedbackStart(ctx, db, saveDB) {
     });
 }
 
-function handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
+async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
     const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
-    
-    if (text.length < 5) return ctx.reply(feedmsg.feedback_short);
-    
-    const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
-    const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-    const adminMsg = `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`;
-    
-    ADMIN_IDS.forEach(id => {
-        bot.telegram.sendMessage(id, adminMsg).catch(() => {});
-    });
-    
-    delete db.userSessions[userId];
-    saveDB();
-    const backBtnText = locale?.btn_back || "🔙 পিছনে যান";
-    return ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback(backBtnText, 'go_to_main_menu')]]));
+
+    if (text.length < 5) {
+        await ctx.deleteMessage().catch(() => {});
+        if (session.feedbackWarningMsgId) {
+            await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+        }
+        const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
+        db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
+        await saveDB();
+        return true;
+    } else {
+        if (session.feedbackWarningMsgId) {
+            await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+        }
+        if (session.feedbackPromptMsgId) {
+            await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
+        }
+        await ctx.deleteMessage().catch(() => {});
+        
+        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
+        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
+        const adminMsg = `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`;
+        
+        ADMIN_IDS.forEach(id => {
+            bot.telegram.sendMessage(id, adminMsg).catch(() => {});
+        });
+        
+        delete db.userSessions[userId];
+        await saveDB();
+        const backBtnText = locale?.btn_back || "🔙 পিছনে যান";
+        await ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback(backBtnText, 'go_to_main_menu')]]));
+        return true;
+    }
 }
 
-function setupFeedbackActions(bot, db, saveDB) {
+function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale) {
     bot.action('menu_feedback', (ctx) => {
         handleFeedbackStart(ctx, db, saveDB);
     });
 }
 
-module.exports = { handleFeedbackStart, handleFeedbackInput, setupFeedbackActions, feedmsg };
+module.exports = { handleFeedbackStart, handleFeedbackText, setupFeedbackActions, feedmsg };
