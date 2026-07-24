@@ -11,12 +11,8 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
             
-            const sentMsg = await bot.telegram.sendMessage(data.userId, "লিংকটি ওপেন করা হয়েছে।").catch(() => null);
-            if (sentMsg) {
-                if (!data.openMessageIds) data.openMessageIds = {};
-                data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
-                await saveDB();
-            }
+            // Update 1: Link open message will not be deleted (removed deletion logic)
+            await bot.telegram.sendMessage(data.userId, "লিংকটি ওপেন করা হয়েছে।").catch(() => null);
             
             let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
             let ip = rawIp.split(',')[0].trim();
@@ -66,7 +62,7 @@ function setupRoutes(app, db, saveDB, bot) {
             return res.json({ 
                 success: true, isLocked: false, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: config.question, buttons: config.buttons, image: data.image || null,
+                question: config.question, buttons: data.buttons, image: data.image || null,
                 buttonMovement: data.buttonMovement || 'no'
             });
         } catch (err) { 
@@ -80,12 +76,8 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
 
-            const sentMsg = await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে।").catch(() => null);
-            if (sentMsg) {
-                if (!data.envelopeMessageIds) data.envelopeMessageIds = {};
-                data.envelopeMessageIds[req.ip || 'default'] = sentMsg.message_id;
-                await saveDB();
-            }
+            // Update 1: Envelope opened message will not be deleted (removed deletion logic)
+            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে।").catch(() => null);
             return res.json({ success: true });
         } catch (err) {
             res.json({ success: false });
@@ -129,34 +121,19 @@ function setupRoutes(app, db, saveDB, bot) {
             
             data.answer = answer;
             data.noAttempts = noAttempts || 0;
+            data.visitorCustomMessage = "";
             
             if (data.attemptingMsgId) {
                 await bot.telegram.editMessageText(data.userId, data.attemptingMsgId, undefined, `মোট ${data.noAttempts} বার no তে ক্লিক করা হয়েছে।`).catch(() => {});
                 data.attemptingMsgId = null;
             }
 
-            if (data.openMessageIds) {
-                const clientIp = req.ip || 'default';
-                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
-                if (msgId) {
-                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
-                    delete data.openMessageIds[clientIp];
-                }
-            }
-
-            if (data.envelopeMessageIds) {
-                const clientIp = req.ip || 'default';
-                const msgId = data.envelopeMessageIds[clientIp] || Object.values(data.envelopeMessageIds)[0];
-                if (msgId) {
-                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
-                    delete data.envelopeMessageIds[clientIp];
-                }
-            }
-            
             await saveDB();
             
+            // Update 2: Notification format with Check Msg inline button
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            const sentNotify = await bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => null);
+            const notificationText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}\nMsg: `;
+            const sentNotify = await bot.telegram.sendMessage(data.userId, notificationText, Markup.inlineKeyboard([[Markup.button.callback("Check Msg", `check_msg_${id}`)]])).catch(() => null);
             if (sentNotify) {
                 data.lastAnswerNotifyMsgId = sentNotify.message_id;
                 await saveDB();
@@ -182,8 +159,10 @@ function setupRoutes(app, db, saveDB, bot) {
                 data.lastAnswerNotifyMsgId = null;
             }
 
-            const updatedText = `apnar link theke msg eseche.\nMsg: ${message}`;
-            const newMsg = await bot.telegram.sendMessage(data.userId, updatedText).catch(() => null);
+            // Update 2: Notification format with custom message and Check Msg button
+            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            const notificationText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${data.answer || ''}\nMsg: ${message}`;
+            const newMsg = await bot.telegram.sendMessage(data.userId, notificationText, Markup.inlineKeyboard([[Markup.button.callback("Check Msg", `check_msg_${id}`)]])).catch(() => null);
             if (newMsg) {
                 data.lastAnswerNotifyMsgId = newMsg.message_id;
                 await saveDB();
