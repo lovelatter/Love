@@ -10,7 +10,8 @@ const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
 const { setupMakeLink } = require('./modules/menu_makelink');
-const { generateRandomAnimation, generateRandomLetter } = require('./modules/random');
+const { setupAnimationActions, handleAnimationText } = require('./modules/animation');
+const { setupLetterActions, handleLetterText } = require('./modules/letter');
 
 const app = express();
 app.use(express.json());
@@ -67,6 +68,8 @@ setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadPrompt);
 setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt);
 setupMusicActions(bot, db, saveDB, showImageUploadPrompt);
 setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, null);
+setupAnimationActions(bot, db, saveDB);
+setupLetterActions(bot, db, saveDB, ADMIN_IDS, SERVER_URL);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -114,172 +117,6 @@ async function showAnimationIntro(ctx) {
     }
 }
 
-bot.action('random_anim_start', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    
-    session.animHistory = [];
-    session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
-    session.animHistory.push(...session.currentAnimList);
-    session.step = 'PREVIEW_RANDOM_ANIM';
-    await saveDB();
-    await renderRandomAnimPreview(ctx, userId);
-});
-
-async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
-    const session = db.userSessions[userId];
-    const text = "জেনারেট করা অ্যানিমেশন টেক্সট:\n\n" + session.currentAnimList.join('\n');
-    let buttons = [
-        [Markup.button.callback("এটি রাখবো", 'anim_keep')],
-        [Markup.button.callback("পরিবর্তন", 'anim_change')]
-    ];
-    if (showPrevBtn) {
-        buttons = [
-            [Markup.button.callback("এটি রাখবো", 'anim_keep')],
-            [Markup.button.callback("আগেরটা", 'anim_prev'), Markup.button.callback("পরিবর্তন", 'anim_change')]
-        ];
-    }
-    const keyboard = Markup.inlineKeyboard(buttons);
-    await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(() => {});
-}
-
-bot.action('anim_change', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    session.prevAnimList = [...session.currentAnimList];
-    session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
-    session.animHistory.push(...session.currentAnimList);
-    await saveDB();
-    await renderRandomAnimPreview(ctx, userId, true);
-});
-
-bot.action('anim_prev', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session || !session.prevAnimList) return;
-    const temp = [...session.currentAnimList];
-    session.currentAnimList = [...session.prevAnimList];
-    session.prevAnimList = temp;
-    await saveDB();
-    await renderRandomAnimPreview(ctx, userId, true);
-});
-
-bot.action('anim_keep', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    session.animations = session.currentAnimList;
-    session.step = 'AWAITING_LETTER_TEXT';
-    await saveDB();
-    const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("🎲 Random", 'random_letter_start')],
-        [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
-    ]);
-    const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
-        return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
-    });
-    if (sentMsg) {
-        session.lastPromptMsgId = sentMsg.message_id;
-        await saveDB();
-    }
-});
-
-bot.action('random_letter_start', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    
-    session.letterHistory = [];
-    session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
-    session.letterHistory.push(session.currentLetterText);
-    session.step = 'PREVIEW_RANDOM_LETTER';
-    await saveDB();
-    await renderRandomLetterPreview(ctx, userId);
-});
-
-async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
-    const session = db.userSessions[userId];
-    const text = "জেনারেট করা চিঠি:\n\n" + session.currentLetterText;
-    let buttons = [
-        [Markup.button.callback("এটি রাখবো", 'letter_keep')],
-        [Markup.button.callback("পরিবর্তন", 'letter_change')]
-    ];
-    if (showPrevBtn) {
-        buttons = [
-            [Markup.button.callback("এটি রাখবো", 'letter_keep')],
-            [Markup.button.callback("আগেরটা", 'letter_prev'), Markup.button.callback("পরিবর্তন", 'letter_change')]
-        ];
-    }
-    const keyboard = Markup.inlineKeyboard(buttons);
-    await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(() => {});
-}
-
-bot.action('letter_change', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    session.prevLetterText = session.currentLetterText;
-    session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
-    session.letterHistory.push(session.currentLetterText);
-    await saveDB();
-    await renderRandomLetterPreview(ctx, userId, true);
-});
-
-bot.action('letter_prev', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session || !session.prevLetterText) return;
-    const temp = session.currentLetterText;
-    session.currentLetterText = session.prevLetterText;
-    session.prevLetterText = temp;
-    await saveDB();
-    await renderRandomLetterPreview(ctx, userId, true);
-});
-
-bot.action('letter_keep', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-    session.step = 'AWAITING_MOVEMENT_CHOICE';
-    await saveDB();
-    
-    if (session.lastPromptMsgId) {
-        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-    }
-
-    const sentMsg = await ctx.reply("🔘 No বাটনটি মুভমেন্ট করাতে চান?", Markup.inlineKeyboard([
-        [Markup.button.callback("হ্যাঁ ✅", "mov_yes"), Markup.button.callback("না ❌", "mov_no")]
-    ]));
-    session.lastPromptMsgId = sentMsg.message_id;
-    await saveDB();
-});
-
-bot.action(/^mov_(yes|no)$/, async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    if (!session) return;
-
-    session.enableMovement = (ctx.match[1] === 'yes');
-    const letterText = session.currentLetterText;
-
-    if (session.lastPromptMsgId) {
-        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-    }
-    await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
-});
-
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
     const help_text = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন।\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`;
@@ -312,36 +149,11 @@ bot.on('text', async (ctx) => {
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
-            db.userSessions[userId].animations = lines;
-            db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-            if (session.lastPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            const nextPrompt = await ctx.reply(`✅ চমৎকার! আপনি ${lines.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
-                [Markup.button.callback("🎲 Random", 'random_letter_start')],
-                [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
-            ]));
-            db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
-            await saveDB();
+            await handleAnimationText(ctx, db, saveDB, bot);
             return;
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
-            if (session.lastPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            session.currentLetterText = text;
-            session.step = 'AWAITING_MOVEMENT_CHOICE';
-            await saveDB();
-
-            const sentMsg = await ctx.reply("🔘 No বাটনটি মুভমেন্ট করাতে চান?", Markup.inlineKeyboard([
-                [Markup.button.callback("হ্যাঁ ✅", "mov_yes"), Markup.button.callback("না ❌", "mov_no")]
-            ]));
-            session.lastPromptMsgId = sentMsg.message_id;
-            await saveDB();
+            await handleLetterText(ctx, db, saveDB, bot);
             return;
         }
     } catch (error) {
