@@ -125,32 +125,15 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         }
     });
 
-    bot.action(/^view_msg_(.+)$/, async (ctx) => {
+    // Update 3: Check msg button action will show message as pop-up (alert)
+    bot.action(/^check_msg_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-        ctx.answerCbQuery();
 
-        if (data.visitorCustomMessage) {
-            const sentMsg = await ctx.reply(`Visitor Msg: ${data.visitorCustomMessage}`).catch(() => null);
-            if (sentMsg) {
-                setTimeout(async () => {
-                    try {
-                        await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
-                    } catch (e) {}
-                }, 5000);
-            }
-        } else {
-            const sentMsg = await ctx.reply("ei link theke kuno msg aseni").catch(() => null);
-            if (sentMsg) {
-                setTimeout(async () => {
-                    try {
-                        await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
-                    } catch (e) {}
-                }, 2000);
-            }
-        }
+        const msg = data.visitorCustomMessage ? data.visitorCustomMessage : "কোনো মেসেজ পাঠানো হয়নি।";
+        await ctx.answerCbQuery(`Msg: ${msg}`, { show_alert: true });
     });
 
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
