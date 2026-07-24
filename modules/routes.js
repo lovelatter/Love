@@ -9,10 +9,14 @@ function setupRoutes(app, db, saveDB, bot) {
         try {
             const linkId = req.body.id;
             const data = db.linkDatabase[linkId];
-            if (!data) return res.json({ success: false });
+            if (!data || data.isOff) return res.json({ success: false });
             
-            // Update 1: Link open message will not be deleted (removed deletion logic)
-            await bot.telegram.sendMessage(data.userId, "লিংকটি ওপেন করা হয়েছে।").catch(() => null);
+            const sentMsg = await bot.telegram.sendMessage(data.userId, "লিংকটি open করা হয়েছে।").catch(() => null);
+            if (sentMsg) {
+                if (!data.openMessageIds) data.openMessageIds = {};
+                data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
+                await saveDB();
+            }
             
             let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
             let ip = rawIp.split(',')[0].trim();
@@ -62,50 +66,35 @@ function setupRoutes(app, db, saveDB, bot) {
             return res.json({ 
                 success: true, isLocked: false, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: config.question, buttons: data.buttons, image: data.image || null,
-                buttonMovement: data.buttonMovement || 'no'
+                question: config.question, buttons: config.buttons, image: data.image || null,
+                config: data.config
             });
         } catch (err) { 
             res.json({ success: false }); 
         }
     });
 
-    app.post('/api/envelope-opened', async (req, res) => {
+    app.post('/api/open-envelope', async (req, res) => {
         try {
             const { id } = req.body;
             const data = db.linkDatabase[id];
-            if (!data) return res.json({ success: false });
-
-            // Update 1: Envelope opened message will not be deleted (removed deletion logic)
-            await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে।").catch(() => null);
+            if (!data || data.isOff) return res.json({ success: false });
+            
+            bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে").catch(() => {});
             return res.json({ success: true });
         } catch (err) {
             res.json({ success: false });
         }
     });
 
-    app.post('/api/no-attempt', async (req, res) => {
+    app.post('/api/event-log', async (req, res) => {
         try {
-            const { id, count } = req.body;
+            const { id, event } = req.body;
             const data = db.linkDatabase[id];
-            if (!data || data.buttonMovement !== 'yes') return res.json({ success: false });
+            if (!data || data.isOff) return res.json({ success: false });
 
-            if (count === 1) {
-                const sentMsg = await bot.telegram.sendMessage(data.userId, "no তে ক্লিক করার চেষ্টা করা হচ্ছে").catch(() => null);
-                if (sentMsg) {
-                    data.attemptingMsgId = sentMsg.message_id;
-                    await saveDB();
-                }
-            } else {
-                if (data.attemptingMsgId) {
-                    await bot.telegram.editMessageText(data.userId, data.attemptingMsgId, undefined, `মোট ${count} বার no তে ক্লিক করা হয়েছে।`).catch(() => {});
-                } else {
-                    const sentMsg = await bot.telegram.sendMessage(data.userId, `মোট ${count} বার no তে ক্লিক করা হয়েছে।`).catch(() => null);
-                    if (sentMsg) {
-                        data.attemptingMsgId = sentMsg.message_id;
-                        await saveDB();
-                    }
-                }
+            if (event === 'no_attempt_start' && data.config && data.config.enableMovement) {
+                bot.telegram.sendMessage(data.userId, "no তে ক্লিক করার চেষ্টা করা হচ্ছে").catch(() => {});
             }
             return res.json({ success: true });
         } catch (err) {
@@ -115,29 +104,30 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-answer', async (req, res) => {
         try {
-            const { id, answer, noAttempts } = req.body;
+            const { id, answer, totalMovements } = req.body;
             const data = db.linkDatabase[id];
-            if (!data) return res.json({ success: false });
+            if (!data || data.isOff) return res.json({ success: false });
             
             data.answer = answer;
-            data.noAttempts = noAttempts || 0;
-            data.visitorCustomMessage = "";
+            data.totalMovements = totalMovements || 0;
             
-            if (data.attemptingMsgId) {
-                await bot.telegram.editMessageText(data.userId, data.attemptingMsgId, undefined, `মোট ${data.noAttempts} বার no তে ক্লিক করা হয়েছে।`).catch(() => {});
-                data.attemptingMsgId = null;
+            if (data.openMessageIds) {
+                const clientIp = req.ip || 'default';
+                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
+                if (msgId) {
+                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
+                    delete data.openMessageIds[clientIp];
+                }
             }
-
+            
             await saveDB();
             
-            // Update 2: Notification format with Check Msg inline button
-            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            const notificationText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}\nMsg: `;
-            const sentNotify = await bot.telegram.sendMessage(data.userId, notificationText, Markup.inlineKeyboard([[Markup.button.callback("Check Msg", `check_msg_${id}`)]])).catch(() => null);
-            if (sentNotify) {
-                data.lastAnswerNotifyMsgId = sentNotify.message_id;
-                await saveDB();
+            if (data.config && data.config.enableMovement) {
+                bot.telegram.sendMessage(data.userId, `mut ${data.totalMovements} বার no তে ক্লিক করা হয়েছে।`).catch(() => {});
             }
+
+            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => {});
             
             return res.json({ success: true });
         } catch (err) { 
@@ -145,29 +135,16 @@ function setupRoutes(app, db, saveDB, bot) {
         }
     });
 
-    app.post('/api/submit-custom-message', async (req, res) => {
+    app.post('/api/submit-message', async (req, res) => {
         try {
             const { id, message } = req.body;
             const data = db.linkDatabase[id];
-            if (!data) return res.json({ success: false });
+            if (!data || data.isOff) return res.json({ success: false });
 
-            data.visitorCustomMessage = message;
+            data.visitorMessage = message;
             await saveDB();
 
-            if (data.lastAnswerNotifyMsgId) {
-                await bot.telegram.deleteMessage(data.userId, data.lastAnswerNotifyMsgId).catch(() => {});
-                data.lastAnswerNotifyMsgId = null;
-            }
-
-            // Update 2: Notification format with custom message and Check Msg button
-            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            const notificationText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${data.answer || ''}\nMsg: ${message}`;
-            const newMsg = await bot.telegram.sendMessage(data.userId, notificationText, Markup.inlineKeyboard([[Markup.button.callback("Check Msg", `check_msg_${id}`)]])).catch(() => null);
-            if (newMsg) {
-                data.lastAnswerNotifyMsgId = newMsg.message_id;
-                await saveDB();
-            }
-
+            bot.telegram.sendMessage(data.userId, `আপনার লিংক থেকে মেসেজ এসেছে。\nMsg: ${message}`).catch(() => {});
             return res.json({ success: true });
         } catch (err) {
             res.json({ success: false });
