@@ -299,8 +299,8 @@ bot.action('letter_keep', async (ctx) => {
         await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
     }
 
-    const sentMsg = await ctx.reply("no batton movement korate chan?", Markup.inlineKeyboard([
-        [Markup.button.callback("yes", "mov_yes"), Markup.button.callback("no", "mov_no")]
+    const sentMsg = await ctx.reply("🔘 No বাটনটি মুভমেন্ট করাতে চান?", Markup.inlineKeyboard([
+        [Markup.button.callback("হ্যাঁ ✅", "mov_yes"), Markup.button.callback("না ❌", "mov_no")]
     ]));
     session.lastPromptMsgId = sentMsg.message_id;
     await saveDB();
@@ -404,8 +404,8 @@ bot.on('text', async (ctx) => {
             session.step = 'AWAITING_MOVEMENT_CHOICE';
             await saveDB();
 
-            const sentMsg = await ctx.reply("no batton movement korate chan?", Markup.inlineKeyboard([
-                [Markup.button.callback("yes", "mov_yes"), Markup.button.callback("no", "mov_no")]
+            const sentMsg = await ctx.reply("🔘 No বাটনটি মুভমেন্ট করাতে চান?", Markup.inlineKeyboard([
+                [Markup.button.callback("হ্যাঁ ✅", "mov_yes"), Markup.button.callback("না ❌", "mov_no")]
             ]));
             session.lastPromptMsgId = sentMsg.message_id;
             await saveDB();
