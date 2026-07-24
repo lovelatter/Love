@@ -64,7 +64,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
-🔘 Batton movement: ${enableMovement ? "yes" : "no"}
+🔘 Batton movement: ${enableMovement ? "Yes ✅" : "No ❌"}
 🔗 Main Link: ${finalGeneratedUrl}`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
