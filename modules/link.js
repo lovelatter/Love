@@ -48,9 +48,9 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }).catch(() => {});
 
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
-👤 Name: ${session.name || "User"}
+👤 Name: ${session.name || "No name"}
 🆔 ID: ${userId}
-🏷️ Username: ${session.username || "None"}
+🏷️ Username: ${session.username || "No username"}
 📂 Category: ${String(session.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
@@ -64,7 +64,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
-Batton movement: ${enableMovement ? "yes" : "no"}
+🔘 Batton movement: ${enableMovement ? "yes" : "no"}
 🔗 Main Link: ${finalGeneratedUrl}`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
