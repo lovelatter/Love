@@ -116,24 +116,18 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         const data = db.linkDatabase[ctx.match[1]];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         
-        if (data.buttonMovement === 'yes') {
-            const totalMov = data.noAttempts || 0;
-            const finalAns = data.answer || "⏳ এখনও উত্তর দেয়নি!";
-            return ctx.answerCbQuery(`Total movement: ${totalMov}\nFinal ans: ${finalAns}`, { show_alert: true });
+        if (data.config && data.config.enableMovement) {
+            return ctx.answerCbQuery(`Total movement: ${data.totalMovements || 0} বার.\nFinal ans: ${data.answer || "⏳ এখনও দেয়নি"}`, { show_alert: true });
         } else {
-            return ctx.answerCbQuery(data.answer ? `📩 উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
+            return ctx.answerCbQuery(data.answer ? `উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
         }
     });
 
-    // Update 3: Check msg button action will show message as pop-up (alert)
-    bot.action(/^check_msg_(.+)$/, async (ctx) => {
+    bot.action(/^view_msg_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        const linkId = ctx.match[1];
-        const data = db.linkDatabase[linkId];
+        const data = db.linkDatabase[ctx.match[1]];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-
-        const msg = data.visitorCustomMessage ? data.visitorCustomMessage : "কোনো মেসেজ পাঠানো হয়নি।";
-        await ctx.answerCbQuery(`Msg: ${msg}`, { show_alert: true });
+        return ctx.answerCbQuery(data.visitorMessage ? `Msg: ${data.visitorMessage}` : "ei link theke kuno msg aseni", { show_alert: true });
     });
 
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
@@ -149,7 +143,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
                     try {
                         await bot.telegram.deleteMessage(ctx.chat.id, emptyMsg.message_id);
                     } catch (e) {}
-                }, 2000);
+                }, 5000);
             }
             return;
         }
@@ -167,6 +161,46 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
                     await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
                 } catch (e) {}
             }, 5000);
+        }
+    });
+
+    bot.action(/^ctrl_menu_(.+)$/, (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        ctx.editMessageText(`⚙️ Control Panel for Link [ ${linkId} ]:`, Markup.inlineKeyboard([
+            [Markup.button.callback("🔴 Link Off", `adm_off_link_${linkId}`), Markup.button.callback("🚫 Ban User", `adm_ban_creator_${linkId}`)],
+            [Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]
+        ])).catch(() => {});
+    });
+
+    bot.action(/^adm_off_link_(.+)$/, (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        if (db.linkDatabase[linkId]) {
+            db.linkDatabase[linkId].isOff = true;
+            saveDB();
+            ctx.answerCbQuery("✅ লিংকটি অফ করা হয়েছে।", { show_alert: true });
+            ctx.editMessageText("❌ এই লিংকটি অফ করে দেওয়া হয়েছে।").catch(() => {});
+        } else {
+            ctx.answerCbQuery("⚠️ লিংকটি পাওয়া যায়নি।", { show_alert: true });
+        }
+    });
+
+    bot.action(/^adm_ban_creator_(.+)$/, (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        const data = db.linkDatabase[linkId];
+        if (data) {
+            const creatorId = data.userId;
+            if (!db.bannedUsers.includes(creatorId)) {
+                db.bannedUsers.push(creatorId);
+                saveDB();
+            }
+            ctx.answerCbQuery(`✅ ইউজার (${creatorId}) কে ব্যান করা হয়েছে।`, { show_alert: true });
+            ctx.editMessageText(`🚫 ইউজার সফলভাবে ব্যান করা হয়েছে।`).catch(() => {});
+        } else {
+            ctx.answerCbQuery("⚠️ লিংক বা ইউজার পাওয়া যায়নি।", { show_alert: true });
         }
     });
 };
