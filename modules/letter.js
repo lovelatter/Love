@@ -1,5 +1,4 @@
 const { Markup } = require('telegraf');
-const { processFinalLinkCreation } = require('./link');
 
 const letterPool = {
     love: [
@@ -42,7 +41,7 @@ const letterPool = {
         "ঈদ মোবারক! তোমার ও তোমার পরিবারের জীবন ঈদের চাঁদের মতো উজ্জ্বল ও সুন্দর হোক। আল্লাহ তোমার জীবন অনাবিল শান্তি ও সমৃদ্ধিতে পরিপূর্ণ করে দিন। 🌙✨",
         "এই পবিত্র ঈদে তোমার জীবনের সকল দুঃখ-বেদনা দূর হয়ে মনটা আনন্দে ভরে উঠুক। প্রিয়জনদের সান্নিধ্যে তোমার এবারের ঈদ অত্যন্ত আনন্দময় ও নিরাপদ কাটুক। 🕌",
         "ঈদ মোবারক! মহান আল্লাহ তোমার সকল নেক আমল কবুল করুন এবং তোমার জীবনকে সুখ ও হাসিমুখে ভরিয়ে তুলুন। পরিবারকে নিয়ে অনেক ভালো কাটুক এবারের ঈদ! 🌹",
-        "সেমাইয়ের মিষ্টি স্বাদ আর সবার কোলাকুলিতে জমে উঠুক তোমার ঈদের দিনটি। সব মনকষ্ট দূরে ঠেলে দিয়ে আজকের দিনটি শুধু হাসিখুশিতে কাটিয়ে দাও। ঈদ মোবারক! 🎉",
+        "সেমাইয়ের মিষ্টি স্বাদ আর সবার কোলাকুলিতে জমে উঠুক তোমার ঈদের দিনটি। সব মনকষ্ট দূরে ঠেলে দিয়ে শুধুমাত্র হাসিখুশিতে কাটিয়ে দাও। ঈদ মোবারক! 🎉",
         "ঈদের এই পবিত্র হাওয়া তোমার মনে নিয়ে আসুক অপার শান্তি ও প্রশান্তি। তোমার জীবনের প্রতিটি দিন যেন ঈদের দিনের মতো আনন্দের হয়, এই শুভকামনা রইল। 🌟",
         "ঈদ মোবারক! তোমার জীবনের সমস্ত অন্ধকার দূর হয়ে আনন্দের আলোয় ঝলমল করে উঠুক চারপাশ। পরিবারের সবাইকে নিয়ে খুব আনন্দে কাটুক এবারের ঈদ! 🏮",
         "বছর ঘুরে আবার আসুক ঈদের আনন্দ। এই পবিত্র দিনে আল্লাহ তোমার সমস্ত দোয়া কবুল করুন এবং তোমার জীবনকে সুখ-শান্তিতে ভরে দিন। ঈদ মোবারক! 🌙",
@@ -61,7 +60,7 @@ async function generateRandomLetter(category, history = []) {
     return text;
 }
 
-function setupLetterActions(bot, db, saveDB, ADMIN_IDS, SERVER_URL) {
+function setupLetterActions(bot, db, saveDB) {
     bot.action('random_letter_start', async (ctx) => {
         ctx.answerCbQuery();
         const userId = ctx.chat.id;
@@ -99,40 +98,6 @@ function setupLetterActions(bot, db, saveDB, ADMIN_IDS, SERVER_URL) {
         await saveDB();
         await renderRandomLetterPreview(ctx, userId, true);
     });
-
-    bot.action('letter_keep', async (ctx) => {
-        ctx.answerCbQuery();
-        const userId = ctx.chat.id;
-        const session = db.userSessions[userId];
-        if (!session) return;
-        session.step = 'AWAITING_MOVEMENT_CHOICE';
-        await saveDB();
-        
-        if (session.lastPromptMsgId) {
-            await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-        }
-
-        const sentMsg = await ctx.reply("🔘 No বাটনটি মুভমেন্ট করাতে চান?", Markup.inlineKeyboard([
-            [Markup.button.callback("হ্যাঁ ✅", "mov_yes"), Markup.button.callback("না ❌", "mov_no")]
-        ]));
-        session.lastPromptMsgId = sentMsg.message_id;
-        await saveDB();
-    });
-
-    bot.action(/^mov_(yes|no)$/, async (ctx) => {
-        ctx.answerCbQuery();
-        const userId = ctx.chat.id;
-        const session = db.userSessions[userId];
-        if (!session) return;
-
-        session.enableMovement = (ctx.match[1] === 'yes');
-        const letterText = session.currentLetterText;
-
-        if (session.lastPromptMsgId) {
-            await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-        }
-        await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
-    });
 }
 
 async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
@@ -152,25 +117,4 @@ async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
     await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(() => {});
 }
 
-async function handleLetterText(ctx, db, saveDB, bot) {
-    const userId = ctx.chat.id;
-    const session = db.userSessions[userId];
-    const text = ctx.message.text.trim();
-
-    if (session.lastPromptMsgId) {
-        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-    }
-    await ctx.deleteMessage().catch(() => {});
-    session.currentLetterText = text;
-    session.step = 'AWAITING_MOVEMENT_CHOICE';
-    await saveDB();
-
-    const sentMsg = await ctx.reply("🔘 No বাটনটি মুভমেন্ট করাতে চান?", Markup.inlineKeyboard([
-        [Markup.button.callback("হ্যাঁ ✅", "mov_yes"), Markup.button.callback("না ❌", "mov_no")]
-    ]));
-    session.lastPromptMsgId = sentMsg.message_id;
-    await saveDB();
-    return true;
-}
-
-module.exports = { setupLetterActions, handleLetterText };
+module.exports = { setupLetterActions, generateRandomLetter };
