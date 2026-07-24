@@ -9,7 +9,7 @@ const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
-const { localeCategories } = require('./modules/category');
+const { setupMakeLink } = require('./modules/menu_makelink');
 const { generateRandomAnimation, generateRandomLetter } = require('./modules/random');
 
 const app = express();
@@ -63,6 +63,7 @@ bot.use(async (ctx, next) => {
 });
 
 setupAdmin(bot, db, saveDB, isAdmin, __dirname, null);
+setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadPrompt);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -82,32 +83,6 @@ bot.command('start', async (ctx) => {
 });
 
 bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
-
-bot.action('menu_makelink', (ctx) => {
-    ctx.answerCbQuery();
-    ctx.editMessageText(localeCategories.choose_cat, Markup.inlineKeyboard([
-        [Markup.button.callback(localeCategories.cat_love, 'make_love')],
-        [Markup.button.callback(localeCategories.cat_birthday, 'make_birthday')],
-        [Markup.button.callback(localeCategories.cat_sorry, 'make_sorry')],
-        [Markup.button.callback(localeCategories.cat_eid, 'make_eid')],
-        [Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]
-    ]));
-});
-
-bot.action(/^make_/, async (ctx) => {
-    ctx.answerCbQuery();
-    const cat = ctx.match.input.replace('make_', '');
-    db.userSessions[ctx.chat.id] = { 
-        type: cat, 
-        name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim() || "User",
-        username: ctx.from.username ? `@${ctx.from.username}` : "None",
-        music: music_set[cat] || "",
-        imageUrl: null,
-        step: 'AWAITING_COUNTDOWN_SELECTION'
-    };
-    await saveDB();
-    showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, null), null);
-});
 
 bot.action('timer_no', async (ctx) => { 
     ctx.answerCbQuery(); 
