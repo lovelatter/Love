@@ -5,7 +5,7 @@ const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt, setupCountdownActions } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, setupMusicActions } = require('./modules/music');
-const { handleFeedbackStart, handleFeedbackInput, setupFeedbackActions } = require('./modules/feedback');
+const { handleFeedbackStart, handleFeedbackText, setupFeedbackActions } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
@@ -66,7 +66,7 @@ setupAdmin(bot, db, saveDB, isAdmin, __dirname, null);
 setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadPrompt);
 setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt);
 setupMusicActions(bot, db, saveDB, showImageUploadPrompt);
-setupFeedbackActions(bot, db, saveDB);
+setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, null);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -295,25 +295,8 @@ bot.on('text', async (ctx) => {
     const text = ctx.message.text.trim();
     
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        if (text.length < 5) {
-            await ctx.deleteMessage().catch(() => {});
-            if (session.feedbackWarningMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
-            }
-            const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
-            db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
-            await saveDB();
-            return;
-        } else {
-            if (session.feedbackWarningMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
-            }
-            if (session.feedbackPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, null);
-        }
+        const handled = await handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, null);
+        if (handled) return;
     }
 
     if (isAdmin(userId) && session) {
