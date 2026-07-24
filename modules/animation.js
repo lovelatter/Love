@@ -123,7 +123,7 @@ const animationPool = {
         "তোমার জীবনের প্রতিটি দিন ঈদের মতো হোক 🏮",
         "আল্লাহ তোমার সকল নেক দোয়া কবুল করুন 🤲",
         "প্রিয়জনদের সান্নিধ্যে চমৎকার কাটুক ঈদ 👨‍👩‍👧‍👦",
-        "ঈদ মানে আনন্দ, ঈদ মানে অনাবিল শান্তি 🕊️",
+        "ঈদ মোবারক মানে আনন্দ, ঈদ মোবারক মানে অনাবিল শান্তি 🕊️",
         "খুশির আলোয় ঝলমল করুক তোমার আঙিনা 💡",
         "মিষ্টিমুখ আর কোলাকুলিতে জমজমাট হোক ঈদ 🍧",
         "তোমার জীবনে বয়ে আসুক রহমতের বারিপাত 🌧️",
@@ -254,26 +254,24 @@ async function handleAnimationText(ctx, db, saveDB, bot) {
     await ctx.deleteMessage().catch(() => {});
 
     const successText = `✅ চমৎকার! আপনি ${lines.length} লাইনের অ্যানিমেশন যোগ করেছেন।`;
-    const sentMsg = await ctx.reply(successText);
-    session.lastPromptMsgId = sentMsg.message_id;
-    await saveDB();
-
+    const tempMsg = await ctx.reply(successText);
+    
     setTimeout(async () => {
         try {
-            await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+            await bot.telegram.deleteMessage(userId, tempMsg.message_id).catch(() => {});
         } catch (e) {}
-
-        const letterPromptText = "💌 খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।" + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
-        const keyboard = Markup.inlineKeyboard([
-            [Markup.button.callback("🎲 Random", 'random_letter_start')],
-            [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
-        ]);
-        const nextPrompt = await ctx.reply(letterPromptText, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
-        if (nextPrompt) {
-            session.lastPromptMsgId = nextPrompt.message_id;
-            await saveDB();
-        }
     }, 3000);
+
+    const letterPromptText = "💌 খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।" + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback("🎲 Random", 'random_letter_start')],
+        [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
+    ]);
+    const nextPrompt = await ctx.reply(letterPromptText, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
+    if (nextPrompt) {
+        session.lastPromptMsgId = nextPrompt.message_id;
+        await saveDB();
+    }
 
     return true;
 }
