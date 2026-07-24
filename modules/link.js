@@ -19,7 +19,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     
     const dbImageUrl = session.imageUrl || null;
     let finalMusicUrl = session.music || "";
-    let btnMov = session.buttonMovement || 'no';
+    const enableMovement = session.enableMovement || false;
 
     db.linkDatabase[uniqueId] = {
         userId, 
@@ -34,17 +34,17 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
         image: dbImageUrl, 
         imagePath: null, 
         visitors: [],
-        buttonMovement: btnMov,
-        noAttempts: 0,
-        visitorCustomMessage: null
+        config: { enableMovement },
+        totalMovements: 0,
+        visitorMessage: null,
+        isOff: false
     };
 
     delete db.userSessions[userId];
     await saveDB();
 
     ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
+        parse_mode: 'Markdown'
     }).catch(() => {});
 
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
@@ -64,12 +64,12 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
-🔗 Main Link: ${finalGeneratedUrl}
-Batton movement: ${btnMov}`;
+Batton movement: ${enableMovement ? "yes" : "no"}
+🔗 Main Link: ${finalGeneratedUrl}`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
         [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("💬 Check Msg", `view_msg_${uniqueId}`)],
-        [Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`), Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]
+        [Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`), Markup.button.callback("⚙️ Control", `ctrl_menu_${uniqueId}`)]
     ])).catch(() => {}));
 }
 
