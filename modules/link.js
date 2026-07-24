@@ -19,7 +19,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     
     const dbImageUrl = session.imageUrl || null;
     let finalMusicUrl = session.music || "";
-    const buttonMovement = session.buttonMovement || false;
+    let btnMov = session.buttonMovement || 'no';
 
     db.linkDatabase[uniqueId] = {
         userId, 
@@ -33,8 +33,10 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
         answer: null, 
         image: dbImageUrl, 
         imagePath: null, 
-        buttonMovement: buttonMovement,
-        visitors: []
+        visitors: [],
+        buttonMovement: btnMov,
+        noAttempts: 0,
+        visitorCustomMessage: null
     };
 
     delete db.userSessions[userId];
@@ -62,11 +64,12 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }
     adminNotificationText += `\n✨ Animation txt: ${(session.animations || []).join(", ")}
 💌 Letter: ${letterText}
-Batton movement: ${buttonMovement ? "yes" : "no"}
-🔗 Main Link: ${finalGeneratedUrl}`;
+🔗 Main Link: ${finalGeneratedUrl}
+Batton movement: ${btnMov}`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
-        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("💬 Check Msg", `view_msg_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
+        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("💬 Check Msg", `view_msg_${uniqueId}`)],
+        [Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`), Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]
     ])).catch(() => {}));
 }
 
