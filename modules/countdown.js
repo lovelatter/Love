@@ -1,8 +1,8 @@
 const { Markup } = require('telegraf');
 
 const locale = {
-    prompt_countdown_ask: "⏰ টাইম কাউন্টডাউন সেট করুন।",
-    btn_no_countdown: "❌ No Countdown"
+    prompt_countdown_ask: "⏰ কাউন্টডাউন টাইমার সেট করুন।",
+    btn_no_countdown: "❌ কাউন্টডাউন ছাড়া"
 };
 
 function showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt) {
