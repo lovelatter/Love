@@ -156,7 +156,7 @@ function setupRoutes(app, db, saveDB, bot) {
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            const sentNotify = await bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => null);
+            const sentNotify = await bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => null);
             if (sentNotify) {
                 data.lastAnswerNotifyMsgId = sentNotify.message_id;
                 await saveDB();
@@ -183,7 +183,7 @@ function setupRoutes(app, db, saveDB, bot) {
             }
 
             const updatedText = `apnar link theke msg eseche.\nMsg: ${message}`;
-            const newMsg = await bot.telegram.sendMessage(data.userId, updatedText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => null);
+            const newMsg = await bot.telegram.sendMessage(data.userId, updatedText).catch(() => null);
             if (newMsg) {
                 data.lastAnswerNotifyMsgId = newMsg.message_id;
                 await saveDB();
