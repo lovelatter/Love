@@ -156,4 +156,5 @@ function setupRoutes(app, db, saveDB, bot) {
     app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
 }
 
-setupRoutes;
+module.exports = setupRoutes;
+
