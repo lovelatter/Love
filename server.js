@@ -69,7 +69,7 @@ setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt);
 setupMusicActions(bot, db, saveDB, showImageUploadPrompt);
 setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, null);
 setupAnimationActions(bot, db, saveDB);
-setupLetterActions(bot, db, saveDB, ADMIN_IDS, SERVER_URL);
+setupLetterActions(bot, db, saveDB);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -116,6 +116,40 @@ async function showAnimationIntro(ctx) {
         await saveDB();
     }
 }
+
+bot.action('letter_keep', async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    if (!session) return;
+    session.step = 'AWAITING_MOVEMENT_CHOICE';
+    await saveDB();
+    
+    if (session.lastPromptMsgId) {
+        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+    }
+
+    const sentMsg = await ctx.reply("🔘 No বাটনটি মুভমেন্ট করাতে চান?", Markup.inlineKeyboard([
+        [Markup.button.callback("হ্যাঁ ✅", "mov_yes"), Markup.button.callback("না ❌", "mov_no")]
+    ]));
+    session.lastPromptMsgId = sentMsg.message_id;
+    await saveDB();
+});
+
+bot.action(/^mov_(yes|no)$/, async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    const session = db.userSessions[userId];
+    if (!session) return;
+
+    session.enableMovement = (ctx.match[1] === 'yes');
+    const letterText = session.currentLetterText;
+
+    if (session.lastPromptMsgId) {
+        await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+    }
+    await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
+});
 
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
