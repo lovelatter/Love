@@ -136,7 +136,6 @@
         let arrayIndex = 0, audioCtx = null;
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
         let linkConfig = { enableMovement: false };
-        let noClickAttempts = 0;
         let totalMovementCount = 0;
         let maxAllowedMovements = 0;
         let hasTriggeredFirstNoAttempt = false;
@@ -234,8 +233,8 @@
                                         triggerMove();
                                     });
                                     btn.addEventListener('click', (e) => {
+                                        e.preventDefault();
                                         if (totalMovementCount < maxAllowedMovements) {
-                                            e.preventDefault();
                                             triggerMove();
                                         } else {
                                             submitAnswer(`${btnText} ❌`);
