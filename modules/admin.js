@@ -168,21 +168,19 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
         const linkId = ctx.match[1];
-        // কন্ট্রোল প্যানেল ওপেন করার সময় নোটিফিকেশন মেসেজটি এডিট করে কন্ট্রোল প্যানেল দেখানো হবে
         ctx.editMessageText(`⚙️ Control Panel for Link [ ${linkId} ]:`, Markup.inlineKeyboard([
             [Markup.button.callback("🔴 Link Off", `adm_off_link_${linkId}`), Markup.button.callback("🚫 Ban User", `adm_ban_creator_${linkId}`)],
             [Markup.button.callback("🔙 ব্যাক", `adm_back_to_notif_${linkId}`)]
         ])).catch(() => {});
     });
 
-    // ব্যাক বাটনে ক্লিক করলে আবার আগের নোটিফিকেশন বাটনগুলো ফিরিয়ে আনা হবে
     bot.action(/^adm_back_to_notif_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
         
-        let notifText = `📌 Link Control Panel Info\n🔗 Link ID: ${linkId}`;
+        let notifText = `📌 Link Control Panel\n🔗 Link ID: ${linkId}`;
         if (data) {
             notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
 👤 Name: ${data.name || "User"}
@@ -203,11 +201,23 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.action(/^adm_off_link_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
-        if (db.linkDatabase[linkId]) {
-            db.linkDatabase[linkId].isOff = true;
+        const data = db.linkDatabase[linkId];
+        if (data) {
+            data.isOff = true;
             saveDB();
             ctx.answerCbQuery("✅ লিংকটি অফ করা হয়েছে।", { show_alert: true });
-            ctx.editMessageText("❌ এই লিংকটি অফ করে দেওয়া হয়েছে।").catch(() => {});
+            
+            let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [OFF 🔴]
+👤 Name: ${data.name || "User"}
+🆔 ID: ${data.userId}
+🏷️ Username: ${data.username || "None"}
+📂 Category: ${String(data.type || "love").toUpperCase()}
+🔗 Link ID: ${linkId}\n\nℹ️ এই লিংকটি অফ করে দেওয়া হয়েছে।`;
+
+            ctx.editMessageText(notifText, Markup.inlineKeyboard([
+                [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
+                [Markup.button.callback("👤 Visitor Info", `view_vi_${linkId}`), Markup.button.callback("⚙️ Control", `ctrl_menu_${linkId}`)]
+            ])).catch(() => {});
         } else {
             ctx.answerCbQuery("⚠️ লিংকটি পাওয়া যায়নি।", { show_alert: true });
         }
@@ -224,7 +234,18 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
                 saveDB();
             }
             ctx.answerCbQuery(`✅ ইউজার (${creatorId}) কে ব্যান করা হয়েছে।`, { show_alert: true });
-            ctx.editMessageText(`🚫 ইউজার সফলভাবে ব্যান করা হয়েছে।`).catch(() => {});
+            
+            let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [User Banned 🚫]
+👤 Name: ${data.name || "User"}
+🆔 ID: ${data.userId}
+🏷️ Username: ${data.username || "None"}
+📂 Category: ${String(data.type || "love").toUpperCase()}
+🔗 Link ID: ${linkId}\n\nℹ️ এই লিংকের ইউজারকে সফলভাবে ব্যান করা হয়েছে।`;
+
+            ctx.editMessageText(notifText, Markup.inlineKeyboard([
+                [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
+                [Markup.button.callback("👤 Visitor Info", `view_vi_${linkId}`), Markup.button.callback("⚙️ Control", `ctrl_menu_${linkId}`)]
+            ])).catch(() => {});
         } else {
             ctx.answerCbQuery("⚠️ লিংক বা ইউজার পাওয়া যায়নি।", { show_alert: true });
         }
