@@ -129,15 +129,6 @@ function setupRoutes(app, db, saveDB, bot) {
                 data.movementCount = movementCount;
             }
             
-            if (data.openMessageIds) {
-                const clientIp = req.ip || 'default';
-                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
-                if (msgId) {
-                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
-                    delete data.openMessageIds[clientIp];
-                }
-            }
-            
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
@@ -146,7 +137,15 @@ function setupRoutes(app, db, saveDB, bot) {
                 notificationText += `\n\nআপনার লিংক থেকে মেসেজ এসেছে。\nMsg: ${message}`;
             }
 
-            bot.telegram.sendMessage(data.userId, notificationText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+            if (data.lastAnswerMsgId) {
+                await bot.telegram.deleteMessage(data.userId, data.lastAnswerMsgId).catch(() => {});
+            }
+            
+            const sentMsg = await bot.telegram.sendMessage(data.userId, notificationText).catch(() => null);
+            if (sentMsg) {
+                data.lastAnswerMsgId = sentMsg.message_id;
+                await saveDB();
+            }
             
             return res.json({ success: true });
         } catch (err) { 
@@ -157,4 +156,4 @@ function setupRoutes(app, db, saveDB, bot) {
     app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
 }
 
-module.exports = { setupRoutes };
+setupRoutes;
