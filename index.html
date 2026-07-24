@@ -45,7 +45,7 @@
         .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height: 42px; position: relative; }
         .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index: 5; }
         .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
-        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
+        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; transition: transform 0.15s ease-out; }
         .btn-no:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(231,76,60,0.5); }
         
         .msg-box-container { margin-top: 15px; border-top: 1px dashed #ff758f; padding-top: 15px; display: none; }
@@ -133,6 +133,7 @@
         let enableMovement = false;
         let noAttemptCount = 0;
         let finalAnswerChosen = false;
+        let maxMovements = 0;
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
@@ -191,6 +192,9 @@
                     }
 
                     enableMovement = data.buttonMovement === 'yes';
+                    if (enableMovement) {
+                        maxMovements = Math.floor(Math.random() * 9) + 7;
+                    }
 
                     if(data.buttons && data.buttons.length > 0) {
                         btnGroup.innerHTML = ''; 
@@ -210,7 +214,7 @@
                                     let attempts = 0;
                                     const triggerMove = () => {
                                         if (finalAnswerChosen) return;
-                                        if (attempts < 15) {
+                                        if (attempts < maxMovements) {
                                             attempts++;
                                             noAttemptCount++;
                                             const randomX = (Math.random() - 0.5) * 160;
@@ -384,9 +388,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: msgText, id: id })
             }).then(() => {
-                sendMsgBtn.innerText = 'Sent! ✨';
+                customMsgInput.value = '';
+                customMsgInput.style.display = 'none';
+                sendMsgBtn.innerText = 'Delivered';
                 sendMsgBtn.disabled = true;
-                customMsgInput.disabled = true;
+                setTimeout(() => {
+                    msgBoxContainer.style.display = 'none';
+                }, 1500);
             }).catch(() => {});
         });
     </script>
