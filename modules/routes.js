@@ -178,15 +178,14 @@ function setupRoutes(app, db, saveDB, bot) {
             await saveDB();
 
             if (data.lastAnswerNotifyMsgId) {
-                const updatedText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${(CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love']).question}\nAns: ${data.answer}\n\napnar link theke msg eseche.\nMsg: ${message}`;
-                await bot.telegram.editMessageText(data.userId, data.lastAnswerNotifyMsgId, undefined, updatedText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(async () => {
-                    const newMsg = await bot.telegram.sendMessage(data.userId, updatedText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => null);
-                    if (newMsg) data.lastAnswerNotifyMsgId = newMsg.message_id;
-                    await saveDB();
-                });
-            } else {
-                const newMsg = await bot.telegram.sendMessage(data.userId, `apnar link theke msg eseche.\nMsg: ${message}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => null);
-                if (newMsg) data.lastAnswerNotifyMsgId = newMsg.message_id;
+                await bot.telegram.deleteMessage(data.userId, data.lastAnswerNotifyMsgId).catch(() => {});
+                data.lastAnswerNotifyMsgId = null;
+            }
+
+            const updatedText = `apnar link theke msg eseche.\nMsg: ${message}`;
+            const newMsg = await bot.telegram.sendMessage(data.userId, updatedText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => null);
+            if (newMsg) {
+                data.lastAnswerNotifyMsgId = newMsg.message_id;
                 await saveDB();
             }
 
