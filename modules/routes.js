@@ -113,6 +113,7 @@ function setupRoutes(app, db, saveDB, bot) {
             data.answer = answer;
             data.totalMovements = totalMovements || 0;
             
+            // এখানে صرف অ্যানসার সাবমিট করার সময় আগের "লিংকটি open করা হয়েছে" মেসেজটি ডিলিট হবে
             if (data.openMessageIds) {
                 const clientIp = req.ip || 'default';
                 const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
