@@ -89,11 +89,13 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/event-log', async (req, res) => {
         try {
-            const { id, event } = req.body;
+            const { id, event, totalMovements } = req.body;
             const data = db.linkDatabase[id];
             if (!data || data.isOff) return res.json({ success: false });
 
             if (event === 'no_attempt_start' && data.config && data.config.enableMovement) {
+                data.totalMovements = totalMovements || 0;
+                await saveDB();
                 bot.telegram.sendMessage(data.userId, "no তে ক্লিক করার চেষ্টা করা হচ্ছে").catch(() => {});
             }
             return res.json({ success: true });
