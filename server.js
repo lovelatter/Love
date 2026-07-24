@@ -278,36 +278,27 @@ bot.action('letter_keep', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    const letterText = session.currentLetterText;
+    session.step = 'AWAITING_BUTTON_MOVEMENT_CHOICE';
+    await saveDB();
     if (session.lastPromptMsgId) {
         await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
     }
-    
-    session.pendingLetterText = letterText;
-    session.step = 'AWAITING_BUTTON_MOVEMENT_CHOICE';
-    await saveDB();
-    
-    const text = "no বাটন movement করাতে চান?";
+    const text = "No বাটন movement করাতে চান?";
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("Yes", 'movement_yes'), Markup.button.callback("No", 'movement_no')]
+        [Markup.button.callback("Yes", 'btn_mov_yes'), Markup.button.callback("No", 'btn_mov_no')]
     ]);
-    const sentMsg = await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
-    if (sentMsg) {
-        session.lastPromptMsgId = sentMsg.message_id;
-        await saveDB();
-    }
+    const sentMsg = await ctx.reply(text, { reply_markup: keyboard.reply_markup });
+    session.lastPromptMsgId = sentMsg.message_id;
+    await saveDB();
 });
 
-bot.action(/^movement_(yes|no)$/, async (ctx) => {
+bot.action(/^btn_mov_(yes|no)$/, async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    
-    const choice = ctx.match[1];
-    session.buttonMovement = (choice === 'yes');
-    const letterText = session.pendingLetterText;
-    
+    session.buttonMovement = ctx.match[1];
+    const letterText = session.currentLetterText;
     if (session.lastPromptMsgId) {
         await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
     }
@@ -405,15 +396,13 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            
-            db.userSessions[userId].pendingLetterText = text;
-            db.userSessions[userId].step = 'AWAITING_BUTTON_MOVEMENT_CHOICE';
+            session.currentLetterText = text;
+            session.step = 'AWAITING_BUTTON_MOVEMENT_CHOICE';
             await saveDB();
-            
-            const promptMsg = await ctx.reply("no বাটন movement করাতে চান?", Markup.inlineKeyboard([
-                [Markup.button.callback("Yes", 'movement_yes'), Markup.button.callback("No", 'movement_no')]
+            const promptMsg = await ctx.reply("No বাটন movement করাতে চান?", Markup.inlineKeyboard([
+                [Markup.button.callback("Yes", 'btn_mov_yes'), Markup.button.callback("No", 'btn_mov_no')]
             ]));
-            db.userSessions[userId].lastPromptMsgId = promptMsg.message_id;
+            session.lastPromptMsgId = promptMsg.message_id;
             await saveDB();
             return;
         }
