@@ -2,7 +2,7 @@ const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 
 const { db, loadDB, saveDB } = require('./modules/db');
-const { showCountdownPrompt } = require('./modules/countdown');
+const { showCountdownPrompt, setupCountdownActions } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
@@ -64,6 +64,7 @@ bot.use(async (ctx, next) => {
 
 setupAdmin(bot, db, saveDB, isAdmin, __dirname, null);
 setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadPrompt);
+setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -83,23 +84,6 @@ bot.command('start', async (ctx) => {
 });
 
 bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
-
-bot.action('timer_no', async (ctx) => { 
-    ctx.answerCbQuery(); 
-    if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
-    db.userSessions[ctx.chat.id].pendingMinutes = null; 
-    await saveDB();
-    showMusicUploadPrompt(ctx, db, saveDB, null); 
-});
-
-bot.action(/^set_time_/, async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
-    db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
-    await saveDB();
-    showMusicUploadPrompt(ctx, db, saveDB, null);
-});
 
 bot.action(['music_no', 'music_default'], (ctx) => {
     handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, null);
