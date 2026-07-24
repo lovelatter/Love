@@ -42,15 +42,15 @@
         .question-box h3 { font-size:1.3rem; color:#ff4d6d; margin-bottom:12px; }
         
         .btn-group { display:flex; justify-content:center; align-items:center; gap:25px; min-height: 60px; position: relative; margin-top: 10px; }
-        .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height: 42px; }
+        .ask-btn { font-size:1.1rem; font-weight:bold; border:none; padding:10px 30px; border-radius:20px; cursor:pointer; transition:transform 0.2s ease, box-shadow 0.2s ease; color:#fff; height: 42px; position: relative; }
         .btn-yes { background-color:#2ecc71; box-shadow:0 4px 10px rgba(46,204,113,0.3); z-index: 5; }
         .btn-yes:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(46,204,113,0.5); }
-        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; position: relative; transition: none; }
+        .btn-no { background-color:#e74c3c; box-shadow:0 4px 10px rgba(231,76,60,0.3); z-index: 5; }
         .btn-no:hover { transform:scale(1.1); box-shadow:0 6px 15px rgba(231,76,60,0.5); }
         
-        .msg-section { margin-top: 15px; text-align: left; display: none; }
-        .msg-input { width: 100%; padding: 10px; border: 1px solid #ff758f; border-radius: 10px; outline: none; font-size: 0.95rem; background: #fff; color: #333; resize: none; }
-        .msg-send-btn { background-color: #ff4d6d; color: #fff; border: none; padding: 8px 20px; border-radius: 15px; cursor: pointer; font-weight: bold; margin-top: 8px; float: right; display: none; }
+        .msg-box-container { margin-top: 15px; border-top: 1px dashed #ff758f; padding-top: 15px; display: none; }
+        .custom-msg-input { width: 100%; padding: 10px; border: 1px solid #ff758f; border-radius: 10px; font-size: 0.95rem; outline: none; resize: none; background: #fff; color: #333; margin-bottom: 10px; }
+        .send-msg-btn { background-color: #ff4d6d; color: white; border: none; padding: 8px 20px; border-radius: 15px; font-weight: bold; cursor: pointer; display: none; }
 
         .heart { position:absolute; color:#ff4d6d; font-size:24px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index: 1; }
         @keyframes floatUp { 0% { transform:translateY(100vh) scale(0); opacity:0; } 10% { opacity:0.8; } 90% { opacity:0.8; } 100% { transform:translateY(-10vh) scale(1.5); opacity:0; } }
@@ -116,35 +116,33 @@
         <div class="question-box" id="questionBox">
             <h3 id="displayQuestion">Are you happy? 😊</h3>
             <div class="btn-group" id="btnGroup"></div>
-            <div class="msg-section" id="msgSection">
-                <textarea id="msgInput" class="msg-input" placeholder="msg লিখে পাঠান" rows="2"></textarea>
-                <button id="msgSendBtn" class="msg-send-btn">Send</button>
-                <div style="clear: both;"></div>
-            </div>
+        </div>
+
+        <div class="msg-box-container" id="msgBoxContainer">
+            <textarea id="customMsgInput" class="custom-msg-input" placeholder="msg likhe patan" rows="2"></textarea>
+            <button id="sendMsgBtn" class="send-msg-btn">Send</button>
         </div>
     </div>
 
     <script>
-        const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), questionBox = document.getElementById('questionBox'), lockScreen = document.getElementById('lockScreen'), letterTitle = document.getElementById('letterTitle'), displayQuestion = document.getElementById('displayQuestion'), btnGroup = document.getElementById('btnGroup'), envelopeHeart = document.getElementById('envelopeHeart');
-        const msgSection = document.getElementById('msgSection'), msgInput = document.getElementById('msgInput'), msgSendBtn = document.getElementById('msgSendBtn');
+        const openBtn = document.getElementById('openBtn'), textDisplay = document.getElementById('textDisplay'), envelope = document.getElementById('envelope'), loveLetter = document.getElementById('loveLetter'), bgMusic = document.getElementById('bgMusic'), questionBox = document.getElementById('questionBox'), lockScreen = document.getElementById('lockScreen'), letterTitle = document.getElementById('letterTitle'), displayQuestion = document.getElementById('displayQuestion'), btnGroup = document.getElementById('btnGroup'), envelopeHeart = document.getElementById('envelopeHeart'), msgBoxContainer = document.getElementById('msgBoxContainer'), customMsgInput = document.getElementById('customMsgInput'), sendMsgBtn = document.getElementById('sendMsgBtn');
         
         let textArray = ["...", "আপনার জন্য বার্তা..."];
         let arrayIndex = 0, audioCtx = null;
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
-        let enableButtonMovement = false;
-        let movementCount = 0;
-        let currentLinkId = '';
-        let lastSelectedAnswer = '';
+        let enableMovement = false;
+        let noAttemptCount = 0;
+        let finalAnswerChosen = false;
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
-            currentLinkId = pathParts[pathParts.length - 1];
+            const id = pathParts[pathParts.length - 1];
             
             try {
                 const response = await fetch('/api/get-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: currentLinkId })
+                    body: JSON.stringify({ id: id })
                 });
                 const data = await response.json();
                 
@@ -175,8 +173,6 @@
                         }
                     }
 
-                    enableButtonMovement = !!data.buttonMovement;
-
                     const categoryKey = data.type || data.category || '';
                     const matchedCategory = categoryKey.toLowerCase().trim();
 
@@ -194,6 +190,8 @@
                         displayQuestion.innerText = data.question;
                     }
 
+                    enableMovement = data.buttonMovement === 'yes';
+
                     if(data.buttons && data.buttons.length > 0) {
                         btnGroup.innerHTML = ''; 
                         data.buttons.forEach((btnText, idx) => {
@@ -203,24 +201,35 @@
                             
                             if(idx === 0) {
                                 btn.classList.add('btn-yes');
-                                btn.onclick = () => sendResponse(`${btnText} ✅`);
+                                btn.onclick = () => handleAnswerClick(btnText, true);
                             } else {
                                 btn.classList.add('btn-no');
                                 btn.id = 'noBtn';
-                                if(enableButtonMovement) {
-                                    btn.addEventListener('mouseover', moveNoButton);
-                                    btn.addEventListener('touchstart', moveNoButton);
-                                    btn.onclick = (e) => {
-                                        if (movementCount < 15) {
-                                            e.preventDefault();
-                                            moveNoButton();
-                                        } else {
-                                            sendResponse(`${btnText} ❌`);
+                                
+                                if (enableMovement) {
+                                    let attempts = 0;
+                                    const triggerMove = () => {
+                                        if (finalAnswerChosen) return;
+                                        if (attempts < 15) {
+                                            attempts++;
+                                            noAttemptCount++;
+                                            const randomX = (Math.random() - 0.5) * 160;
+                                            const randomY = (Math.random() - 0.5) * 80;
+                                            btn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+                                            
+                                            fetch('/api/no-attempt', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ id: id, count: noAttemptCount })
+                                            }).catch(() => {});
                                         }
                                     };
-                                } else {
-                                    btn.onclick = () => sendResponse(`${btnText} ❌`);
+                                    btn.addEventListener('mouseover', triggerMove);
+                                    btn.addEventListener('touchstart', (e) => {
+                                        triggerMove();
+                                    });
                                 }
+                                btn.onclick = () => handleAnswerClick(btnText, false);
                             }
                             btnGroup.appendChild(btn);
                         });
@@ -232,28 +241,10 @@
                     document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
             } catch(e) { 
+                console.log('Content fetch error');
                 letterTitle.innerText = "কিছু কথা";
             }
         });
-
-        function moveNoButton() {
-            if (!enableButtonMovement || movementCount >= 15) return;
-            movementCount++;
-            const noBtn = document.getElementById('noBtn');
-            if (!noBtn) return;
-            
-            if (movementCount === 1) {
-                fetch('/api/notify-movement-attempt', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: currentLinkId })
-                }).catch(() => {});
-            }
-
-            const x = (Math.random() - 0.5) * 160;
-            const y = (Math.random() - 0.5) * 80;
-            noBtn.style.transform = `translate(${x}px, ${y}px)`;
-        }
 
         function handleTimeLock(countdownTime) {
             lockScreen.style.display = 'flex';
@@ -335,10 +326,12 @@
                 bgMusic.currentTime = 0; bgMusic.volume = 1.0;
                 bgMusic.play().catch(e => console.log("Final play blocked"));
             }
-            fetch('/api/notify-envelope-open', {
+            const pathParts = window.location.pathname.split('/');
+            const id = pathParts[pathParts.length - 1];
+            fetch('/api/envelope-opened', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: currentLinkId })
+                body: JSON.stringify({ id: id })
             }).catch(() => {});
 
             setTimeout(() => {
@@ -355,71 +348,47 @@
             document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, 5000);
         }
 
-        msgInput.addEventListener('input', () => {
-            if(msgInput.value.trim().length > 0) {
-                msgSendBtn.style.display = 'block';
-            } else {
-                msgSendBtn.style.display = 'none';
-            }
-        });
+        function handleAnswerClick(btnText, isYes) {
+            finalAnswerChosen = true;
+            const fullAnswer = `${btnText} ${isYes ? '✅' : '❌'}`;
+            questionBox.innerHTML = `<h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>`;
+            msgBoxContainer.style.display = 'block';
 
-        msgSendBtn.addEventListener('click', () => {
-            const messageText = msgInput.value.trim();
-            if(!messageText) return;
-            msgSection.innerHTML = `<h3 style="color:#2ecc71; font-size:1.1rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>`;
-            
-            fetch('/api/submit-answer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: lastSelectedAnswer || "Yes ✅", message: messageText, movementCount: movementCount, id: currentLinkId })
-            }).catch(() => {});
-        });
-
-        function sendResponse(answer) {
-            lastSelectedAnswer = answer;
-            let finalAns = answer;
-            if (enableButtonMovement && answer.includes('❌')) {
-                finalAns = `${movementCount} বার no এ ক্লিক করা হয়েছে (${answer})`;
-            }
-
-            questionBox.innerHTML = `
-                <h3 style="color:#2ecc71; font-size:1.3rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>
-                <div class="msg-section" id="msgSection" style="display: block; margin-top: 15px;">
-                    <textarea id="msgInput" class="msg-input" placeholder="msg লিখে পাঠান" rows="2"></textarea>
-                    <button id="msgSendBtn" class="msg-send-btn">Send</button>
-                    <div style="clear: both;"></div>
-                </div>
-            `;
-
-            const newMsgInput = document.getElementById('msgInput');
-            const newMsgSendBtn = document.getElementById('msgSendBtn');
-
-            newMsgInput.addEventListener('input', () => {
-                if(newMsgInput.value.trim().length > 0) {
-                    newMsgSendBtn.style.display = 'block';
-                } else {
-                    newMsgSendBtn.style.display = 'none';
-                }
-            });
-
-            newMsgSendBtn.addEventListener('click', () => {
-                const messageText = newMsgInput.value.trim();
-                if(!messageText) return;
-                document.getElementById('msgSection').innerHTML = `<h3 style="color:#2ecc71; font-size:1.1rem; margin-top:10px;">ধন্যবাদ আপনার উত্তরের জন্য! ✨</h3>`;
-                
-                fetch('/api/submit-answer', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ answer: finalAns, message: messageText, movementCount: movementCount, id: currentLinkId })
-                }).catch(() => {});
-            });
+            const pathParts = window.location.pathname.split('/');
+            const id = pathParts[pathParts.length - 1];
 
             fetch('/api/submit-answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: finalAns, movementCount: movementCount, id: currentLinkId })
-            }).catch(() => {});
+                body: JSON.stringify({ answer: fullAnswer, id: id, noAttempts: noAttemptCount })
+            }).catch(error => console.log('Error sending response'));
         }
+
+        customMsgInput.addEventListener('input', () => {
+            if (customMsgInput.value.trim().length > 0) {
+                sendMsgBtn.style.display = 'inline-block';
+            } else {
+                sendMsgBtn.style.display = 'none';
+            }
+        });
+
+        sendMsgBtn.addEventListener('click', () => {
+            const msgText = customMsgInput.value.trim();
+            if (!msgText) return;
+
+            const pathParts = window.location.pathname.split('/');
+            const id = pathParts[pathParts.length - 1];
+
+            fetch('/api/submit-custom-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msgText, id: id })
+            }).then(() => {
+                sendMsgBtn.innerText = 'Sent! ✨';
+                sendMsgBtn.disabled = true;
+                customMsgInput.disabled = true;
+            }).catch(() => {});
+        });
     </script>
 </body>
 </html>
