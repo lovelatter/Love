@@ -11,7 +11,7 @@ const music_set = {
 };
 
 const music_msg = {
-    music_ask: "🎵 ব্যাকগ্রাউন্ড মিউজিক এখানে আপলোড করুন[span_0](start_span)[span_0](end_span)। ডিফল্ট মিউজিক রাখতে ডিফল্ট বাটনে ট্যাপ করুন[span_1](start_span)[span_1](end_span)."
+    music_ask: "🎵 ব্যাকগ্রাউন্ড মিউজিক এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে ডিফল্ট বাটনে ট্যাপ করুন"
 };
 
 function showMusicUploadPrompt(ctx, db, saveDB, locale) {
@@ -47,13 +47,13 @@ function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
     if (action === 'music_no') {
         session.music = "";
         saveDB();
-        ctx.answerCbQuery("কোনো ব্যাকগ্রাউন্ড মিউজিক রাখা হয়নি[span_2](start_span)[span_2](end_span).");
+        ctx.answerCbQuery("কোনো ব্যাকগ্রাউন্ড মিউজিক রাখা হয়নি।");
         ctx.deleteMessage().catch(() => {});
         showImageUploadPrompt(ctx, db, saveDB, locale);
     } else if (action === 'music_default') {
         session.music = music_set[session.type] || "";
         saveDB();
-        ctx.answerCbQuery("ডিফল্ট মিউজিক সেট করা হয়েছে[span_3](start_span)[span_3](end_span).");
+        ctx.answerCbQuery("ডিফল্ট মিউজিক সেট করা হয়েছে।");
         ctx.deleteMessage().catch(() => {});
         showImageUploadPrompt(ctx, db, saveDB, locale);
     }
@@ -68,7 +68,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
         const promptMsgId = session.lastPromptMessageId;
 
         if (!ctx.message || !ctx.message.audio) {
-            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও (Audio) ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন[span_4](start_span)[span_4](end_span).");
+            return ctx.reply("এখানে সঠিক ফরম্যাটের অডিও (Audio) ফাইল আপলোড করুন অথবা নিচের বাটনগুলো ব্যবহার করুন।");
         }
 
         return (async () => {
@@ -83,7 +83,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 const catboxUrl = await uploadToCatbox(fileUrl, 'mp3');
                 
                 if (!catboxUrl) {
-                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন[span_5](start_span)[span_5](end_span).").catch(() => {});
+                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
                     return;
                 }
 
@@ -102,7 +102,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                     await bot.telegram.deleteMessage(userId, loadingMsg.message_id).catch(() => {});
                 }
 
-                const successMsg = await ctx.reply("🎵 অডিও আপলোড হয়েছে[span_6](start_span)[span_6](end_span).").catch(() => null);
+                const successMsg = await ctx.reply("🎵 অডিও আপলোড হয়েছে।").catch(() => null);
                 if (successMsg) {
                     setTimeout(async () => {
                         await bot.telegram.deleteMessage(userId, successMsg.message_id).catch(() => {});
@@ -111,7 +111,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
 
                 showImageUploadPrompt(ctx, db, saveDB, locale);
             } catch (error) {
-                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও প্রসেস করতে ব্যর্থ হয়েছে[span_7](start_span)[span_7](end_span).").catch(() => {});
+                if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
             }
         })();
     }
@@ -124,3 +124,4 @@ function setupMusicActions(bot, db, saveDB, showImageUploadPrompt) {
 }
 
 module.exports = { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, setupMusicActions, music_set };
+।
