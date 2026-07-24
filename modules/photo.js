@@ -13,7 +13,7 @@ function showImageUploadPrompt(ctx, db, saveDB, locale) {
     
     const message = img_msg.img_ask;
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback(locale.btn_skip, 'skip_image_upload')],
+        [Markup.button.callback("⏭️ Skip", 'skip_image_upload')],
         [Markup.button.callback("🔙 Back", 'menu_makelink')]
     ]);
 
