@@ -132,9 +132,9 @@
         let arrayIndex = 0, audioCtx = null;
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
         let enableButtonMovement = false;
-        let noClickCount = 0;
         let movementCount = 0;
         let currentLinkId = '';
+        let lastSelectedAnswer = '';
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
@@ -371,11 +371,12 @@
             fetch('/api/submit-answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: "মেসেজ পাঠানো হয়েছে", message: messageText, movementCount: movementCount, id: currentLinkId })
+                body: JSON.stringify({ answer: lastSelectedAnswer || "Yes ✅", message: messageText, movementCount: movementCount, id: currentLinkId })
             }).catch(() => {});
         });
 
         function sendResponse(answer) {
+            lastSelectedAnswer = answer;
             let finalAns = answer;
             if (enableButtonMovement && answer.includes('❌')) {
                 finalAns = `${movementCount} বার no এ ক্লিক করা হয়েছে (${answer})`;
