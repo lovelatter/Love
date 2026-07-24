@@ -1,7 +1,7 @@
 const { localeCategories } = require('./category');
 
 const locale = {
-    welcome: (name) => `হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
+    welcome: (name) => `👋 হ্যালো ${name}। বটের পক্ষ থেকে স্বাগতম।`,
     btn_make: "🚀 লিঙ্ক তৈরি করুন", btn_feedback: "📝 মতামত", btn_help: "❓ সাহায্য", btn_back: "🔙 মেইন মেনু",
     ...localeCategories,
     btn_skip: "⏭️ Skip",
