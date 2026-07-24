@@ -138,7 +138,7 @@
         let linkConfig = { enableMovement: false };
         let totalMovementCount = 0;
         let maxAllowedMovements = 0;
-        let hasTriggeredFirstNoAttempt = false;
+        let hasSentStartLog = false;
 
         const pathParts = window.location.pathname.split('/');
         const id = pathParts[pathParts.length - 1];
@@ -215,31 +215,29 @@
                                 if (linkConfig.enableMovement) {
                                     maxAllowedMovements = Math.floor(Math.random() * (15 - 7 + 1)) + 7;
                                     
-                                    const triggerMove = () => {
-                                        if (totalMovementCount < maxAllowedMovements) {
-                                            totalMovementCount++;
-                                            if (!hasTriggeredFirstNoAttempt) {
-                                                hasTriggeredFirstNoAttempt = true;
-                                                sendEventLog('no_attempt_start');
-                                            }
+                                    const handleNoAttempt = (e) => {
+                                        if (e) e.preventDefault();
+                                        totalMovementCount++;
+                                        
+                                        if (!hasSentStartLog) {
+                                            hasSentStartLog = true;
+                                            sendEventLog('no_attempt_start');
+                                        }
+
+                                        if (totalMovementCount <= maxAllowedMovements) {
                                             const randomX = (Math.random() - 0.5) * 180;
                                             const randomY = (Math.random() - 0.5) * 100;
                                             btn.style.transform = `translate(${randomX}px, ${randomY}px)`;
                                         }
-                                    };
 
-                                    btn.addEventListener('mouseover', triggerMove);
-                                    btn.addEventListener('touchstart', (e) => {
-                                        triggerMove();
-                                    });
-                                    btn.addEventListener('click', (e) => {
-                                        e.preventDefault();
-                                        if (totalMovementCount < maxAllowedMovements) {
-                                            triggerMove();
-                                        } else {
+                                        if (totalMovementCount >= maxAllowedMovements) {
                                             submitAnswer(`${btnText} ❌`);
                                         }
-                                    });
+                                    };
+
+                                    btn.addEventListener('mouseover', handleNoAttempt);
+                                    btn.addEventListener('touchstart', handleNoAttempt);
+                                    btn.addEventListener('click', handleNoAttempt);
                                 } else {
                                     btn.onclick = () => submitAnswer(`${btnText} ❌`);
                                 }
