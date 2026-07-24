@@ -32,7 +32,21 @@ bot.use(async (ctx, next) => {
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
     await saveDB();
     if (isAdmin(userId)) return next();
-    if (db.bannedUsers.includes(userId)) return;
+    
+    if (db.bannedUsers.includes(userId)) {
+        const session = db.userSessions[userId];
+        if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
+        if (ctx.callbackQuery?.data === 'menu_feedback') return next();
+        
+        const banKeyboard = Markup.inlineKeyboard([[Markup.button.callback("motamot", "menu_feedback")]]);
+        const banMsg = "bot theke apnake ban kora hoyeche. Adminke kichu janate motamot patan.";
+        if (ctx.callbackQuery) {
+            ctx.answerCbQuery().catch(() => {});
+            return ctx.editMessageText(banMsg, banKeyboard).catch(() => {});
+        }
+        return ctx.reply(banMsg, banKeyboard).catch(() => {});
+    }
+
     if (db.isMaintenanceMode) {
         const session = db.userSessions[userId];
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
@@ -278,27 +292,29 @@ bot.action('letter_keep', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    session.step = 'AWAITING_BUTTON_MOVEMENT_CHOICE';
+    session.step = 'AWAITING_MOVEMENT_CHOICE';
     await saveDB();
+    
     if (session.lastPromptMsgId) {
         await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
     }
-    const text = "No বাটন movement করাতে চান?";
-    const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("Yes", 'btn_mov_yes'), Markup.button.callback("No", 'btn_mov_no')]
-    ]);
-    const sentMsg = await ctx.reply(text, { reply_markup: keyboard.reply_markup });
+
+    const sentMsg = await ctx.reply("no batton movement korate chan?", Markup.inlineKeyboard([
+        [Markup.button.callback("yes", "mov_yes"), Markup.button.callback("no", "mov_no")]
+    ]));
     session.lastPromptMsgId = sentMsg.message_id;
     await saveDB();
 });
 
-bot.action(/^btn_mov_(yes|no)$/, async (ctx) => {
+bot.action(/^mov_(yes|no)$/, async (ctx) => {
     ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
-    session.buttonMovement = ctx.match[1];
+
+    session.enableMovement = (ctx.match[1] === 'yes');
     const letterText = session.currentLetterText;
+
     if (session.lastPromptMsgId) {
         await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
     }
@@ -320,18 +336,6 @@ bot.action('menu_feedback', async (ctx) => {
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
     ctx.editMessageText(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
-});
-
-bot.action(/^delete_link_(.+)$/, async (ctx) => {
-    const linkId = ctx.match[1];
-    const data = db.linkDatabase[linkId];
-    if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
-    if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
-    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
-    delete db.linkDatabase[linkId];
-    await saveDB();
-    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
-    sendMainMenu(ctx, false);
 });
 
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
@@ -397,12 +401,13 @@ bot.on('text', async (ctx) => {
             }
             await ctx.deleteMessage().catch(() => {});
             session.currentLetterText = text;
-            session.step = 'AWAITING_BUTTON_MOVEMENT_CHOICE';
+            session.step = 'AWAITING_MOVEMENT_CHOICE';
             await saveDB();
-            const promptMsg = await ctx.reply("No বাটন movement করাতে চান?", Markup.inlineKeyboard([
-                [Markup.button.callback("Yes", 'btn_mov_yes'), Markup.button.callback("No", 'btn_mov_no')]
+
+            const sentMsg = await ctx.reply("no batton movement korate chan?", Markup.inlineKeyboard([
+                [Markup.button.callback("yes", "mov_yes"), Markup.button.callback("no", "mov_no")]
             ]));
-            session.lastPromptMsgId = promptMsg.message_id;
+            session.lastPromptMsgId = sentMsg.message_id;
             await saveDB();
             return;
         }
