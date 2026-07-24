@@ -11,7 +11,7 @@ const music_set = {
 };
 
 const music_msg = {
-    music_ask: "ব্যাকগ্রাউন্ড মিউজিক এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে ডিফল্ট বাটনে ট্যাপ করুন।"
+    music_ask: "🎵 ব্যাকগ্রাউন্ড মিউজিক এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে ডিফল্ট বাটনে ট্যাপ করুন।"
 };
 
 function showMusicUploadPrompt(ctx, db, saveDB, locale) {
