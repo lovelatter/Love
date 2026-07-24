@@ -212,11 +212,12 @@
                                 
                                 if (enableMovement) {
                                     let attempts = 0;
-                                    const triggerMove = () => {
+                                    const triggerMove = (e) => {
                                         if (finalAnswerChosen) return;
                                         if (attempts < maxMovements) {
                                             attempts++;
                                             noAttemptCount++;
+                                            if (e) e.preventDefault();
                                             const randomX = (Math.random() - 0.5) * 160;
                                             const randomY = (Math.random() - 0.5) * 80;
                                             btn.style.transform = `translate(${randomX}px, ${randomY}px)`;
@@ -229,11 +230,23 @@
                                         }
                                     };
                                     btn.addEventListener('mouseover', triggerMove);
-                                    btn.addEventListener('touchstart', (e) => {
-                                        triggerMove();
+                                    btn.addEventListener('click', (e) => {
+                                        if (attempts < maxMovements) {
+                                            triggerMove(e);
+                                        } else {
+                                            handleAnswerClick(btnText, false);
+                                        }
                                     });
+                                    btn.addEventListener('touchstart', (e) => {
+                                        if (attempts < maxMovements) {
+                                            triggerMove(e);
+                                        } else {
+                                            handleAnswerClick(btnText, false);
+                                        }
+                                    });
+                                } else {
+                                    btn.onclick = () => handleAnswerClick(btnText, false);
                                 }
-                                btn.onclick = () => handleAnswerClick(btnText, false);
                             }
                             btnGroup.appendChild(btn);
                         });
@@ -390,7 +403,7 @@
             }).then(() => {
                 customMsgInput.value = '';
                 customMsgInput.style.display = 'none';
-                sendMsgBtn.innerText = 'Delivered';
+                sendMsgBtn.innerText = 'Delivered 💝';
                 sendMsgBtn.disabled = true;
                 setTimeout(() => {
                     msgBoxContainer.style.display = 'none';
