@@ -406,7 +406,7 @@ setupRoutes(app, db, saveDB, bot);
 
 const PORT = process.env.PORT || 3000;
 
-loadDB().loadDB().then(() => {
+loadDB().then(() => {
     app.listen(PORT, () => {
         bot.launch().catch(err => console.error(err));
         console.log(`Server running on port ${PORT}`);
