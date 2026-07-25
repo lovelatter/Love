@@ -293,7 +293,7 @@ bot.action('menu_feedback', async (ctx) => {
 
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
-    const help_text = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন[span_0](start_span)[span_0](end_span).\n3️⃣ কাউন্টডাউন টাইমার সেট করুন[span_1](start_span)[span_1](end_span).\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন[span_2](start_span)[span_2](end_span).\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন[span_3](start_span)[span_3](end_span).\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান[span_4](start_span)[span_4](end_span).\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন[span_5](start_span)[span_5](end_span).\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন[span_6](start_span)[span_6](end_span)!`;
+    const help_text = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন।\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন।!`;
     ctx.editMessageText(help_text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
 });
 
