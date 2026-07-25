@@ -1,7 +1,7 @@
 const { Markup } = require('telegraf');
 const { music_set } = require('./music');
 
-const CATEGORY_CONFIGS = {
+const cat_config = {
     love: { title: "আমার মনের কিছু কথা", emojis: ["❤️", "💖", "💕"], question: "Do you love me? 🥺", buttons: ["Yes", "No"], label: "❤️ প্রেমের চিঠি (Love)" },
     birthday: { title: "Happy Birthday", emojis: ["🎈", "🎉", "🎊"], question: "Are you happy? 😊", buttons: ["Yes", "No"], label: "🎂 জন্মদিনের শুভেচ্ছা (Birthday)" },
     sorry: { title: "I'm Sorry", emojis: ["😭", "😞", "😥"], question: "Do you forgive me? 🥺", buttons: ["Yes", "No"], label: "🥺 দুঃখ প্রকাশ (Sorry)" },
@@ -10,10 +10,10 @@ const CATEGORY_CONFIGS = {
 
 const cat_name = {
     choose_cat: "✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?",
-    cat_love: CATEGORY_CONFIGS.love.label,
-    cat_birthday: CATEGORY_CONFIGS.birthday.label,
-    cat_sorry: CATEGORY_CONFIGS.sorry.label,
-    cat_eid: CATEGORY_CONFIGS.eid.label
+    cat_love: cat_config.love.label,
+    cat_birthday: cat_config.birthday.label,
+    cat_sorry: cat_config.sorry.label,
+    cat_eid: cat_config.eid.label
 };
 
 function setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadPrompt) {
@@ -44,4 +44,4 @@ function setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadProm
     });
 }
 
-module.exports = { CATEGORY_CONFIGS, cat_name, setupMakeLink };
+module.exports = { cat_config, cat_name, setupMakeLink };
