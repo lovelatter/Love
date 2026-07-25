@@ -16,7 +16,7 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
+const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
     bot.command(['admin', 'adm'], (ctx) => {
         if (!isAdmin(ctx.chat.id)) {
             ctx.reply('❌ ভুল ইনপুট: \`${text}\` কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
