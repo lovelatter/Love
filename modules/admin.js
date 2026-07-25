@@ -15,6 +15,36 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
+const getLinkNotifText = (linkId, data, suffix = "") => {
+    if (!data) {
+        return `⚠️ লিংকটি ডাটাবেজে পাওয়া যায়নি বা ডিলিট করা হয়েছে。\n🔗 Link ID: ${linkId}`;
+    }
+    let countdownDisplay = data.countdown ? "Yes ✅" : "No ❌";
+    let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
+    
+    let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে${suffix}
+👤 Name: ${data.name || "No name"}
+🆔 ID: ${data.userId}
+🏷️ Username: ${data.username || "No username"}
+📂 Category: ${String(data.type || "love").toUpperCase()}
+⏳ Countdown: ${countdownDisplay}
+📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
+    
+    if (data.image) {
+        notifText += `\n🖼️ IMG Link: ${data.image}`;
+    }
+    notifText += `\n🎵 Music Included: ${data.music ? "Yes ✅" : "No ❌"}`;
+    if (data.music) {
+        notifText += `\n🎶 Music Link: ${data.music}`;
+    }
+    notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
+💌 Letter: ${data.letter}
+🔘 Batton movement: ${data.config?.enableMovement ? "Yes ✅" : "No ❌"}
+🔗 Main Link: ${finalGeneratedUrl}`;
+
+    return notifText;
+};
+
 const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.command(['admin', 'adm'], (ctx) => {
         if (!isAdmin(ctx.chat.id)) {
@@ -185,31 +215,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
         
-        let notifText = `⚠️ লিংকটি ডাটাবেজে পাওয়া যায়নি বা ডিলিট করা হয়েছে।\n🔗 Link ID: ${linkId}`;
-        if (data) {
-            let countdownDisplay = data.countdown ? "Yes ✅" : "No ❌";
-            let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
-            
-            notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
-👤 Name: ${data.name || "No name"}
-🆔 ID: ${data.userId}
-🏷️ Username: ${data.username || "No username"}
-📂 Category: ${String(data.type || "love").toUpperCase()}
-⏳ Countdown: ${countdownDisplay}
-📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
-            
-            if (data.image) {
-                notifText += `\n🖼️ IMG Link: ${data.image}`;
-            }
-            notifText += `\n🎵 Music Included: ${data.music ? "Yes ✅" : "No ❌"}`;
-            if (data.music) {
-                notifText += `\n🎶 Music Link: ${data.music}`;
-            }
-            notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
-💌 Letter: ${data.letter}
-🔘 Batton movement: ${data.config?.enableMovement ? "Yes ✅" : "No ❌"}
-🔗 Main Link: ${finalGeneratedUrl}`;
-        }
+        let notifText = getLinkNotifText(linkId, data);
 
         ctx.editMessageText(notifText, Markup.inlineKeyboard([
             [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
@@ -226,30 +232,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             saveDB();
             ctx.answerCbQuery("✅ লিংকটি অফ করা হয়েছে।", { show_alert: true });
             
-            let countdownDisplay = data.countdown ? "Yes ✅" : "No ❌";
-            let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
-            
-            let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [OFF 🔴]
-👤 Name: ${data.name || "No name"}
-🆔 ID: ${data.userId}
-🏷️ Username: ${data.username || "No username"}
-📂 Category: ${String(data.type || "love").toUpperCase()}
-⏳ Countdown: ${countdownDisplay}
-📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
-            
-            if (data.image) {
-                notifText += `\n🖼️ IMG Link: ${data.image}`;
-            }
-            notifText += `\n🎵 Music Included: ${data.music ? "Yes ✅" : "No ❌"}`;
-            if (data.music) {
-                notifText += `\n🎶 Music Link: ${data.music}`;
-            }
-            notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
-💌 Letter: ${data.letter}
-🔘 Batton movement: ${data.config?.enableMovement ? "Yes ✅" : "No ❌"}
-🔗 Main Link: ${finalGeneratedUrl}
-
-ℹ️ এই লিংকটি অফ করে দেওয়া হয়েছে।`;
+            let notifText = getLinkNotifText(linkId, data, " [OFF 🔴]") + "\n\nℹ️ এই লিংকটি অফ করে দেওয়া হয়েছে।";
 
             ctx.editMessageText(notifText, Markup.inlineKeyboard([
                 [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
@@ -272,30 +255,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             }
             ctx.answerCbQuery(`✅ ইউজার (${creatorId}) কে ব্যান করা হয়েছে।`, { show_alert: true });
             
-            let countdownDisplay = data.countdown ? "Yes ✅" : "No ❌";
-            let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
-            
-            let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [User Banned 🚫]
-👤 Name: ${data.name || "No name"}
-🆔 ID: ${data.userId}
-🏷️ Username: ${data.username || "No username"}
-📂 Category: ${String(data.type || "love").toUpperCase()}
-⏳ Countdown: ${countdownDisplay}
-📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
-            
-            if (data.image) {
-                notifText += `\n🖼️ IMG Link: ${data.image}`;
-            }
-            notifText += `\n🎵 Music Included: ${data.music ? "Yes ✅" : "No ❌"}`;
-            if (data.music) {
-                notifText += `\n🎶 Music Link: ${data.music}`;
-            }
-            notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
-💌 Letter: ${data.letter}
-🔘 Batton movement: ${data.config?.enableMovement ? "Yes ✅" : "No ❌"}
-🔗 Main Link: ${finalGeneratedUrl}
-
-ℹ️ এই লিংকের ইউজারকে সফলভাবে ব্যান করা হয়েছে।`;
+            let notifText = getLinkNotifText(linkId, data, " [User Banned 🚫]") + "\n\nℹ️ এই লিংকের ইউজারকে সফলভাবে ব্যান করা হয়েছে।";
 
             ctx.editMessageText(notifText, Markup.inlineKeyboard([
                 [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
