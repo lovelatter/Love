@@ -18,8 +18,13 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
 const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.command(['admin', 'adm'], (ctx) => {
         if (!isAdmin(ctx.chat.id)) {
-            ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
-            return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+            if (locale && typeof locale.invalid_cmd === 'function') {
+                ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
+            }
+            if (locale && locale.help_text) {
+                ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back || "Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+            }
+            return;
         }
         showAdminDashboard(ctx, db, false);
     });
