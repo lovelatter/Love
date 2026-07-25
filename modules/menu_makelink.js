@@ -24,7 +24,7 @@ function setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadProm
             [Markup.button.callback(localeCategories.cat_birthday, 'make_birthday')],
             [Markup.button.callback(localeCategories.cat_sorry, 'make_sorry')],
             [Markup.button.callback(localeCategories.cat_eid, 'make_eid')],
-            [Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]
+            [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
         ]));
     });
 
