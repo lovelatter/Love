@@ -32,7 +32,23 @@ bot.use(async (ctx, next) => {
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
     await saveDB();
     if (isAdmin(userId)) return next();
-    if (db.bannedUsers.includes(userId)) return;
+
+    // ব্যান ইউজার চেক ও মতামত বাটন হ্যান্ডেলিং
+    if (db.bannedUsers.includes(userId)) {
+        const session = db.userSessions[userId];
+        if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
+        if (ctx.callbackQuery?.data === 'menu_feedback') return next();
+        
+        const banKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
+        const banMsg = "বিশেষ কোন কারণে বট থেকে আপনাকে ব্যান করা হয়েছে। আপনার কিছু বলার থাকলে এডমিনকে মতামত জানাতে পারেন।";
+        
+        if (ctx.callbackQuery) {
+            ctx.answerCbQuery().catch(() => {});
+            return ctx.editMessageText(banMsg, banKeyboard).catch(() => {});
+        }
+        return ctx.reply(banMsg, banKeyboard).catch(() => {});
+    }
+
     if (db.isMaintenanceMode) {
         const session = db.userSessions[userId];
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
@@ -147,7 +163,6 @@ bot.action('random_anim_start', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম অ্যানিমেশন জেনারেট করে প্রিভিউ দেখাবে[span_0](start_span)[span_0](end_span)
     session.animHistory = [];
     session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
@@ -225,7 +240,6 @@ bot.action('random_letter_start', async (ctx) => {
     const session = db.userSessions[userId];
     if (!session) return;
     
-    // নাম চাওয়ার স্টেপ বাদ দিয়ে সরাসরি রেন্ডম চিঠি জেনারেট করে প্রিভিউ দেখাবে[span_1](start_span)[span_1](end_span)
     session.letterHistory = [];
     session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
