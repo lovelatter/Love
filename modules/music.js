@@ -1,5 +1,6 @@
 const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
+const { showCountdownPrompt } = require('./countdown');
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
@@ -24,7 +25,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("❌ No Music", 'music_no')],
         [Markup.button.callback("🎵 Default Music", 'music_default')],
-        [Markup.button.callback("🔙 Back", 'menu_makelink')]
+        [Markup.button.callback("🔙 Back", 'back_to_countdown')]
     ]);
 
     ctx.editMessageText(message, keyboard).then((sentMsg) => {
@@ -56,6 +57,9 @@ function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
         ctx.answerCbQuery("ডিফল্ট মিউজিক সেট করা হয়েছে।");
         ctx.deleteMessage().catch(() => {});
         showImageUploadPrompt(ctx, db, saveDB, locale);
+    } else if (action === 'back_to_countdown') {
+        ctx.answerCbQuery();
+        showCountdownPrompt(ctx, db, saveDB, showMusicUploadPrompt, locale);
     }
 }
 
