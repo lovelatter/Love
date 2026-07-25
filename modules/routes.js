@@ -9,9 +9,9 @@ function setupRoutes(app, db, saveDB, bot) {
         try {
             const linkId = req.body.id;
             const data = db.linkDatabase[linkId];
-            if (!data) return res.json({ success: false });
+            if (!data || data.isOff) return res.json({ success: false });
             
-            const sentMsg = await bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(() => null);
+            const sentMsg = await bot.telegram.sendMessage(data.userId, "লিংকটি open করা হয়েছে।").catch(() => null);
             if (sentMsg) {
                 if (!data.openMessageIds) data.openMessageIds = {};
                 data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
@@ -66,20 +66,50 @@ function setupRoutes(app, db, saveDB, bot) {
             return res.json({ 
                 success: true, isLocked: false, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: config.question, buttons: config.buttons, image: data.image || null 
+                question: config.question, buttons: config.buttons, image: data.image || null,
+                config: data.config
             });
         } catch (err) { 
             res.json({ success: false }); 
         }
     });
 
+    app.post('/api/open-envelope', async (req, res) => {
+        try {
+            const { id } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data || data.isOff) return res.json({ success: false });
+            
+            bot.telegram.sendMessage(data.userId, "খাম খোলা হয়েছে").catch(() => {});
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
+    });
+
+    app.post('/api/event-log', async (req, res) => {
+        try {
+            const { id, event } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data || data.isOff) return res.json({ success: false });
+
+            if (event === 'no_attempt_start' && data.config && data.config.enableMovement) {
+                bot.telegram.sendMessage(data.userId, "no তে ক্লিক করার চেষ্টা করা হচ্ছে").catch(() => {});
+            }
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
+    });
+
     app.post('/api/submit-answer', async (req, res) => {
         try {
-            const { id, answer } = req.body;
+            const { id, answer, totalMovements } = req.body;
             const data = db.linkDatabase[id];
-            if (!data) return res.json({ success: false });
+            if (!data || data.isOff) return res.json({ success: false });
             
             data.answer = answer;
+            data.totalMovements = totalMovements || 0;
             
             if (data.openMessageIds) {
                 const clientIp = req.ip || 'default';
@@ -92,12 +122,32 @@ function setupRoutes(app, db, saveDB, bot) {
             
             await saveDB();
             
+            if (data.config && data.config.enableMovement) {
+                bot.telegram.sendMessage(data.userId, `mut ${data.totalMovements} বার no তে ক্লিক করা হয়েছে।`).catch(() => {});
+            }
+
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+            bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => {});
             
             return res.json({ success: true });
         } catch (err) { 
             res.json({ success: false }); 
+        }
+    });
+
+    app.post('/api/submit-message', async (req, res) => {
+        try {
+            const { id, message } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data || data.isOff) return res.json({ success: false });
+
+            data.visitorMessage = message;
+            await saveDB();
+
+            bot.telegram.sendMessage(data.userId, `আপনার লিংক থেকে মেসেজ এসেছে。\nMsg: ${message}`).catch(() => {});
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
         }
     });
 
