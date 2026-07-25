@@ -22,8 +22,8 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
 
     db.linkDatabase[uniqueId] = {
         userId, 
-        name: session.name || "User", 
-        username: session.username || "None", 
+        name: session.name || "No name", 
+        username: session.username || "No username", 
         type: session.type || "love",
         music: finalMusicUrl, 
         countdown: finalCountdownIso, 
@@ -45,9 +45,9 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }).catch(() => {});
 
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
-👤 Name: ${session.name || "User"}
+👤 Name: ${session.name || "No name"}
 🆔 ID: ${userId}
-🏷️ Username: ${session.username || "None"}
+🏷️ Username: ${session.username || "No username"}
 📂 Category: ${String(session.type || "love").toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
