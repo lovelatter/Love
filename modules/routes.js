@@ -2,7 +2,7 @@ const path = require('path');
 const https = require('https');
 const { Markup } = require('telegraf');
 const { parseUserAgent } = require('./visitor');
-const { CATEGORY_CONFIGS } = require('./menu_makelink');
+const { cat_config } = require('./menu_makelink');
 
 function setupRoutes(app, db, saveDB, bot) {
     app.post('/api/get-content', async (req, res) => {
