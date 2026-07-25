@@ -5,7 +5,7 @@ const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set } = require('./modules/music');
-const { handleFeedbackStart, handleFeedbackText, setupFeedbackActions } = require('./modules/feedback');
+const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
@@ -31,7 +31,7 @@ bot.use(async (ctx, next) => {
     if (!userId) return;
     if (!db.registeredUsers.includes(userId)) db.registeredUsers.push(userId);
     if (ctx.from?.username) db.usernameMap[ctx.from.username.toLowerCase()] = userId;
-    await saveDB().catch(() => {});
+    await saveDB();
     if (isAdmin(userId)) return next();
 
     if (db.bannedUsers.includes(userId)) {
@@ -66,7 +66,6 @@ bot.use(async (ctx, next) => {
 });
 
 setupAdmin(bot, db, saveDB, isAdmin, __dirname, { btn_feedback: "📝 মতামত" });
-setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, { btn_back: "🔙 Back" });
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -81,28 +80,25 @@ const sendMainMenu = async (ctx, isEdit = false) => {
 
 bot.command('start', async (ctx) => { 
     delete db.userSessions[ctx.chat.id];
-    await saveDB().catch(() => {});
+    await saveDB();
     sendMainMenu(ctx, false); 
 });
 
-bot.action('go_to_main_menu', (ctx) => { 
-    ctx.answerCbQuery().catch(() => {}); 
-    sendMainMenu(ctx, true); 
-});
+bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
 
 bot.action('menu_makelink', (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
-    ctx.editMessageText("📌 ক্যাটাগরি সিলেক্ট করুন:", Markup.inlineKeyboard([
-        [Markup.button.callback("❤️ প্রেমের চিঠি (Love)", 'make_love')],
-        [Markup.button.callback("🎂 জন্মদিন (Birthday)", 'make_birthday')],
-        [Markup.button.callback("😢 দুঃখিত (Sorry)", 'make_sorry')],
-        [Markup.button.callback("🌙 ঈদ মোবারক (Eid)", 'make_eid')],
+    ctx.answerCbQuery();
+    ctx.editMessageText("📌 আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন:", Markup.inlineKeyboard([
+        [Markup.button.callback("❤️ Love", 'make_love')],
+        [Markup.button.callback("🎂 Birthday", 'make_birthday')],
+        [Markup.button.callback("😢 Sorry", 'make_sorry')],
+        [Markup.button.callback("🌙 Eid", 'make_eid')],
         [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
-    ])).catch(() => {});
+    ]));
 });
 
 bot.action(/^make_/, async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const cat = ctx.match.input.replace('make_', '');
     db.userSessions[ctx.chat.id] = { 
         type: cat, 
@@ -112,24 +108,24 @@ bot.action(/^make_/, async (ctx) => {
         imageUrl: null,
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
-    await saveDB().catch(() => {});
+    await saveDB();
     showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, {}));
 });
 
 bot.action('timer_no', async (ctx) => { 
-    ctx.answerCbQuery().catch(() => {}); 
+    ctx.answerCbQuery(); 
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
-    await saveDB().catch(() => {});
+    await saveDB();
     showMusicUploadPrompt(ctx, db, saveDB, {}); 
 });
 
 bot.action(/^set_time_/, async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
-    await saveDB().catch(() => {});
+    await saveDB();
     showMusicUploadPrompt(ctx, db, saveDB, {});
 });
 
@@ -138,19 +134,18 @@ bot.action(['music_no', 'music_default'], (ctx) => {
 });
 
 bot.action('skip_image_upload', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     if (db.userSessions[userId]) {
         db.userSessions[userId].imageUrl = null;
     }
-    await saveDB().catch(() => {});
+    await saveDB();
     showAnimationIntro(ctx);
 });
 
 async function showAnimationIntro(ctx) {
-    if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
-    await saveDB().catch(() => {});
+    await saveDB();
     const text = `✨ অ্যানিমেশন মেসেজ লিখুন。\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')],
@@ -161,12 +156,12 @@ async function showAnimationIntro(ctx) {
     });
     if (sentMsg) {
         db.userSessions[ctx.chat.id].lastPromptMsgId = sentMsg.message_id;
-        await saveDB().catch(() => {});
+        await saveDB();
     }
 }
 
 bot.action('random_anim_start', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
@@ -175,7 +170,7 @@ bot.action('random_anim_start', async (ctx) => {
     session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
     session.step = 'PREVIEW_RANDOM_ANIM';
-    await saveDB().catch(() => {});
+    await saveDB();
     await renderRandomAnimPreview(ctx, userId);
 });
 
@@ -197,37 +192,37 @@ async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
 }
 
 bot.action('anim_change', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
     session.prevAnimList = [...session.currentAnimList];
     session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
     session.animHistory.push(...session.currentAnimList);
-    await saveDB().catch(() => {});
+    await saveDB();
     await renderRandomAnimPreview(ctx, userId, true);
 });
 
 bot.action('anim_prev', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session || !session.prevAnimList) return;
     const temp = [...session.currentAnimList];
     session.currentAnimList = [...session.prevAnimList];
     session.prevAnimList = temp;
-    await saveDB().catch(() => {});
+    await saveDB();
     await renderRandomAnimPreview(ctx, userId, true);
 });
 
 bot.action('anim_keep', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
     session.animations = session.currentAnimList;
     session.step = 'AWAITING_LETTER_TEXT';
-    await saveDB().catch(() => {});
+    await saveDB();
     const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')],
@@ -238,12 +233,12 @@ bot.action('anim_keep', async (ctx) => {
     });
     if (sentMsg) {
         session.lastPromptMsgId = sentMsg.message_id;
-        await saveDB().catch(() => {});
+        await saveDB();
     }
 });
 
 bot.action('random_letter_start', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
@@ -252,7 +247,7 @@ bot.action('random_letter_start', async (ctx) => {
     session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
     session.step = 'PREVIEW_RANDOM_LETTER';
-    await saveDB().catch(() => {});
+    await saveDB();
     await renderRandomLetterPreview(ctx, userId);
 });
 
@@ -274,31 +269,31 @@ async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
 }
 
 bot.action('letter_change', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
     session.prevLetterText = session.currentLetterText;
     session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
     session.letterHistory.push(session.currentLetterText);
-    await saveDB().catch(() => {});
+    await saveDB();
     await renderRandomLetterPreview(ctx, userId, true);
 });
 
 bot.action('letter_prev', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session || !session.prevLetterText) return;
     const temp = session.currentLetterText;
     session.currentLetterText = session.prevLetterText;
     session.prevLetterText = temp;
-    await saveDB().catch(() => {});
+    await saveDB();
     await renderRandomLetterPreview(ctx, userId, true);
 });
 
 bot.action('letter_keep', async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery();
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
@@ -309,20 +304,32 @@ bot.action('letter_keep', async (ctx) => {
     await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
 });
 
+bot.action('menu_feedback', async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
+    db.userSessions[userId].feedbackWarningMsgId = null;
+    
+    const sentMsg = await ctx.editMessageText("📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
+    db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
+    await saveDB();
+});
+
 bot.action('menu_help', (ctx) => { 
-    ctx.answerCbQuery().catch(() => {}); 
-    ctx.editMessageText(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {}); 
+    ctx.answerCbQuery(); 
+    ctx.editMessageText(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
 });
 
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
-    if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true }).catch(() => {});
-    if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true }).catch(() => {});
-    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true }).catch(() => {});
+    if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
+    if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
+    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
     delete db.linkDatabase[linkId];
-    await saveDB().catch(() => {});
-    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।").catch(() => {});
+    await saveDB();
+    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
     sendMainMenu(ctx, false);
 });
 
@@ -335,7 +342,25 @@ bot.on('text', async (ctx) => {
     const text = ctx.message.text.trim();
     
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        return handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, { btn_back: "🔙 Back" });
+        if (text.length < 5) {
+            await ctx.deleteMessage().catch(() => {});
+            if (session.feedbackWarningMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+            }
+            const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
+            db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
+            await saveDB();
+            return;
+        } else {
+            if (session.feedbackWarningMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+            }
+            if (session.feedbackPromptMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
+            }
+            await ctx.deleteMessage().catch(() => {});
+            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, {});
+        }
     }
 
     if (isAdmin(userId) && session) {
@@ -350,7 +375,7 @@ bot.on('text', async (ctx) => {
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন.");
+            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
             if (session.lastPromptMsgId) {
@@ -362,7 +387,7 @@ bot.on('text', async (ctx) => {
                 [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
             ]));
             db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
-            await saveDB().catch(() => {});
+            await saveDB();
             return;
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
@@ -383,7 +408,7 @@ const PORT = process.env.PORT || 3000;
 
 loadDB().then(() => {
     app.listen(PORT, () => {
-        bot.launch().catch(err => console.error("Bot launch error:", err));
+        bot.launch().catch(err => console.error(err));
         console.log(`Server running on port ${PORT}`);
     });
 });
