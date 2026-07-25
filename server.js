@@ -25,6 +25,8 @@ const SERVER_URL = "https://love-bb7p.onrender.com";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
+const HELP_TEXT = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন।\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`;
+
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
     if (!userId) return;
@@ -99,7 +101,7 @@ bot.action('skip_image_upload', async (ctx) => {
 async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = `✨ অ্যানিমেশন মেসেজ লিখুন।\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
+    const text = `✨ অ্যানিমেশন মেসেজ লিখুন。\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')],
         [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
@@ -293,8 +295,7 @@ bot.action('menu_feedback', async (ctx) => {
 
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
-    const help_text = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন।\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন।!`;
-    ctx.editMessageText(help_text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
+    ctx.editMessageText(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
 });
 
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, null));
@@ -334,9 +335,8 @@ bot.on('text', async (ctx) => {
     
     if (!session?.step) {
         const invalid_cmd_text = `❌ ভুল ইনপুট: \`${text}\` কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`;
-        const help_text = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন[span_7](start_span)[span_7](end_span).\n3️⃣ কাউন্টডাউন টাইমার সেট করুন[span_8](start_span)[span_8](end_span).\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন[span_9](start_span)[span_9](end_span).\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন[span_10](start_span)[span_10](end_span).\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান[span_11](start_span)[span_11](end_span).\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন[span_12](start_span)[span_12](end_span).\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন[span_13](start_span)[span_13](end_span)!`;
         ctx.reply(invalid_cmd_text, { parse_mode: 'Markdown' }).catch(() => {});
-        return ctx.reply(help_text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+        return ctx.reply(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
