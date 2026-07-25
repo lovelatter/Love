@@ -8,7 +8,7 @@ const CATEGORY_CONFIGS = {
     eid: { title: "Eid Mubarak", emojis: ["🤝", "🎇", "🫂"], question: "EID Mubarak 🌙", buttons: ["EID Mubarak"], label: "🌙 ঈদ মোবারক (Eid)" }
 };
 
-const localeCategories = {
+const cat_name = {
     choose_cat: "✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?",
     cat_love: CATEGORY_CONFIGS.love.label,
     cat_birthday: CATEGORY_CONFIGS.birthday.label,
@@ -19,11 +19,11 @@ const localeCategories = {
 function setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadPrompt) {
     bot.action('menu_makelink', (ctx) => {
         ctx.answerCbQuery();
-        ctx.editMessageText(localeCategories.choose_cat, Markup.inlineKeyboard([
-            [Markup.button.callback(localeCategories.cat_love, 'make_love')],
-            [Markup.button.callback(localeCategories.cat_birthday, 'make_birthday')],
-            [Markup.button.callback(localeCategories.cat_sorry, 'make_sorry')],
-            [Markup.button.callback(localeCategories.cat_eid, 'make_eid')],
+        ctx.editMessageText(cat_name.choose_cat, Markup.inlineKeyboard([
+            [Markup.button.callback(cat_name.cat_love, 'make_love')],
+            [Markup.button.callback(cat_name.cat_birthday, 'make_birthday')],
+            [Markup.button.callback(cat_name.cat_sorry, 'make_sorry')],
+            [Markup.button.callback(cat_name.cat_eid, 'make_eid')],
             [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
         ]));
     });
@@ -44,4 +44,4 @@ function setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadProm
     });
 }
 
-module.exports = { CATEGORY_CONFIGS, localeCategories, setupMakeLink };
+module.exports = { CATEGORY_CONFIGS, cat_name, setupMakeLink };
