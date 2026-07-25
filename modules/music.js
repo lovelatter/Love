@@ -14,7 +14,7 @@ const music_msg = {
     music_ask: "🎵 ব্যাকগ্রাউন্ড মিউজিক এখানে আপলোড করুন। ডিফল্ট মিউজিক রাখতে ডিফল্ট বাটনে ট্যাপ করুন।"
 };
 
-function showMusicUploadPrompt(ctx, db, saveDB, locale) {
+function showMusicUploadPrompt(ctx, db, saveDB) {
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_MUSIC_CHOICE';
@@ -38,7 +38,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     });
 }
 
-function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
+function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
@@ -49,17 +49,17 @@ function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
         saveDB();
         ctx.answerCbQuery("কোনো ব্যাকগ্রাউন্ড মিউজিক রাখা হয়নি।");
         ctx.deleteMessage().catch(() => {});
-        showImageUploadPrompt(ctx, db, saveDB, locale);
+        showImageUploadPrompt(ctx, db, saveDB);
     } else if (action === 'music_default') {
         session.music = music_set[session.type] || "";
         saveDB();
         ctx.answerCbQuery("ডিফল্ট মিউজিক সেট করা হয়েছে।");
         ctx.deleteMessage().catch(() => {});
-        showImageUploadPrompt(ctx, db, saveDB, locale);
+        showImageUploadPrompt(ctx, db, saveDB);
     }
 }
 
-function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) {
+function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     
@@ -109,7 +109,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                     }, 5000);
                 }
 
-                showImageUploadPrompt(ctx, db, saveDB, locale);
+                showImageUploadPrompt(ctx, db, saveDB);
             } catch (error) {
                 if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও প্রসেস করতে ব্যর্থ হয়েছে।").catch(() => {});
             }
