@@ -5,7 +5,7 @@ const img_msg = {
     img_ask: "📸 ছবি দিতে চাইলে ছবিটি এখানে আপলোড করুন।"
 };
 
-function showImageUploadPrompt(ctx, db, saveDB, locale) {
+function showImageUploadPrompt(ctx, db, saveDB) {
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_IMAGE_UPLOAD';
