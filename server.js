@@ -101,7 +101,7 @@ bot.action('skip_image_upload', async (ctx) => {
 async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = `✨ অ্যানিমেশন মেসেজ লিখুন。\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
+    const text = `✨ অ্যানিমেশন মেসেজ লিখুন অথবা পছন্দ করুন:\n\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')],
         [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
@@ -131,7 +131,7 @@ bot.action('random_anim_start', async (ctx) => {
 
 async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
     const session = db.userSessions[userId];
-    const text = "জেনারেট করা অ্যানিমেশন টেক্সট:\n\n" + session.currentAnimList.join('\n');
+    const text = "পছন্দ করুন অথবা নিজে লিখে দিন:\n\nজেনারেট করা অ্যানিমেশন টেক্সট:\n\n" + session.currentAnimList.join('\n');
     let buttons = [
         [Markup.button.callback("এটি রাখবো", 'anim_keep')],
         [Markup.button.callback("পরিবর্তন", 'anim_change')]
@@ -178,7 +178,7 @@ bot.action('anim_keep', async (ctx) => {
     session.animations = session.currentAnimList;
     session.step = 'AWAITING_LETTER_TEXT';
     await saveDB();
-    const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
+    const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান অথবা পছন্দ করুন:`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')],
         [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
@@ -208,7 +208,7 @@ bot.action('random_letter_start', async (ctx) => {
 
 async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
     const session = db.userSessions[userId];
-    const text = "জেনারেট করা চিঠি:\n\n" + session.currentLetterText;
+    const text = "পছন্দ করুন অথবা নিজে লিখে দিন:\n\nজেনারেট করা চিঠি:\n\n" + session.currentLetterText;
     let buttons = [
         [Markup.button.callback("এটি রাখবো", 'letter_keep')],
         [Markup.button.callback("পরিবর্তন", 'letter_change')]
@@ -339,7 +339,7 @@ bot.on('text', async (ctx) => {
         return ctx.reply(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
-        if (session.step === 'AWAITING_ANIMATION_TEXT') {
+        if (session.step === 'AWAITING_ANIMATION_TEXT' || session.step === 'PREVIEW_RANDOM_ANIM') {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
             db.userSessions[userId].animations = lines;
@@ -348,7 +348,7 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            const nextPrompt = await ctx.reply(`✅ চমৎকার! আপনি ${lines.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
+            const nextPrompt = await ctx.reply(`✅ চমৎকার! আপনি ${lines.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান অথবা পছন্দ করুন:`, Markup.inlineKeyboard([
                 [Markup.button.callback("🎲 Random", 'random_letter_start')],
                 [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
             ]));
@@ -356,7 +356,7 @@ bot.on('text', async (ctx) => {
             await saveDB();
             return;
         }
-        if (session.step === 'AWAITING_LETTER_TEXT') {
+        if (session.step === 'AWAITING_LETTER_TEXT' || session.step === 'PREVIEW_RANDOM_LETTER') {
             if (session.lastPromptMsgId) {
                 await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
             }
