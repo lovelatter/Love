@@ -2,13 +2,11 @@ const path = require('path');
 const https = require('https');
 const { Markup } = require('telegraf');
 const { parseUserAgent } = require('./visitor');
-const { cat_config } = require('./menu_makelink');
-const { loadDB } = require('./db');
+const { CATEGORY_CONFIGS } = require('./menu_makelink');
 
 function setupRoutes(app, db, saveDB, bot) {
     app.post('/api/get-content', async (req, res) => {
         try {
-            await loadDB();
             const linkId = req.body.id;
             const data = db.linkDatabase[linkId];
             if (!data || data.isOff) return res.json({ success: false });
@@ -78,7 +76,6 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/open-envelope', async (req, res) => {
         try {
-            await loadDB();
             const { id } = req.body;
             const data = db.linkDatabase[id];
             if (!data || data.isOff) return res.json({ success: false });
@@ -92,7 +89,6 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/event-log', async (req, res) => {
         try {
-            await loadDB();
             const { id, event, totalMovements } = req.body;
             const data = db.linkDatabase[id];
             if (!data || data.isOff) return res.json({ success: false });
@@ -110,7 +106,6 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-answer', async (req, res) => {
         try {
-            await loadDB();
             const { id, answer, totalMovements } = req.body;
             const data = db.linkDatabase[id];
             if (!data || data.isOff) return res.json({ success: false });
@@ -144,7 +139,6 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-message', async (req, res) => {
         try {
-            await loadDB();
             const { id, message } = req.body;
             const data = db.linkDatabase[id];
             if (!data || data.isOff) return res.json({ success: false });
