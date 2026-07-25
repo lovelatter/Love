@@ -11,7 +11,6 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
             
-            // ২-১. লিংক খোলার সাথে সাথেই স্থায়ী নোটিফিকেশন পাঠানো
             bot.telegram.sendMessage(data.userId, `আপনার লিংক ওপেন করা হয়েছে! (লিংক আইডি: ${linkId})`).catch(() => {});
             
             let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
@@ -69,7 +68,6 @@ function setupRoutes(app, db, saveDB, bot) {
         }
     });
 
-    // ২-২. খাম খোলার নোটিফিকেশন রাউট
     app.post('/api/open-envelope', async (req, res) => {
         try {
             const { id } = req.body;
@@ -83,7 +81,6 @@ function setupRoutes(app, db, saveDB, bot) {
         }
     });
 
-    // ২-৩. ইয়েস/নো রিপ্লাই নোটিফিকেশন (লিংক অফ বাটন ছাড়া)
     app.post('/api/submit-answer', async (req, res) => {
         try {
             const { id, answer } = req.body;
@@ -102,7 +99,7 @@ function setupRoutes(app, db, saveDB, bot) {
         }
     });
 
-    // ২-৪. ভিজিটরের টেক্সট মেসেজ নোটিফিকেশন
+
     app.post('/api/submit-message', async (req, res) => {
         try {
             const { id, message } = req.body;
