@@ -24,7 +24,7 @@ function handleFeedbackStart(ctx, db, saveDB) {
     });
 }
 
-async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
+async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
@@ -57,13 +57,12 @@ async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
         
         delete db.userSessions[userId];
         await saveDB();
-        const backBtnText = locale?.btn_back || "🔙 পিছনে যান";
-        await ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback(backBtnText, 'go_to_main_menu')]]));
+        await ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
         return true;
     }
 }
 
-function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale) {
+function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS) {
     bot.action('menu_feedback', (ctx) => {
         handleFeedbackStart(ctx, db, saveDB);
     });
