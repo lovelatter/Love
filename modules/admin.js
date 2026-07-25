@@ -170,18 +170,86 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         const linkId = ctx.match[1];
         ctx.editMessageText(`⚙️ Control Panel for Link [ ${linkId} ]:`, Markup.inlineKeyboard([
             [Markup.button.callback("🔴 Link Off", `adm_off_link_${linkId}`), Markup.button.callback("🚫 Ban User", `adm_ban_creator_${linkId}`)],
-            [Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]
+            [Markup.button.callback("🔙 ব্যাক", `adm_back_to_notif_${linkId}`)]
+        ])).catch(() => {});
+    });
+
+    bot.action(/^adm_back_to_notif_(.+)$/, (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        const data = db.linkDatabase[linkId];
+        
+        let notifText = `⚠️ লিংকটি ডাটাবেজে পাওয়া যায়নি বা ডিলিট করা হয়েছে।\n🔗 Link ID: ${linkId}`;
+        if (data) {
+            let countdownDisplay = data.countdown ? "Yes ✅" : "No ❌";
+            let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
+            
+            notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
+👤 Name: ${data.name || "User"}
+🆔 ID: ${data.userId}
+🏷️ Username: ${data.username || "None"}
+📂 Category: ${String(data.type || "love").toUpperCase()}
+⏳ Countdown: ${countdownDisplay}
+📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
+            
+            if (data.image) {
+                notifText += `\n🖼️ IMG Link: ${data.image}`;
+            }
+            notifText += `\n🎵 Music Included: ${data.music ? "Yes ✅" : "No ❌"}`;
+            if (data.music) {
+                notifText += `\n🎶 Music Link: ${data.music}`;
+            }
+            notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
+💌 Letter: ${data.letter}
+Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
+🔗 Main Link: ${finalGeneratedUrl}`;
+        }
+
+        ctx.editMessageText(notifText, Markup.inlineKeyboard([
+            [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
+            [Markup.button.callback("👤 Visitor Info", `view_vi_${linkId}`), Markup.button.callback("⚙️ Control", `ctrl_menu_${linkId}`)]
         ])).catch(() => {});
     });
 
     bot.action(/^adm_off_link_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
-        if (db.linkDatabase[linkId]) {
-            db.linkDatabase[linkId].isOff = true;
+        const data = db.linkDatabase[linkId];
+        if (data) {
+            data.isOff = true;
             saveDB();
             ctx.answerCbQuery("✅ লিংকটি অফ করা হয়েছে।", { show_alert: true });
-            ctx.editMessageText("❌ এই লিংকটি অফ করে দেওয়া হয়েছে।").catch(() => {});
+            
+            let countdownDisplay = data.countdown ? "Yes ✅" : "No ❌";
+            let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
+            
+            let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [OFF 🔴]
+👤 Name: ${data.name || "User"}
+🆔 ID: ${data.userId}
+🏷️ Username: ${data.username || "None"}
+📂 Category: ${String(data.type || "love").toUpperCase()}
+⏳ Countdown: ${countdownDisplay}
+📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
+            
+            if (data.image) {
+                notifText += `\n🖼️ IMG Link: ${data.image}`;
+            }
+            notifText += `\n🎵 Music Included: ${data.music ? "Yes ✅" : "No ❌"}`;
+            if (data.music) {
+                notifText += `\n🎶 Music Link: ${data.music}`;
+            }
+            notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
+💌 Letter: ${data.letter}
+Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
+🔗 Main Link: ${finalGeneratedUrl}
+
+ℹ️ এই লিংকটি অফ করে দেওয়া হয়েছে।`;
+
+            ctx.editMessageText(notifText, Markup.inlineKeyboard([
+                [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
+                [Markup.button.callback("👤 Visitor Info", `view_vi_${linkId}`), Markup.button.callback("⚙️ Control", `ctrl_menu_${linkId}`)]
+            ])).catch(() => {});
         } else {
             ctx.answerCbQuery("⚠️ লিংকটি পাওয়া যায়নি।", { show_alert: true });
         }
@@ -198,7 +266,36 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
                 saveDB();
             }
             ctx.answerCbQuery(`✅ ইউজার (${creatorId}) কে ব্যান করা হয়েছে।`, { show_alert: true });
-            ctx.editMessageText(`🚫 ইউজার সফলভাবে ব্যান করা হয়েছে।`).catch(() => {});
+            
+            let countdownDisplay = data.countdown ? "Yes ✅" : "No ❌";
+            let finalGeneratedUrl = `https://love-bb7p.onrender.com/love/${linkId}`;
+            
+            let notifText = `🆕 নতুন লিংক তৈরি করা হয়েছে [User Banned 🚫]
+👤 Name: ${data.name || "User"}
+🆔 ID: ${data.userId}
+🏷️ Username: ${data.username || "None"}
+📂 Category: ${String(data.type || "love").toUpperCase()}
+⏳ Countdown: ${countdownDisplay}
+📸 IMG Included: ${data.image ? "Yes ✅" : "No ❌"}`;
+            
+            if (data.image) {
+                notifText += `\n🖼️ IMG Link: ${data.image}`;
+            }
+            notifText += `\n🎵 Music Included: ${data.music ? "Yes ✅" : "No ❌"}`;
+            if (data.music) {
+                notifText += `\n🎶 Music Link: ${data.music}`;
+            }
+            notifText += `\n✨ Animation txt: ${(data.animations || []).join(", ")}
+💌 Letter: ${data.letter}
+Batton movement: ${data.config?.enableMovement ? "yes" : "no"}
+🔗 Main Link: ${finalGeneratedUrl}
+
+ℹ️ এই লিংকের ইউজারকে সফলভাবে ব্যান করা হয়েছে।`;
+
+            ctx.editMessageText(notifText, Markup.inlineKeyboard([
+                [Markup.button.callback("👀 Check Answer", `view_ans_${linkId}`), Markup.button.callback("💬 Check Msg", `view_msg_${linkId}`)],
+                [Markup.button.callback("👤 Visitor Info", `view_vi_${linkId}`), Markup.button.callback("⚙️ Control", `ctrl_menu_${linkId}`)]
+            ])).catch(() => {});
         } else {
             ctx.answerCbQuery("⚠️ লিংক বা ইউজার পাওয়া যায়নি।", { show_alert: true });
         }
