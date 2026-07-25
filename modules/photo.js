@@ -2,7 +2,7 @@ const { Markup } = require('telegraf');
 const { uploadToCatbox } = require('./catbox');
 
 const img_msg = {
-    img_ask: "📸 ছবি দিতে চাইলে ছবিটি এখানে পাঠান অথবা Skip করুন।"
+    img_ask: "📸 ছবি দিতে চাইলে ছবিটি এখানে আপলোড করুন।"
 };
 
 function showImageUploadPrompt(ctx, db, saveDB, locale) {
@@ -13,7 +13,7 @@ function showImageUploadPrompt(ctx, db, saveDB, locale) {
     
     const message = img_msg.img_ask;
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("⏭️ Skip", 'skip_image_upload')],
+        [Markup.button.callback("❌ ছবি ছাড়া", 'skip_image_upload')],
         [Markup.button.callback("🔙 Back", 'menu_makelink')]
     ]);
 
