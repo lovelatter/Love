@@ -9,6 +9,7 @@ const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
+const { locale } = require('./modules/locale');
 const { generateRandomAnimation, generateRandomLetter } = require('./modules/random');
 
 const app = express();
@@ -24,8 +25,6 @@ const SERVER_URL = "https://love-bb7p.onrender.com";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
-const HELP_TEXT = `❓ বট ব্যবহারের নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন করুন অথবা ছবি ছাড়া।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`;
-
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
     if (!userId) return;
@@ -34,12 +33,13 @@ bot.use(async (ctx, next) => {
     await saveDB();
     if (isAdmin(userId)) return next();
 
+    // ব্যান ইউজার চেক ও মতামত বাটন হ্যান্ডেলিং
     if (db.bannedUsers.includes(userId)) {
         const session = db.userSessions[userId];
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
         if (ctx.callbackQuery?.data === 'menu_feedback') return next();
         
-        const banKeyboard = Markup.inlineKeyboard([[Markup.button.callback("📝 মতামত", 'menu_feedback')]]);
+        const banKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
         const banMsg = "বিশেষ কোন কারণে বট থেকে আপনাকে ব্যান করা হয়েছে। আপনার কিছু বলার থাকলে এডমিনকে মতামত জানাতে পারেন।";
         
         if (ctx.callbackQuery) {
@@ -53,29 +53,26 @@ bot.use(async (ctx, next) => {
         const session = db.userSessions[userId];
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
         if (ctx.callbackQuery?.data === 'menu_feedback') return next();
-        
-        const maintMsg = "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি。\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।";
-        const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback("📝 মতামত", 'menu_feedback')]]);
+        const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
         if (ctx.callbackQuery) {
             ctx.answerCbQuery().catch(() => {});
-            return ctx.editMessageText(maintMsg, maintKeyboard).catch(() => {});
+            return ctx.editMessageText(locale.maint_msg, maintKeyboard).catch(() => {});
         }
-        return ctx.reply(maintMsg, maintKeyboard).catch(() => {});
+        return ctx.reply(locale.maint_msg, maintKeyboard).catch(() => {});
     }
     return next();
 });
 
-setupAdmin(bot, db, saveDB, isAdmin, __dirname, { btn_feedback: "📝 মতামত" });
+setupAdmin(bot, db, saveDB, isAdmin, __dirname, locale);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
-    const welcomeMsg = `👋 হ্যালো ${fullName}। বটের পক্ষ থেকে স্বাগতম।`;
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("🚀 লিঙ্ক তৈরি করুন", 'menu_makelink')],
-        [Markup.button.callback("📝 মতামত", 'menu_feedback'), Markup.button.callback("❓ সাহায্য", 'menu_help')]
+        [Markup.button.callback(locale.btn_make, 'menu_makelink')],
+        [Markup.button.callback(locale.btn_feedback, 'menu_feedback'), Markup.button.callback(locale.btn_help, 'menu_help')]
     ]);
-    if (isEdit) return ctx.editMessageText(welcomeMsg, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
-    return ctx.reply(welcomeMsg, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    if (isEdit) return ctx.editMessageText(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    return ctx.reply(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
 bot.command('start', async (ctx) => { 
@@ -88,12 +85,12 @@ bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, 
 
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
-    ctx.editMessageText("📌 আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন:", Markup.inlineKeyboard([
-        [Markup.button.callback("❤️ Love", 'make_love')],
-        [Markup.button.callback("🎂 Birthday", 'make_birthday')],
-        [Markup.button.callback("😢 Sorry", 'make_sorry')],
-        [Markup.button.callback("🌙 Eid", 'make_eid')],
-        [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
+    ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
+        [Markup.button.callback(locale.cat_love, 'make_love')],
+        [Markup.button.callback(locale.cat_birthday, 'make_birthday')],
+        [Markup.button.callback(locale.cat_sorry, 'make_sorry')],
+        [Markup.button.callback(locale.cat_eid, 'make_eid')],
+        [Markup.button.callback(locale.btn_back, 'go_to_main_menu')]
     ]));
 });
 
@@ -109,7 +106,7 @@ bot.action(/^make_/, async (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     await saveDB();
-    showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, {}));
+    showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, locale), locale);
 });
 
 bot.action('timer_no', async (ctx) => { 
@@ -117,7 +114,7 @@ bot.action('timer_no', async (ctx) => {
     if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
     db.userSessions[ctx.chat.id].pendingMinutes = null; 
     await saveDB();
-    showMusicUploadPrompt(ctx, db, saveDB, {}); 
+    showMusicUploadPrompt(ctx, db, saveDB, locale); 
 });
 
 bot.action(/^set_time_/, async (ctx) => {
@@ -126,11 +123,11 @@ bot.action(/^set_time_/, async (ctx) => {
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
     await saveDB();
-    showMusicUploadPrompt(ctx, db, saveDB, {});
+    showMusicUploadPrompt(ctx, db, saveDB, locale);
 });
 
 bot.action(['music_no', 'music_default'], (ctx) => {
-    handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, {});
+    handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale);
 });
 
 bot.action('skip_image_upload', async (ctx) => {
@@ -146,7 +143,7 @@ bot.action('skip_image_upload', async (ctx) => {
 async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = `✨ অ্যানিমেশন মেসেজ লিখুন。\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
+    const text = locale.session_started();
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
@@ -223,7 +220,7 @@ bot.action('anim_keep', async (ctx) => {
     session.animations = session.currentAnimList;
     session.step = 'AWAITING_LETTER_TEXT';
     await saveDB();
-    const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
+    const text = locale.input_anim_success(session.animations.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
@@ -311,14 +308,14 @@ bot.action('menu_feedback', async (ctx) => {
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
     db.userSessions[userId].feedbackWarningMsgId = null;
     
-    const sentMsg = await ctx.editMessageText("📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
+    const sentMsg = await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
     db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
     await saveDB();
 });
 
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
-    ctx.editMessageText(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
+    ctx.editMessageText(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
 });
 
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
@@ -333,7 +330,7 @@ bot.action(/^delete_link_(.+)$/, async (ctx) => {
     sendMainMenu(ctx, false);
 });
 
-bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, {}));
+bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
 bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
 bot.on('text', async (ctx) => {
@@ -359,7 +356,7 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, {});
+            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
         }
     }
 
@@ -369,8 +366,8 @@ bot.on('text', async (ctx) => {
     }
     
     if (!session?.step) {
-        ctx.reply(`❌ ভুল ইনপুট: \`${text}\` কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`, { parse_mode: 'Markdown' }).catch(() => {});
-        return ctx.reply(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+        ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
+        return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
@@ -382,7 +379,7 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            const nextPrompt = await ctx.reply(`✅ চমৎকার! আপনি ${lines.length} লাইনের অ্যানিমেশন যোগ করেছেন。\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:`, Markup.inlineKeyboard([
+            const nextPrompt = await ctx.reply(locale.input_anim_success(lines.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
                 [Markup.button.callback("🎲 Random", 'random_letter_start')],
                 [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
             ]));
@@ -398,7 +395,7 @@ bot.on('text', async (ctx) => {
             return await processFinalLinkCreation(ctx, text, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
         }
     } catch (error) {
-        ctx.reply("⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন.").catch(() => {});
+        ctx.reply(locale.general_error).catch(() => {});
     }
 });
 
