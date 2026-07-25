@@ -5,7 +5,7 @@ const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt, setupCountdownActions } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, setupMusicActions } = require('./modules/music');
-const { handleFeedbackStart, handleFeedbackText, setupFeedbackActions } = require('./modules/feedback');
+const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
@@ -24,6 +24,8 @@ const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 const SERVER_URL = "https://love-bb7p.onrender.com";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
+
+const HELP_TEXT = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন।\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`;
 
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
@@ -52,7 +54,7 @@ bot.use(async (ctx, next) => {
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
         if (ctx.callbackQuery?.data === 'menu_feedback') return next();
         const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback("📝 মতামত", 'menu_feedback')]]);
-        const maint_msg = "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।";
+        const maint_msg = "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি።\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।";
         if (ctx.callbackQuery) {
             ctx.answerCbQuery().catch(() => {});
             return ctx.editMessageText(maint_msg, maintKeyboard).catch(() => {});
@@ -66,7 +68,6 @@ setupAdmin(bot, db, saveDB, isAdmin, __dirname, null);
 setupMakeLink(bot, db, saveDB, showCountdownPrompt, showMusicUploadPrompt);
 setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt);
 setupMusicActions(bot, db, saveDB, showImageUploadPrompt);
-setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, null);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -100,7 +101,7 @@ bot.action('skip_image_upload', async (ctx) => {
 async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = `✨ অ্যানিমেশন মেসেজ লিখুন।\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
+    const text = `✨ অ্যানিমেশন মেসেজ লিখুন。\n• একাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')],
         [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
@@ -280,10 +281,21 @@ bot.action(/^mov_(yes|no)$/, async (ctx) => {
     await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
 });
 
+bot.action('menu_feedback', async (ctx) => {
+    ctx.answerCbQuery();
+    const userId = ctx.chat.id;
+    if (!db.userSessions[userId]) db.userSessions[userId] = {};
+    db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
+    db.userSessions[userId].feedbackWarningMsgId = null;
+    
+    const sentMsg = await ctx.editMessageText("📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]));
+    db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
+    await saveDB();
+});
+
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
-    const help_text = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন।\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`;
-    ctx.editMessageText(help_text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
+    ctx.editMessageText(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
 });
 
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, null));
@@ -295,8 +307,25 @@ bot.on('text', async (ctx) => {
     const text = ctx.message.text.trim();
     
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        const handled = await handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, null);
-        if (handled) return;
+        if (text.length < 5) {
+            await ctx.deleteMessage().catch(() => {});
+            if (session.feedbackWarningMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+            }
+            const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
+            db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
+            await saveDB();
+            return;
+        } else {
+            if (session.feedbackWarningMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
+            }
+            if (session.feedbackPromptMsgId) {
+                await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
+            }
+            await ctx.deleteMessage().catch(() => {});
+            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, null);
+        }
     }
 
     if (isAdmin(userId) && session) {
@@ -306,9 +335,8 @@ bot.on('text', async (ctx) => {
     
     if (!session?.step) {
         const invalid_cmd_text = `❌ ভুল ইনপুট: \`${text}\` কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`;
-        const help_text = `❓ বট ব্যবহারের সঠিক নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর*\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন অথবা Skip করুন।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ No বাটন মুভমেন্ট করাতে চান কিনা তা সিলেক্ট করুন।\n8️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`;
         ctx.reply(invalid_cmd_text, { parse_mode: 'Markdown' }).catch(() => {});
-        return ctx.reply(help_text, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+        return ctx.reply(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
