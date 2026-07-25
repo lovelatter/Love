@@ -5,7 +5,7 @@ const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set } = require('./modules/music');
-const { handleFeedbackStart, handleFeedbackInput } = require('./modules/feedback');
+const { handleFeedbackStart, handleFeedbackText, setupFeedbackActions } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
@@ -66,6 +66,7 @@ bot.use(async (ctx, next) => {
 });
 
 setupAdmin(bot, db, saveDB, isAdmin, __dirname, { btn_feedback: "📝 মতামত" });
+setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, { btn_back: "🔙 Back" });
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -304,18 +305,6 @@ bot.action('letter_keep', async (ctx) => {
     await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
 });
 
-bot.action('menu_feedback', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    if (!db.userSessions[userId]) db.userSessions[userId] = {};
-    db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
-    db.userSessions[userId].feedbackWarningMsgId = null;
-    
-    const sentMsg = await ctx.editMessageText("📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
-    db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
-    await saveDB();
-});
-
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
     ctx.editMessageText(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
@@ -342,25 +331,7 @@ bot.on('text', async (ctx) => {
     const text = ctx.message.text.trim();
     
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        if (text.length < 5) {
-            await ctx.deleteMessage().catch(() => {});
-            if (session.feedbackWarningMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
-            }
-            const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
-            db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
-            await saveDB();
-            return;
-        } else {
-            if (session.feedbackWarningMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
-            }
-            if (session.feedbackPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, {});
-        }
+        return handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, { btn_back: "🔙 Back" });
     }
 
     if (isAdmin(userId) && session) {
