@@ -6,37 +6,39 @@ const feedmsg = {
     feedback_short: "❌ মেসেজটি একটু বিস্তারিত লিখুন (কমপক্ষে ৫টি অক্ষর)।"
 };
 
-function handleFeedbackStart(ctx, db, saveDB) {
-    ctx.answerCbQuery();
+async function handleFeedbackStart(ctx, db, saveDB) {
+    await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
     db.userSessions[userId].feedbackWarningMsgId = null;
     
-    ctx.editMessageText(feedmsg.prompt, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]])).then((sentMsg) => {
+    try {
+        const sentMsg = await ctx.editMessageText(feedmsg.prompt, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]));
         db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
-        saveDB();
-    }).catch(() => {
-        ctx.reply(feedmsg.prompt, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]])).then((sentMsg) => {
-            db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
-            saveDB();
-        }).catch(() => {});
-    });
+        await saveDB().catch(() => {});
+    } catch {
+        const sentMsg = await ctx.reply(feedmsg.prompt, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]));
+        db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
+        await saveDB().catch(() => {});
+    }
 }
 
 async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
-    const text = ctx.message.text.trim();
+    const text = ctx.message?.text?.trim() || "";
 
     if (text.length < 5) {
         await ctx.deleteMessage().catch(() => {});
         if (session.feedbackWarningMsgId) {
             await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
         }
-        const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
-        db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
-        await saveDB();
+        const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন.").catch(() => null);
+        if (warnMsg) {
+            db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
+            await saveDB().catch(() => {});
+        }
         return true;
     } else {
         if (session.feedbackWarningMsgId) {
@@ -56,8 +58,8 @@ async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS) {
         });
         
         delete db.userSessions[userId];
-        await saveDB();
-        await ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
+        await saveDB().catch(() => {});
+        await ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]])).catch(() => {});
         return true;
     }
 }
