@@ -111,27 +111,32 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         showAdminDashboard(ctx, db, true);
     });
 
-    bot.action(/^view_ans_(.+)$/, (ctx) => {
+    // Btn1: Answer & Msg (Pop-up)
+    bot.action(/^view_ans_msg_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const data = db.linkDatabase[ctx.match[1]];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-        return ctx.answerCbQuery(data.answer ? `📩 উত্তর: ${data.answer}` : "⏳ এখনও উত্তর দেয়নি!", { show_alert: true });
+        
+        const ansText = data.answer ? data.answer : "⏳ এখনও উত্তর দেয়নি!";
+        const msgText = data.message ? data.message : "কুনো মেসেজ আসেনি";
+        
+        return ctx.answerCbQuery(`ans: ${ansText}\nmsg: ${msgText}`, { show_alert: true });
     });
 
+    // Btn2: Visitor Info (Auto-delete after 5 sec)
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         ctx.answerCbQuery();
+        
         if (!data.visitors || data.visitors.length === 0) {
             const emptyMsg = await ctx.reply("ℹ️ লিঙ্কটি এখনও কেউ ওপেন করেনি।").catch(() => null);
             if (emptyMsg) {
                 setTimeout(async () => {
-                    try {
-                        await bot.telegram.deleteMessage(ctx.chat.id, emptyMsg.message_id);
-                    } catch (e) {}
-                }, 10000);
+                    try { await bot.telegram.deleteMessage(ctx.chat.id, emptyMsg.message_id); } catch (e) {}
+                }, 5000);
             }
             return;
         }
@@ -145,11 +150,39 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         const sentMsg = await ctx.reply(report).catch(() => null);
         if (sentMsg) {
             setTimeout(async () => {
-                try {
-                    await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id);
-                } catch (e) {}
-            }, 10000);
+                try { await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id); } catch (e) {}
+            }, 5000);
         }
+    });
+
+    // Btn3: Link Off
+    bot.action(/^adm_off_link_(.+)$/, async (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        if (db.linkDatabase[linkId]) {
+            delete db.linkDatabase[linkId];
+            await saveDB();
+            ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে বন্ধ করা হয়েছে।", { show_alert: true });
+            ctx.editMessageText("❌ এই লিঙ্কটি অ্যাডমিন কর্তৃক বন্ধ করা হয়েছে।").catch(() => {});
+        } else {
+            ctx.answerCbQuery("⚠️ লিঙ্কটি ইতিমধ্যে মুছে ফেলা হয়েছে বা নেই।", { show_alert: true });
+        }
+    });
+
+    // Btn4: Ban User (Creator)
+    bot.action(/^adm_ban_creator_(.+)$/, async (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const linkId = ctx.match[1];
+        const data = db.linkDatabase[linkId];
+        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি পাওয়া যায়নি।", { show_alert: true });
+        
+        const creatorId = Number(data.userId);
+        if (!db.bannedUsers.includes(creatorId)) {
+            db.bannedUsers.push(creatorId);
+            await saveDB();
+        }
+        ctx.answerCbQuery(`🚫 ইউজার (${creatorId}) কে সফলভাবে ব্যান করা হয়েছে।`, { show_alert: true });
+        ctx.editMessageText(`🚫 এই লিঙ্কের তৈরিকারী ইউজারকে (ID: ${creatorId}) ব্যান করা হয়েছে।`).catch(() => {});
     });
 };
 
