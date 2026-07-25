@@ -93,10 +93,10 @@ bot.action('go_to_main_menu', (ctx) => {
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery().catch(() => {});
     ctx.editMessageText("📌 আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন:", Markup.inlineKeyboard([
-        [Markup.button.callback("❤️ Love", 'make_love')],
-        [Markup.button.callback("🎂 Birthday", 'make_birthday')],
-        [Markup.button.callback("😢 Sorry", 'make_sorry')],
-        [Markup.button.callback("🌙 Eid", 'make_eid')],
+        [Markup.button.callback("❤️ প্রেমের চিঠি (Love)", 'make_love')],
+        [Markup.button.callback("🎂 জন্মদিন (Birthday)", 'make_birthday')],
+        [Markup.button.callback("😢 দুঃখিত (Sorry)", 'make_sorry')],
+        [Markup.button.callback("🌙 ঈদ মোবারক (Eid)", 'make_eid')],
         [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
     ])).catch(() => {});
 });
