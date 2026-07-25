@@ -54,7 +54,7 @@ bot.use(async (ctx, next) => {
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
         if (ctx.callbackQuery?.data === 'menu_feedback') return next();
         
-        const maintMsg = "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।";
+        const maintMsg = "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি。\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।";
         const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback("📝 মতামত", 'menu_feedback')]]);
         if (ctx.callbackQuery) {
             ctx.answerCbQuery().catch(() => {});
@@ -146,7 +146,7 @@ bot.action('skip_image_upload', async (ctx) => {
 async function showAnimationIntro(ctx) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = `✨ অ্যানিমেশন মেসেজ লিখুন।\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
+    const text = `✨ অ্যানিমেশন মেসেজ লিখুন。\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
@@ -223,7 +223,7 @@ bot.action('anim_keep', async (ctx) => {
     session.animations = session.currentAnimList;
     session.step = 'AWAITING_LETTER_TEXT';
     await saveDB();
-    const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
+    const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন。\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান।` + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')],
         [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
@@ -382,7 +382,7 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            const nextPrompt = await ctx.reply(`✅ চমৎকার! আপনি ${lines.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:`, Markup.inlineKeyboard([
+            const nextPrompt = await ctx.reply(`✅ চমৎকার! আপনি ${lines.length} লাইনের অ্যানিমেশন যোগ করেছেন。\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:`, Markup.inlineKeyboard([
                 [Markup.button.callback("🎲 Random", 'random_letter_start')],
                 [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
             ]));
@@ -406,7 +406,7 @@ setupRoutes(app, db, saveDB, bot);
 
 const PORT = process.env.PORT || 3000;
 
-loadDB().loadDB().then(() => {
+loadDB().then(() => {
     app.listen(PORT, () => {
         bot.launch().catch(err => console.error(err));
         console.log(`Server running on port ${PORT}`);
