@@ -15,13 +15,11 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
+const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.command(['admin', 'adm'], (ctx) => {
         if (!isAdmin(ctx.chat.id)) {
-            const userText = ctx.message.text || '';
-            ctx.reply(`❌ ভুল ইনপুট: \`${userText}\` কমান্ডটি গ্রহণযোগ্য নয়।`, { parse_mode: 'Markdown' }).catch(() => {});
-            const helpText = `❓ বট ব্যবহারের নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন করুন অথবা ছবি ছাড়া।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!`;
-            return ctx.reply(helpText, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+            ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
+            return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
         }
         showAdminDashboard(ctx, db, false);
     });
@@ -113,6 +111,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
         showAdminDashboard(ctx, db, true);
     });
 
+    // Btn1: Answer & Msg (Pop-up)
     bot.action(/^view_ans_msg_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const data = db.linkDatabase[ctx.match[1]];
@@ -124,6 +123,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
         return ctx.answerCbQuery(`ans: ${ansText}\nmsg: ${msgText}`, { show_alert: true });
     });
 
+    // Btn2: Visitor Info (Auto-delete after 5 sec)
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
@@ -155,6 +155,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
         }
     });
 
+    // Btn3: Link Off
     bot.action(/^adm_off_link_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
@@ -168,6 +169,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
         }
     });
 
+    // Btn4: Ban User (Creator)
     bot.action(/^adm_ban_creator_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
