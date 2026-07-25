@@ -19,7 +19,7 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
 const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
     bot.command(['admin', 'adm'], (ctx) => {
         if (!isAdmin(ctx.chat.id)) {
-            ctx.reply('❌ ভুল ইনপুট: \`${text}\` কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
+            ctx.reply('❌ ভুল ইনপুট: \`${text}\` কমান্ডটি গ্রহণযোগ্য নয়। নিচে সঠিক সাহায্য গাইডটি দেওয়া হলো:`,(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
             return ctx.reply(HELP_TEXT, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
         }
         showAdminDashboard(ctx, db, false);
