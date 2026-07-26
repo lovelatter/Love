@@ -25,8 +25,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     const message = music_msg.music_ask;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("❌ No Music", 'music_no')],
-        [Markup.button.callback("🎵 Default Music", 'music_default')],
-        [Markup.button.callback("🔙 Back", 'menu_makelink')]
+        [Markup.button.callback("🎵 Default Music", 'music_default')]
     ]);
 
     ctx.editMessageText(message, keyboard).then((sentMsg) => {
