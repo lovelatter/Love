@@ -6,7 +6,7 @@ const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
 const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set } = require('./modules/music');
-const { handleFeedbackStart, handleFeedbackText } = require('./modules/feedback');
+const { handleFeedbackStart, handleFeedbackText, setupFeedbackActions } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
@@ -66,6 +66,7 @@ bot.use(async (ctx, next) => {
 });
 
 setupAdmin(bot, db, saveDB, isAdmin, __dirname, locale);
+setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
