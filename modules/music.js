@@ -1,5 +1,6 @@
 const { Markup } = require('telegraf');
-const { uploadToCatbox } = require('./catbox');
+const fs = require('fs');
+const path = require('path');
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
@@ -80,14 +81,22 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
-                const catboxUrl = await uploadToCatbox(fileUrl, 'mp3');
-                
-                if (!catboxUrl) {
-                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ অডিও আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
-                    return;
+                const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+                if (response.status !== 200) throw new Error();
+
+                const uploadsDir = path.join(__dirname, '../public/uploads');
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
                 }
 
-                db.userSessions[userId].music = catboxUrl;
+                const fileName = `audio_${Date.now()}_${userId}.mp3`;
+                const filePath = path.join(uploadsDir, fileName);
+                fs.writeFileSync(filePath, Buffer.from(response.data));
+
+                const hostUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
+                const audioUrl = `${hostUrl}/uploads/${fileName}`;
+
+                db.userSessions[userId].music = audioUrl;
                 saveDB();
                 
                 if (userMessageId) {
