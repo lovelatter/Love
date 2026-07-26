@@ -1,5 +1,5 @@
 const { Markup } = require('telegraf');
-const { uploadToCatbox } = require('./catbox');
+const { uploadToTelegraph } = require('./catbox');
 
 const img_msg = {
     img_ask: "📸 ছবি দিতে চাইলে ছবিটি এখানে আপলোড করুন।"
@@ -48,14 +48,14 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
-                const catboxUrl = await uploadToCatbox(fileUrl, 'jpg');
+                const telegraphUrl = await uploadToTelegraph(fileUrl, 'jpg');
                 
-                if (!catboxUrl) {
+                if (!telegraphUrl) {
                     if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
                     return;
                 }
 
-                db.userSessions[userId].imageUrl = catboxUrl;
+                db.userSessions[userId].imageUrl = telegraphUrl;
                 saveDB();
                 
                 if (userMessageId) {
