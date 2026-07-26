@@ -10,7 +10,6 @@ async function uploadToTelegraph(fileUrl, fileExtension) {
         }
 
         const form = new FormData();
-        
         form.append('file', Buffer.from(response.data), {
             filename: `file_${Date.now()}.${fileExtension}`
         });
@@ -30,7 +29,7 @@ async function uploadToTelegraph(fileUrl, fileExtension) {
             return null;
         }
 
-    } catch (error) {
+    }chas (error) {
         console.error('Telegraph Upload Error:', error.message);
         return null;
     }
