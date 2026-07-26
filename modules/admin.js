@@ -109,11 +109,11 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.action('adm_view_links_list', (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
-        const keys = Object.keys(db.linkDatabase);
+        const keys = Object.keys(db.linkDatabase || {});
         if (!keys.length) {
-            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu") + ""]] )).catch(() => {});
+            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]] )).catch(() => {});
         }
-        ctx.reply("📜 সকল লিংক:");
+        ctx.editMessageText("📜 সকল লিঙ্কের তালিকা নিচে দেওয়া হলো:", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]] )).catch(() => {});
         keys.forEach(key => {
             const data = db.linkDatabase[key];
             ctx.reply(`👤 Creator: ${data.name}\n📂 Category: ${data.type}\n🔗 Link ID: ${key}`, Markup.inlineKeyboard([[Markup.button.callback(`❌ Delete/Off: ${key}`, `adm_instant_del_${key}`)]])).catch(() => {});
@@ -148,15 +148,17 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.action('adm_delete_all_links_confirm', (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
-        Object.keys(db.linkDatabase).forEach(key => {
-            if (db.linkDatabase[key].imagePath) {
-                const fullImgPath = path.join(baseDir, db.linkDatabase[key].imagePath);
-                if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
-            }
-        });
-        db.linkDatabase = {};
-        saveDB();
-        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu") + ""]])).catch(() => {});
+        if (db.linkDatabase) {
+            Object.keys(db.linkDatabase).forEach(key => {
+                if (db.linkDatabase[key].imagePath) {
+                    const fullImgPath = path.join(baseDir, db.linkDatabase[key].imagePath);
+                    if (fs.existsSync(fullImgPath)) fs.unlinkSync(fullImgPath);
+                }
+            });
+            db.linkDatabase = {};
+            saveDB();
+        }
+        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]] )).catch(() => {});
     });
 
     bot.action('adm_ban_menu', (ctx) => {
@@ -269,14 +271,14 @@ const handleAdminText = (ctx, text, session, db, saveDB, bot) => {
         let matchedLinks = [];
 
         if (categories.includes(query)) {
-            matchedLinks = Object.entries(db.linkDatabase).filter(([_, data]) => data.type && data.type.toLowerCase() === query);
+            matchedLinks = Object.entries(db.linkDatabase || {}).filter(([_, data]) => data.type && data.type.toLowerCase() === query);
         } else {
             let targetUserId = parseInt(text, 10);
             if (isNaN(targetUserId)) {
                 targetUserId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
             }
 
-            matchedLinks = Object.entries(db.linkDatabase).filter(([_, data]) => {
+            matchedLinks = Object.entries(db.linkDatabase || {}).filter(([_, data]) => {
                 if (!isNaN(targetUserId) && Number(data.userId) === Number(targetUserId)) return true;
                 if (data.username && data.username.toLowerCase().replace('@', '') === text.replace('@', '').trim().toLowerCase()) return true;
                 return false;
@@ -324,18 +326,19 @@ const handleAdminText = (ctx, text, session, db, saveDB, bot) => {
     }
 
     if (session.step === 'AWAITING_BAN_USER_INPUT') {
-        let targetId = parseInt(text, 10);
-        if (isNaN(targetId)) targetId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
-        if (!targetId) {
+        let targetId = intval(text); // fallback parsing
+        let parsedId = parseInt(text, 10);
+        if (isNaN(parsedId)) parsedId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
+        if (!parsedId) {
             ctx.reply("❌ এই ইউজারনেম/আইডি ডাটাবেজে পাওয়া যায়নি।");
             return true;
         }
-        if (db.bannedUsers.includes(targetId)) {
-            db.bannedUsers = db.bannedUsers.filter(id => id !== targetId);
-            ctx.reply(`🟢 ইউজার \`${targetId}\` কে UNBAN করা হয়েছে।`, { parse_mode: 'Markdown' });
+        if (db.bannedUsers.includes(parsedId)) {
+            db.bannedUsers = db.bannedUsers.filter(id => id !== parsedId);
+            ctx.reply(`🟢 ইউজার \`${parsedId}\` কে UNBAN করা হয়েছে।`, { parse_mode: 'Markdown' });
         } else {
-            db.bannedUsers.push(targetId);
-            ctx.reply(`🚫 ইউজার \`${targetId}\` কে BAN করা হয়েছে।`, { parse_mode: 'Markdown' });
+            db.bannedUsers.push(parsedId);
+            ctx.reply(`🚫 ইউজার \`${parsedId}\` কে BAN করা হয়েছে।`, { parse_mode: 'Markdown' });
         }
         delete db.userSessions[userId];
         saveDB();
