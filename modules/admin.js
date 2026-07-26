@@ -10,7 +10,7 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
         [Markup.button.callback("🔗 All Links", "adm_all_links_menu")],
         [Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")]
     ]);
-    const text = `👑 Admin Dashboard`;
+    const text = `👑 Admin Dashboard\n\n📊 মোট ইউজার: ${db.registeredUsers.length}\n🚫 ব্যান ইউজার: ${db.bannedUsers.length}\n`;
     if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
@@ -100,7 +100,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         ctx.answerCbQuery();
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
         saveDB();
-        ctx.reply(`🚫 Ban / Unban System\n\n📊 মোট ইউজার: ${db.registeredUsers.length}\n• ব্যান ইউজার: ${db.bannedUsers.length}\n\n👉 অনুগ্রহ করে ইউজারের ID অথবা Username লিখে পাঠান:`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
+        ctx.reply(`🚫 Ban / Unban System\n\n👉 অনুগ্রহ করে ইউজারের ID অথবা Username লিখে পাঠান:`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action('adm_back_to_dashboard', (ctx) => {
