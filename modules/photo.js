@@ -1,5 +1,7 @@
 const { Markup } = require('telegraf');
-const { uploadToTelegraph } = require('./catbox');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
 
 const img_msg = {
     img_ask: "📸 ছবি দিতে চাইলে ছবিটি এখানে আপলোড করুন।"
@@ -48,14 +50,22 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
                 const fileUrlObj = await bot.telegram.getFileLink(fileId);
                 const fileUrl = fileUrlObj.href;
                 
-                const telegraphUrl = await uploadToTelegraph(fileUrl, 'jpg');
-                
-                if (!telegraphUrl) {
-                    if (loadingMsg) bot.telegram.editMessageText(ctx.chat.id, loadingMsg.message_id, null, "⚠️ ছবি আপলোড করতে সমস্যা হয়েছে, আবার চেষ্টা করুন।").catch(() => {});
-                    return;
+                const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+                if (response.status !== 200) throw new Error();
+
+                const uploadsDir = path.join(__dirname, '../public/uploads');
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
                 }
 
-                db.userSessions[userId].imageUrl = telegraphUrl;
+                const fileName = `image_${Date.now()}_${userId}.jpg`;
+                const filePath = path.join(uploadsDir, fileName);
+                fs.writeFileSync(filePath, Buffer.from(response.data));
+
+                const hostUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
+                const imageUrl = `${hostUrl}/uploads/${fileName}`;
+
+                db.userSessions[userId].imageUrl = imageUrl;
                 saveDB();
                 
                 if (userMessageId) {
