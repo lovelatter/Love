@@ -49,10 +49,12 @@ async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
         
         const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
         const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-        const adminMsg = `📝 Feedback\nName: ${fullName}\nID: ${userId}\nUsername: ${userName}\n\n${text}`;
+        const adminMsg = `📝 নতুন ফিডব্যাক\nনাম: ${fullName}\nআইডি: <code>${userId}</code>\nইউজারনেম: ${userName}\n\nমেসেজ: ${text}`;
+        
+        const keyboard = Markup.inlineKeyboard([[Markup.button.callback("💬 রিপ্লাই দিন", `admin_reply_${userId}`)]]);
         
         ADMIN_IDS.forEach(id => {
-            bot.telegram.sendMessage(id, adminMsg).catch(() => {});
+            bot.telegram.sendMessage(id, adminMsg, { parse_mode: 'HTML', reply_markup: keyboard.reply_markup }).catch(() => {});
         });
         
         delete db.userSessions[userId];
@@ -66,6 +68,30 @@ async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
 function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale) {
     bot.action('menu_feedback', (ctx) => {
         handleFeedbackStart(ctx, db, saveDB);
+    });
+
+    bot.action(/^admin_reply_(\d+)$/, async (ctx) => {
+        ctx.answerCbQuery();
+        const targetUserId = ctx.match[1];
+        const adminId = ctx.chat.id;
+        
+        if (!db.userSessions[adminId]) db.userSessions[adminId] = {};
+        db.userSessions[adminId].step = 'AWAITING_ADMIN_REPLY';
+        db.userSessions[adminId].targetUserId = targetUserId;
+        await saveDB();
+        
+        await ctx.reply("রিপ্লাই মেসেজ লিখে এখানে দিন:");
+    });
+
+    bot.action(/^user_reply_chat$/, async (ctx) => {
+        ctx.answerCbQuery();
+        const userId = ctx.chat.id;
+        
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
+        db.userSessions[userId].step = 'AWAITING_USER_CHAT_REPLY';
+        await saveDB();
+        
+        await ctx.reply("রিপ্লাই মেসেজ লিখে এখানে দিন। আপনার মেসেজটি এডমিনের কাছে পৌঁছে দেয়া হবে।");
     });
 }
 
