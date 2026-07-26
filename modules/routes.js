@@ -11,12 +11,7 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
             
-            const sentMsg = await bot.telegram.sendMessage(data.userId, "কেউ আপনার লিংক ওপেন করেছে!").catch(() => null);
-            if (sentMsg) {
-                if (!data.openMessageIds) data.openMessageIds = {};
-                data.openMessageIds[req.ip || 'default'] = sentMsg.message_id;
-                await saveDB();
-            }
+            bot.telegram.sendMessage(data.userId, `আপনার লিংক ওপেন করা হয়েছে! (লিংক আইডি: ${linkId})`).catch(() => {});
             
             let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
             let ip = rawIp.split(',')[0].trim();
@@ -73,6 +68,19 @@ function setupRoutes(app, db, saveDB, bot) {
         }
     });
 
+    app.post('/api/open-envelope', async (req, res) => {
+        try {
+            const { id } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+
+            bot.telegram.sendMessage(data.userId, `খাম খোলা হয়েছে! (লিংক আইডি: ${id})`).catch(() => {});
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
+    });
+
     app.post('/api/submit-answer', async (req, res) => {
         try {
             const { id, answer } = req.body;
@@ -80,24 +88,31 @@ function setupRoutes(app, db, saveDB, bot) {
             if (!data) return res.json({ success: false });
             
             data.answer = answer;
-            
-            if (data.openMessageIds) {
-                const clientIp = req.ip || 'default';
-                const msgId = data.openMessageIds[clientIp] || Object.values(data.openMessageIds)[0];
-                if (msgId) {
-                    bot.telegram.deleteMessage(data.userId, msgId).catch(() => {});
-                    delete data.openMessageIds[clientIp];
-                }
-            }
-            
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            bot.telegram.sendMessage(data.userId, `আপনার তৈরি করা লিংক থেকে রিপ্লাই এসেছে。\nQuestion: ${config.question}\nAns: ${answer}`, Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${id}`)]])).catch(() => {});
+            bot.telegram.sendMessage(data.userId, `একটি রিপ্লাই এসেছে! (লিংক আইডি: ${id})\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => {});
             
             return res.json({ success: true });
         } catch (err) { 
             res.json({ success: false }); 
+        }
+    });
+
+    app.post('/api/submit-message', async (req, res) => {
+        try {
+            const { id, message } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+
+            data.message = message;
+            await saveDB();
+
+            bot.telegram.sendMessage(data.userId, `একটি মেসেজ এসেছে! (লিংক আইডি: ${id})\nমেসেজ: ${message}`).catch(() => {});
+
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
         }
     });
 
