@@ -6,9 +6,12 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
     const feedbackCount = db.feedbacks ? db.feedbacks.length : 0;
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint"), Markup.button.callback(`📥 Feedbacks (${feedbackCount})`, "adm_feedback_list")],
-        [Markup.button.callback("📢 Announcement", "adm_broadcast"), Markup.button.callback("✉️ Msg User", "adm_msg_user")],
-        [Markup.button.callback("🔗 All Links", "adm_all_links_menu"), Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")],
+        [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
+        [Markup.button.callback(`📥 Feedbacks (${feedbackCount})`, "adm_feedback_list")],
+        [Markup.button.callback("📢 Announcement", "adm_broadcast")],
+        [Markup.button.callback("✉️ Msg User", "adm_msg_user")],
+        [Markup.button.callback("🔗 All Links", "adm_all_links_menu")],
+        [Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")],
         [Markup.button.callback("❌ Close", "adm_close_dashboard")]
     ]);
     const text = `👑 Admin Dashboard 👑\n\n- মোট: ${db.registeredUsers.length}\n- ব্যান: ${db.bannedUsers.length}\n- ফিডব্যাক: ${feedbackCount}\n`;
