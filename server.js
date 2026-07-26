@@ -355,7 +355,7 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            return handleFeedbackInput(ctx, db, saveDB, bot, ADMIN_IDS, locale);
+            return handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale);
         }
     }
 
