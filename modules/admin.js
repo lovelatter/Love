@@ -4,13 +4,15 @@ const { Markup } = require('telegraf');
 
 const showAdminDashboard = (ctx, db, isEdit = false) => {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
+    const feedbackCount = db.feedbacks ? db.feedbacks.length : 0;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
+        [Markup.button.callback(`📥 Feedbacks (${feedbackCount})`, "adm_feedback_list")],
         [Markup.button.callback("📢 Announcement", "adm_broadcast"), Markup.button.callback("✉️ Msg User", "adm_msg_user")],
         [Markup.button.callback("🔗 All Links", "adm_all_links_menu")],
         [Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")]
     ]);
-    const text = `👑 Admin Dashboard 👑\n\n- মোট: ${db.registeredUsers.length}\n- ব্যান: ${db.bannedUsers.length}\n`;
+    const text = `👑 Admin Dashboard 👑\n\n- মোট: ${db.registeredUsers.length}\n- ব্যান: ${db.bannedUsers.length}\n- ফিডব্যাক: ${feedbackCount}\n`;
     if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
@@ -30,6 +32,41 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         saveDB();
         ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`);
         showAdminDashboard(ctx, db, true);
+    });
+
+    bot.action('adm_feedback_list', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        if (!db.feedbacks || db.feedbacks.length === 0) {
+            return ctx.editMessageText("ℹ️ বর্তমানে কোনো ফিডব্যাক বা রিপোর্ট জমা হয়নি।", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]])).catch(() => {});
+        }
+        ctx.reply("📥 সকল ফিডব্যাক ও রিপোর্ট তালিকা:");
+        db.feedbacks.forEach((f, index) => {
+            const senderName = f.name || "Unknown";
+            const senderId = f.userId;
+            const senderUsername = f.username || "None";
+            const msg = f.message || "";
+            const textContent = `👤 Name: ${senderName}\n🆔 ID: \`${senderId}\`\n🌐 Username: ${senderUsername}\n💬 Message:\n${msg}`;
+            ctx.reply(textContent, {
+                parse_mode: 'Markdown',
+                ...Markup.inlineKeyboard([
+                    [Markup.button.callback("💬 রিপ্লাই দিন", `admin_reply_${senderId}`), Markup.button.callback("🗑️ ডিলিট", `adm_del_feedback_${index}`)]
+                ])
+            }).catch(() => {});
+        });
+    });
+
+    bot.action(/^adm_del_feedback_(\d+)$/, (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        const index = parseInt(ctx.match[1], 10);
+        if (db.feedbacks && db.feedbacks[index]) {
+            db.feedbacks.splice(index, 1);
+            saveDB();
+            ctx.answerCbQuery("✅ ফিডব্যাকটি ডিলিট করা হয়েছে।");
+            ctx.editMessageText("❌ ফিডব্যাকটি মুছে ফেলা হয়েছে।").catch(() => {});
+        } else {
+            ctx.answerCbQuery("⚠️ ফিডব্যাকটি পাওয়া যায়নি!");
+        }
     });
 
     bot.action('adm_broadcast', (ctx) => {
@@ -53,6 +90,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         ctx.answerCbQuery();
         ctx.editMessageText("🔗 All Links Management Sub-Menu:", Markup.inlineKeyboard([
             [Markup.button.callback("📜 All Links List", "adm_view_links_list")],
+            [Markup.button.callback("🔍 Filter Links", "adm_filter_links_prompt")],
             [Markup.button.callback("💥 Delete All Links", "adm_delete_all_links_confirm")],
             [Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]
         ])).catch(() => {});
@@ -63,13 +101,21 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         ctx.answerCbQuery();
         const keys = Object.keys(db.linkDatabase);
         if (!keys.length) {
-            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]])).catch(() => {});
+            return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu") + ""]] )).catch(() => {});
         }
         ctx.reply("📜 সকল লিংক:");
         keys.forEach(key => {
             const data = db.linkDatabase[key];
             ctx.reply(`👤 Creator: ${data.name}\n📂 Category: ${data.type}\n🔗 Link ID: ${key}`, Markup.inlineKeyboard([[Markup.button.callback(`❌ Delete/Off: ${key}`, `adm_instant_del_${key}`)]])).catch(() => {});
         });
+    });
+
+    bot.action('adm_filter_links_prompt', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_LINK_FILTER' };
+        saveDB();
+        ctx.reply("ফিল্টার করার কী দিয়ে (category/username/userid) খুঁজতে চান তা লিখে পাঠান:", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
@@ -100,7 +146,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         });
         db.linkDatabase = {};
         saveDB();
-        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu")]])).catch(() => {});
+        ctx.editMessageText("💥 সমস্ত একটিভ লিংক ডিলিট করে দেওয়া হয়েছে!", Markup.inlineKeyboard([[Markup.button.callback("🔙 পেছনে যান", "adm_all_links_menu") + ""]])).catch(() => {});
     });
 
     bot.action('adm_ban_menu', (ctx) => {
@@ -201,6 +247,41 @@ const handleAdminText = (ctx, text, session, db, saveDB, bot) => {
         delete db.userSessions[userId];
         saveDB();
         showAdminDashboard(ctx, db, false);
+        return true;
+    }
+
+    if (session.step === 'AWAITING_ADMIN_LINK_FILTER') {
+        delete db.userSessions[userId];
+        saveDB();
+
+        const query = text.toLowerCase();
+        const categories = ['love', 'birthday', 'sorry', 'eid'];
+        let matchedLinks = [];
+
+        if (categories.includes(query)) {
+            matchedLinks = Object.entries(db.linkDatabase).filter(([_, data]) => data.type && data.type.toLowerCase() === query);
+        } else {
+            let targetUserId = parseInt(text, 10);
+            if (isNaN(targetUserId)) {
+                targetUserId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
+            }
+
+            matchedLinks = Object.entries(db.linkDatabase).filter(([_, data]) => {
+                if (!isNaN(targetUserId) && Number(data.userId) === Number(targetUserId)) return true;
+                if (data.username && data.username.toLowerCase().replace('@', '') === text.replace('@', '').trim().toLowerCase()) return true;
+                return false;
+            });
+        }
+
+        if (matchedLinks.length === 0) {
+            ctx.reply("❌ এই ফিল্টারের অধীনে কোনো লিংক পাওয়া যায়নি।", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_all_links_menu")]]));
+            return true;
+        }
+
+        ctx.reply(`🔍 ফিল্টার রেজাল্ট (${matchedLinks.length} টি লিংক):`);
+        matchedLinks.forEach(([key, data]) => {
+            ctx.reply(`👤 Creator: ${data.name}\n📂 Category: ${data.type}\n🔗 Link ID: ${key}`, Markup.inlineKeyboard([[Markup.button.callback(`❌ Delete/Off: ${key}`, `adm_instant_del_${key}`)]]));
+        });
         return true;
     }
     
