@@ -1,12 +1,12 @@
-const { Markup } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
+const { Markup } = require('telegraf');
 
 const showAdminDashboard = (ctx, db, isEdit = false) => {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
-        [Markup.button.callback("📢 Announcement", "adm_broadcast")],
+        [Markup.button.callback("📢 Announcement", "adm_broadcast"), Markup.button.callback("✉️ Msg User", "adm_msg_user")],
         [Markup.button.callback("🔗 All Links", "adm_all_links_menu")],
         [Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")]
     ]);
@@ -38,6 +38,14 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
         saveDB();
         ctx.reply("📢 Announcement মেসেজটি পাঠান।", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
+    });
+
+    bot.action('adm_msg_user', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        db.userSessions[ctx.chat.id] = { step: 'AWAITING_MSG_USER_TARGET' };
+        saveDB();
+        ctx.reply("যেই ইউজারকে মেসেজ দিতে চান তার ইউজার id বা ইউজারনেম দিন।", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action('adm_all_links_menu', (ctx) => {
@@ -110,7 +118,6 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         saveDB();
         showAdminDashboard(ctx, db, true);
     });
-
 
     bot.action(/^view_ans_msg_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
@@ -197,6 +204,34 @@ const handleAdminText = (ctx, text, session, db, saveDB, bot) => {
         return true;
     }
     
+    if (session.step === 'AWAITING_MSG_USER_TARGET') {
+        let targetId = parseInt(text, 10);
+        if (isNaN(targetId)) targetId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
+        if (!targetId) {
+            ctx.reply("❌ এই ইউজারনেম/আইডি ডাটাবেজে পাওয়া যায়নি।");
+            return true;
+        }
+        session.targetUserId = targetId;
+        session.targetInput = text;
+        session.step = 'AWAITING_MSG_USER_TEXT';
+        saveDB();
+        ctx.reply(`ইউজার: ${text}\nযেই মেসেজ পাঠাতে চান সেই মেসেজটি লিখে দিন।`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
+        return true;
+    }
+
+    if (session.step === 'AWAITING_MSG_USER_TEXT') {
+        const targetUserId = session.targetUserId;
+        bot.telegram.sendMessage(targetUserId, text).then(() => {
+            ctx.reply("✅ মেসেজটি সফলভাবে পাঠানো হয়েছে।");
+        }).catch(() => {
+            ctx.reply("❌ ইউজারের কাছে মেসেজ পাঠানো সম্ভব হয়নি।");
+        });
+        delete db.userSessions[userId];
+        saveDB();
+        showAdminDashboard(ctx, db, false);
+        return true;
+    }
+
     if (session.step === 'AWAITING_BAN_USER_INPUT') {
         let targetId = parseInt(text, 10);
         if (isNaN(targetId)) targetId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
