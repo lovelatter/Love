@@ -1,6 +1,7 @@
 const { Markup } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 const gh_url = "https://raw.githubusercontent.com/lovelatter/Love/main";
 
@@ -84,7 +85,7 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
                 const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
                 if (response.status !== 200) throw new Error();
 
-                const uploadsDir = path.join(__dirname, '../public/uploads');
+                const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
                 if (!fs.existsSync(uploadsDir)) {
                     fs.mkdirSync(uploadsDir, { recursive: true });
                 }
