@@ -1,5 +1,6 @@
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
+const path = require('path');
 
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt } = require('./modules/countdown');
@@ -15,6 +16,8 @@ const { generateRandomAnimation, generateRandomLetter } = require('./modules/ran
 const app = express();
 app.use(express.json());
 app.set('trust proxy', true);
+
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const ADMIN_IDS = (process.env.ADMIN_CHAT_ID || "").split(',').map(id => id.trim()).filter(id => id !== "");
