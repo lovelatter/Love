@@ -29,7 +29,8 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
         countdown: finalCountdownIso, 
         animations: session.animations, 
         letter: letterText, 
-        answer: null, 
+        answer: null,
+        message: null, 
         image: dbImageUrl, 
         imagePath: null, 
         visitors: []
@@ -63,7 +64,8 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
 🔗 Main Link: ${finalGeneratedUrl}`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
-        [Markup.button.callback("👀 Check Answer", `view_ans_${uniqueId}`), Markup.button.callback("👤 Visitor Info", `view_vi_${uniqueId}`)]
+        [Markup.button.callback("btn1 Answer & Msg", `view_ans_msg_${uniqueId}`), Markup.button.callback("btn2 Visitor Info", `view_vi_${uniqueId}`)],
+        [Markup.button.callback("btn3 Link off", `adm_off_link_${uniqueId}`), Markup.button.callback("btn4 Ban user", `adm_ban_creator_${uniqueId}`)]
     ])).catch(() => {}));
 }
 
