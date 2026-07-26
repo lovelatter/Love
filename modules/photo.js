@@ -15,8 +15,7 @@ function showImageUploadPrompt(ctx, db, saveDB) {
     
     const message = img_msg.img_ask;
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("❌ ছবি ছাড়া", 'skip_image_upload')],
-        [Markup.button.callback("🔙 Back", 'menu_makelink')]
+        [Markup.button.callback("❌ ছবি ছাড়া", 'skip_image_upload')]
     ]);
 
     ctx.editMessageText(message, keyboard).then((sentMsg) => {
