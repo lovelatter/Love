@@ -10,7 +10,7 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
         [Markup.button.callback("🔗 All Links", "adm_all_links_menu")],
         [Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")]
     ]);
-    const text = `👑 Admin Dashboard\n\n📊 মোট ইউজার: ${db.registeredUsers.length}\n🚫 ব্যান ইউজার: ${db.bannedUsers.length}\n`;
+    const text = `👑 Admin Dashboard 👑\n\n- মোট: ${db.registeredUsers.length}\n- ব্যান: ${db.bannedUsers.length}\n`;
     if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
