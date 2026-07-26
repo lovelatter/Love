@@ -29,7 +29,7 @@ async function uploadToTelegraph(fileUrl, fileExtension) {
             return null;
         }
 
-    }chas (error) {
+    } catch (error) {
         console.error('Telegraph Upload Error:', error.message);
         return null;
     }
