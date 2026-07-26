@@ -225,8 +225,7 @@ bot.action('anim_keep', async (ctx) => {
     await saveDB();
     const text = locale.input_anim_success(session.animations.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("🎲 Random", 'random_letter_start')],
-        [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
+        [Markup.button.callback("🎲 Random", 'random_letter_start')]
     ]);
     const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
         return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
@@ -415,8 +414,7 @@ bot.on('text', async (ctx) => {
             }
             await ctx.deleteMessage().catch(() => {});
             const nextPrompt = await ctx.reply(locale.input_anim_success(lines.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
-                [Markup.button.callback("🎲 Random", 'random_letter_start')],
-                [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
+                [Markup.button.callback("🎲 Random", 'random_letter_start')]
             ]));
             db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
             await saveDB();
