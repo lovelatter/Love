@@ -33,7 +33,6 @@ bot.use(async (ctx, next) => {
     await saveDB();
     if (isAdmin(userId)) return next();
 
-    // ব্যান ইউজার চেক ও মতামত বাটন হ্যান্ডেলিং
     if (db.bannedUsers.includes(userId)) {
         const session = db.userSessions[userId];
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
