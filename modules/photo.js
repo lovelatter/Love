@@ -1,5 +1,5 @@
 const { Markup } = require('telegraf');
-const { uploadToTelegraph } = require('./catbox');
+const { uploadToCatbox } = require('./catbox');
 
 const img_msg = {
     img_ask: "📸 ছবি দিতে চাইলে ছবিটি এখানে আপলোড করুন।"
