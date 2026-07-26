@@ -39,7 +39,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     delete db.userSessions[userId];
     await saveDB();
 
-    ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
+    ctx.reply(`🔗 লিংক তৈরি করা হয়েছে।\n* লিংক থেকে কোন রিপ্লাই বা মেসেজ আসলে আপনাকে জানানো হবে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
     parse_mode: 'Markdown'
     }).catch(() => {});
 
