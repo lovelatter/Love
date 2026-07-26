@@ -11,7 +11,7 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[linkId];
             if (!data) return res.json({ success: false });
             
-            bot.telegram.sendMessage(data.userId, `আপনার লিংক ওপেন করা হয়েছে! (লিংক আইডি: ${linkId})`).catch(() => {});
+            bot.telegram.sendMessage(data.userId, `👀 লিংক ওপেন করা হয়েছে!\nলিংক আইডি: ${linkId}`).catch(() => {});
             
             let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
             let ip = rawIp.split(',')[0].trim();
@@ -74,7 +74,7 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
 
-            bot.telegram.sendMessage(data.userId, `খাম খোলা হয়েছে! (লিংক আইডি: ${id})`).catch(() => {});
+            bot.telegram.sendMessage(data.userId, `👁️‍🗨️ খাম খোলা হয়েছে!\nলিংক আইডি: ${id}`).catch(() => {});
             return res.json({ success: true });
         } catch (err) {
             res.json({ success: false });
@@ -91,7 +91,7 @@ function setupRoutes(app, db, saveDB, bot) {
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
-            bot.telegram.sendMessage(data.userId, `একটি রিপ্লাই এসেছে! (লিংক আইডি: ${id})\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => {});
+            bot.telegram.sendMessage(data.userId, `📨 হ্যাঁ/না নোটিফিকেশন!\nলিংক আইডি: ${id}\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => {});
             
             return res.json({ success: true });
         } catch (err) { 
@@ -108,7 +108,7 @@ function setupRoutes(app, db, saveDB, bot) {
             data.message = message;
             await saveDB();
 
-            bot.telegram.sendMessage(data.userId, `একটি মেসেজ এসেছে! (লিংক আইডি: ${id})\nমেসেজ: ${message}`).catch(() => {});
+            bot.telegram.sendMessage(data.userId, `📨 মেসেজ নোটিফিকেশন!\nলিংক আইডি: ${id}\nমেসেজ: ${message}`).catch(() => {});
 
             return res.json({ success: true });
         } catch (err) {
