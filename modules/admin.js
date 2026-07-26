@@ -6,11 +6,10 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
     const maintStatus = db.isMaintenanceMode ? "ON 🔴" : "OFF 🟢";
     const feedbackCount = db.feedbacks ? db.feedbacks.length : 0;
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint")],
-        [Markup.button.callback(`📥 Feedbacks (${feedbackCount})`, "adm_feedback_list")],
+        [Markup.button.callback(`🛠️ Maintenance: ${maintStatus}`, "adm_toggle_maint"), Markup.button.callback(`📥 Feedbacks (${feedbackCount})`, "adm_feedback_list")],
         [Markup.button.callback("📢 Announcement", "adm_broadcast"), Markup.button.callback("✉️ Msg User", "adm_msg_user")],
-        [Markup.button.callback("🔗 All Links", "adm_all_links_menu")],
-        [Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")]
+        [Markup.button.callback("🔗 All Links", "adm_all_links_menu"), Markup.button.callback("🚫 Ban/Unban", "adm_ban_menu")],
+        [Markup.button.callback("❌ Close", "adm_close_dashboard")]
     ]);
     const text = `👑 Admin Dashboard 👑\n\n- মোট: ${db.registeredUsers.length}\n- ব্যান: ${db.bannedUsers.length}\n- ফিডব্যাক: ${feedbackCount}\n`;
     if (isEdit) return ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
@@ -32,6 +31,14 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         saveDB();
         ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`);
         showAdminDashboard(ctx, db, true);
+    });
+
+    bot.action('adm_close_dashboard', (ctx) => {
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        ctx.answerCbQuery();
+        delete db.userSessions[ctx.chat.id];
+        saveDB();
+        ctx.deleteMessage().catch(() => {});
     });
 
     bot.action('adm_feedback_list', (ctx) => {
@@ -115,7 +122,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         ctx.answerCbQuery();
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_LINK_FILTER' };
         saveDB();
-        ctx.reply("ফিল্টার করার কী দিয়ে (category/username/userid) খুঁজতে চান তা লিখে পাঠান:", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
+        ctx.reply("ফিল্টার করার কি দিন (category/username/userid):", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
