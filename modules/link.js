@@ -40,9 +40,9 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     await saveDB();
 
     ctx.reply(`আপনার লিংক তৈরি করা হয়েছে।\n\nলিংক: \`${finalGeneratedUrl}\``, {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([[Markup.button.callback("❌ Link Off", `delete_link_${uniqueId}`)]])
+    parse_mode: 'Markdown'
     }).catch(() => {});
+
 
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
 👤 Name: ${session.name || "User"}
