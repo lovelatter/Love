@@ -142,7 +142,7 @@
                 });
                 const data = await response.json();
                 
-                if(data.success) {
+                if(data && data.success) {
                     if (data.theme && data.theme !== 'classic') {
                         document.body.classList.add(`theme-${data.theme}`);
                     }
@@ -172,7 +172,7 @@
                     const categoryKey = data.type || data.category || '';
                     const matchedCategory = categoryKey.toLowerCase().trim();
 
-                    if(data.emojis && data.emojis.length > 0) {
+                    if(data.emojis && Array.isArray(data.emojis) && data.emojis.length > 0) {
                         flyingEmojis = data.emojis;
                     } else {
                         if(matchedCategory === 'love') flyingEmojis = ['❤️', '💖', '💕'];
@@ -186,7 +186,7 @@
                         displayQuestion.innerText = data.question;
                     }
 
-                    if(data.buttons && data.buttons.length > 0) {
+                    if(data.buttons && Array.isArray(data.buttons) && data.buttons.length > 0) {
                         btnGroup.innerHTML = ''; 
                         data.buttons.forEach((btnText, idx) => {
                             const btn = document.createElement('button');
@@ -205,13 +205,12 @@
                         });
                     }
 
-                    if(data.animations && data.animations.length > 0) textArray = data.animations;
+                    if(data.animations && Array.isArray(data.animations) && data.animations.length > 0) textArray = data.animations;
                     if(data.letter) document.getElementById('letterContent').innerText = data.letter;
                 } else {
                     document.body.innerHTML = "<div style='text-align:center; padding:20px;'><h1 style='color:#e74c3c; font-size:2.2rem; margin-bottom:10px;'>⚠️ Link Expired!</h1><p style='color:#bbb; font-size:1.1rem;'>This link has been deactivated by the owner.</p></div>";
                 }
             } catch(e) { 
-                console.log('Content fetch error');
                 letterTitle.innerText = "কিছু কথা";
             }
         });
@@ -285,7 +284,7 @@
             openBtn.classList.add('blast-out');
             if(bgMusic.src && bgMusic.src !== window.location.href) {
                 bgMusic.volume = 0; bgMusic.muted = true;
-                bgMusic.play().then(() => { bgMusic.muted = false; bgMusic.volume = 0.001; }).catch(e => console.log("Audio unlock retry"));
+                bgMusic.play().then(() => { bgMusic.muted = false; bgMusic.volume = 0.001; }).catch(e => {});
             }
             setTimeout(() => { openBtn.style.display = 'none'; textDisplay.style.display = 'block'; startTextSequence(); }, 800);
         });
@@ -294,7 +293,7 @@
             envelope.classList.add('open');
             if(bgMusic.src && bgMusic.src !== window.location.href) {
                 bgMusic.currentTime = 0; bgMusic.volume = 1.0;
-                bgMusic.play().catch(e => console.log("Final play blocked"));
+                bgMusic.play().catch(e => {});
             }
             
             fetch('/api/open-envelope', {
@@ -358,7 +357,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ answer: answer, id: linkId })
-            }).catch(error => console.log('Error sending response'));
+            }).catch(error => {});
         }
     </script>
 </body>
