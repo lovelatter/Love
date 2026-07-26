@@ -145,7 +145,7 @@ async function showAnimationIntro(ctx) {
     const text = locale.session_started();
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+        [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
     ]);
     const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
         return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
@@ -222,7 +222,7 @@ bot.action('anim_keep', async (ctx) => {
     const text = locale.input_anim_success(session.animations.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')],
-        [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+        [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
     ]);
     const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
         return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
@@ -337,6 +337,38 @@ bot.on('text', async (ctx) => {
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
     
+    if (isAdmin(userId) && session?.step === 'AWAITING_ADMIN_REPLY') {
+        const targetUserId = session.targetUserId;
+        delete db.userSessions[userId];
+        await saveDB();
+
+        const userMsg = `আপনার ফিডব্যাক থেকে এডমিন রিপ্লাই করেছেন。\n\nমেসেজ: ${text}\n\nআপনি রিপ্লাই দিতে চাইলে রিপ্লাই বাটনে ক্লিক করুন।`;
+        const userKeyboard = Markup.inlineKeyboard([[Markup.button.callback("💬 রিপ্লাই", 'user_reply_chat')]]);
+
+        await bot.telegram.sendMessage(targetUserId, userMsg, { reply_markup: userKeyboard.reply_markup }).catch(() => {
+            return ctx.reply("❌ মেসেজটি ইউজারের কাছে পাঠানো যায়নি।");
+        });
+        await ctx.reply("✅ ইউজারের কাছে উত্তর সফলভাবে পাঠানো হয়েছে।");
+        return;
+    }
+
+    if (session?.step === 'AWAITING_USER_CHAT_REPLY') {
+        delete db.userSessions[userId];
+        await saveDB();
+
+        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
+        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
+        const adminMsg = `ইউজার রিপ্লাই করেছে。\nনাম: ${fullName}\nআইডি: <code>${userId}</code>\nইউজারনেম: ${userName}\n\nমেসেজ: ${text}`;
+        const adminKeyboard = Markup.inlineKeyboard([[Markup.button.callback("💬 রিপ্লাই", `admin_reply_${userId}`)]]);
+
+        ADMIN_IDS.forEach(id => {
+            bot.telegram.sendMessage(id, adminMsg, { parse_mode: 'HTML', reply_markup: adminKeyboard.reply_markup }).catch(() => {});
+        });
+
+        await ctx.reply("✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে।");
+        return;
+    }
+
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
         if (text.length < 5) {
             await ctx.deleteMessage().catch(() => {});
@@ -380,7 +412,7 @@ bot.on('text', async (ctx) => {
             await ctx.deleteMessage().catch(() => {});
             const nextPrompt = await ctx.reply(locale.input_anim_success(lines.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
                 [Markup.button.callback("🎲 Random", 'random_letter_start')],
-                [Markup.button.callback("🔙 পেছনে যান", 'menu_makelink')]
+                [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
             ]));
             db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
             await saveDB();
