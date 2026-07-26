@@ -111,7 +111,6 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         showAdminDashboard(ctx, db, true);
     });
 
-
     bot.action(/^view_ans_msg_(.+)$/, (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const data = db.linkDatabase[ctx.match[1]];
@@ -124,9 +123,16 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     });
 
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
+        
+        const isUserAdmin = isAdmin(ctx.chat.id);
+        const isLinkOwner = data && Number(data.userId) === Number(ctx.chat.id);
+
+        if (!isUserAdmin && !isLinkOwner) {
+            return ctx.answerCbQuery("⚠️ আপনার এই তথ্যগুলো দেখার অনুমতি নেই।", { show_alert: true });
+        }
+
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
         ctx.answerCbQuery();
         
@@ -139,10 +145,25 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             }
             return;
         }
+
         let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
-        data.visitors.forEach((v, index) => {
-            report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
+        data.visitors.forEach((vData, index) => {
+            report += `${index + 1}.\n` +
+                      `🌐 IP: ${vData.ip || 'Unknown'}\n` +
+                      `📍 লোকেশন: ${vData.city || 'Unknown'}, ${vData.country || 'Unknown'} (ISP: ${vData.isp || 'Unknown'})\n` +
+                      `💻 ব্রাউজার: ${vData.browser || 'Unknown'}\n` +
+                      `📱 অপারেটিং সিস্টেম: ${vData.os || 'Unknown'}\n` +
+                      `📟 ডিভাইস: ${vData.device || 'Unknown'}\n` +
+                      `⚙️ ইঞ্জিন: ${vData.engine || 'Unknown'}\n` +
+                      `🖲️ CPU: ${vData.cpu || 'Unknown'}\n` +
+                      `🗣️ ভাষা: ${vData.language || 'Unknown'}\n` +
+                      `🔗 সোর্স/রেফারার: ${vData.referer || 'Unknown'}\n` +
+                      `🌍 টাইমজোন: ${vData.timezone || 'Unknown'}\n` +
+                      `📶 নেটওয়ার্ক: ${vData.network || 'Unknown'}\n` +
+                      `🔋 ব্যাটারি: ${vData.battery || 'Unknown'}\n` +
+                      `🕒 সময়: ${vData.time || 'Unknown'}\n\n`;
         });
+
         if (report.length > 4000) {
             report = report.substring(0, 3900) + "\n...[Truncated]";
         }
