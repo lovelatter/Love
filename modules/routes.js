@@ -40,23 +40,23 @@ function setupRoutes(app, db, saveDB, bot) {
             };
             
             if (ip && ip !== "127.0.0.1" && ip !== "::1") {
-                https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
+                https.get(`https://ipapi.co/${ip}/json/`, (apiRes) => {
                     let body = "";
                     apiRes.on('data', chunk => body += chunk);
                     apiRes.on('end', () => {
                         try {
                             const ipData = JSON.parse(body);
-                            if (ipData.status === "success") {
-                                visitorObj.country = ipData.country || "Unknown";
+                            if (!ipData.error) {
+                                visitorObj.country = ipData.country_name || "Unknown";
                                 visitorObj.city = ipData.city || "Unknown";
-                                visitorObj.isp = ipData.isp || "Unknown";
+                                visitorObj.isp = ipData.org || "Unknown";
                             }
                         } catch (e) {}
                         if (!data.visitors) data.visitors = [];
                         data.visitors.push(visitorObj);
                         saveDB();
                     });
-                }).on('error', () => {
+                }).on('error', (err) => {
                     if (!data.visitors) data.visitors = [];
                     data.visitors.push(visitorObj);
                     saveDB();
@@ -101,7 +101,7 @@ function setupRoutes(app, db, saveDB, bot) {
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
             
-            data.answer = answer;
+            data.hostAnswer = answer;
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
