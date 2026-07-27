@@ -29,24 +29,24 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     });
 
     bot.action('adm_toggle_maint', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         db.isMaintenanceMode = !db.isMaintenanceMode;
         saveDB();
-        ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`);
+        ctx.answerCbQuery(`Maintenance: ${db.isMaintenanceMode}`).catch(() => {});
         showAdminDashboard(ctx, db, true);
     });
 
     bot.action('adm_close_dashboard', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         delete db.userSessions[ctx.chat.id];
         saveDB();
         ctx.deleteMessage().catch(() => {});
     });
 
     bot.action('adm_feedback_list', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         if (!db.feedbacks || db.feedbacks.length === 0) {
             return ctx.editMessageText("ℹ️ বর্তমানে কোনো ফিডব্যাক বা রিপোর্ট জমা হয়নি।", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]] )).catch(() => {});
         }
@@ -67,37 +67,37 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     });
 
     bot.action(/^adm_del_feedback_(\d+)$/, (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         const index = parseInt(ctx.match[1], 10);
         if (db.feedbacks && db.feedbacks[index]) {
             db.feedbacks.splice(index, 1);
             saveDB();
-            ctx.answerCbQuery("✅ ফিডব্যাকটি ডিলিট করা হয়েছে।");
+            ctx.answerCbQuery("✅ ফিডব্যাকটি ডিলিট করা হয়েছে।").catch(() => {});
             ctx.editMessageText("❌ ফিডব্যাকটি মুছে ফেলা হয়েছে।").catch(() => {});
         } else {
-            ctx.answerCbQuery("⚠️ ফিডব্যাকটি পাওয়া যায়নি!");
+            ctx.answerCbQuery("⚠️ ফিডব্যাকটি পাওয়া যায়নি!").catch(() => {});
         }
     });
 
     bot.action('adm_broadcast', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_BROADCAST_MSG' };
         saveDB();
         ctx.reply("📢 Announcement মেসেজটি পাঠান।", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action('adm_msg_user', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_MSG_USER_TARGET' };
         saveDB();
         ctx.reply("যেই ইউজারকে মেসেজ দিতে চান তার ইউজার id বা ইউজারনেম দিন।", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action('adm_all_links_menu', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         ctx.editMessageText("🔗 All Links Management Sub-Menu:", Markup.inlineKeyboard([
             [Markup.button.callback("📜 All Links List", "adm_view_links_list")],
             [Markup.button.callback("🔍 Filter Links", "adm_filter_links_prompt")],
@@ -107,8 +107,8 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     });
 
     bot.action('adm_view_links_list', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         const keys = Object.keys(db.linkDatabase || {});
         if (!keys.length) {
             return ctx.editMessageText("ℹ️ বর্তমানে সিস্টেমে কোনো একটিভ লিংক নেই।", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]] )).catch(() => {});
@@ -121,15 +121,15 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     });
 
     bot.action('adm_filter_links_prompt', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_ADMIN_LINK_FILTER' };
         saveDB();
         ctx.reply("ফিল্টার করার কি দিন (category/username/userid):", Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action(/^adm_instant_del_(.+)$/, (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         const targetKey = ctx.match[1];
         if (db.linkDatabase[targetKey]) {
             if (db.linkDatabase[targetKey].imagePath) {
@@ -138,16 +138,16 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             }
             delete db.linkDatabase[targetKey];
             saveDB();
-            ctx.answerCbQuery("✅ লিংকটি রিমুভ করা হয়েছে।");
+            ctx.answerCbQuery("✅ লিংকটি রিমুভ করা হয়েছে।").catch(() => {});
             ctx.editMessageText("❌ লিংকটি ডিলিট করা হয়েছে।").catch(() => {});
         } else {
-            ctx.answerCbQuery("⚠️ লিংকটি ইতিমধ্যে ডিলিট হয়ে গেছে!");
+            ctx.answerCbQuery("⚠️ লিংকটি ইতিমধ্যে ডিলিট হয়ে গেছে!").catch(() => {});
         }
     });
 
     bot.action('adm_delete_all_links_confirm', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         if (db.linkDatabase) {
             Object.keys(db.linkDatabase).forEach(key => {
                 if (db.linkDatabase[key].imagePath) {
@@ -162,38 +162,38 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     });
 
     bot.action('adm_ban_menu', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         db.userSessions[ctx.chat.id] = { step: 'AWAITING_BAN_USER_INPUT' };
         saveDB();
         ctx.reply(`🚫 Ban / Unban System\n\n👉 অনুগ্রহ করে ইউজারের ID অথবা Username লিখে পাঠান:`, Markup.inlineKeyboard([[Markup.button.callback("❌ বাতিল করুন", "adm_back_to_dashboard")]]));
     });
 
     bot.action('adm_back_to_dashboard', (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
-        ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         delete db.userSessions[ctx.chat.id];
         saveDB();
         showAdminDashboard(ctx, db, true);
     });
 
     bot.action(/^view_ans_msg_(.+)$/, (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         const data = db.linkDatabase[ctx.match[1]];
-        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
+        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি。", { show_alert: true }).catch(() => {});
         
         const ansText = data.answer ? data.answer : "⏳ এখনও উত্তর দেয়নি!";
         const msgText = data.message ? data.message : "কুনো মেসেজ আসেনি";
         
-        return ctx.answerCbQuery(`ans: ${ansText}\nmsg: ${msgText}`, { show_alert: true });
+        return ctx.answerCbQuery(`ans: ${ansText}\nmsg: ${msgText}`, { show_alert: true }).catch(() => {});
     });
 
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
-        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true });
-        ctx.answerCbQuery();
+        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true }).catch(() => {});
+        ctx.answerCbQuery().catch(() => {});
         
         if (!data.visitors || data.visitors.length === 0) {
             const emptyMsg = await ctx.reply("ℹ️ লিঙ্কটি এখনও কেউ ওপেন করেনি।").catch(() => null);
@@ -232,30 +232,30 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     });
 
     bot.action(/^adm_off_link_(.+)$/, async (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         const linkId = ctx.match[1];
         if (db.linkDatabase[linkId]) {
             delete db.linkDatabase[linkId];
             await saveDB();
-            ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে বন্ধ করা হয়েছে।", { show_alert: true });
+            ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে বন্ধ করা হয়েছে।", { show_alert: true }).catch(() => {});
             ctx.editMessageText("❌ এই লিঙ্কটি অ্যাডমিন কর্তৃক বন্ধ করা হয়েছে।").catch(() => {});
         } else {
-            ctx.answerCbQuery("⚠️ লিঙ্কটি ইতিমধ্যে মুছে ফেলা হয়েছে বা নেই।", { show_alert: true });
+            ctx.answerCbQuery("⚠️ লিঙ্কটি ইতিমধ্যে মুছে ফেলা হয়েছে বা নেই।", { show_alert: true }).catch(() => {});
         }
     });
 
     bot.action(/^adm_ban_creator_(.+)$/, async (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
+        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         const linkId = ctx.match[1];
         const data = db.linkDatabase[linkId];
-        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি পাওয়া যায়নি।", { show_alert: true });
+        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি পাওয়া যায়নি।", { show_alert: true }).catch(() => {});
         
         const creatorId = Number(data.userId);
         if (!db.bannedUsers.includes(creatorId)) {
             db.bannedUsers.push(creatorId);
             await saveDB();
         }
-        ctx.answerCbQuery(`🚫 ইউজার (${creatorId}) কে সফলভাবে ব্যান করা হয়েছে।`, { show_alert: true });
+        ctx.answerCbQuery(`🚫 ইউজার (${creatorId}) কে সফলভাবে ব্যান করা হয়েছে।`, { show_alert: true }).catch(() => {});
         ctx.editMessageText(`🚫 এই লিঙ্কের তৈরিকারী ইউজারকে (ID: ${creatorId}) ব্যান করা হয়েছে।`).catch(() => {});
     });
 };
