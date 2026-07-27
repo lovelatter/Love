@@ -206,7 +206,15 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         }
         let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
         data.visitors.forEach((v, index) => {
-            report += `${index + 1}. 🗓️ Time: ${v.time}\n🌐 IP: ${v.ip}\n🌍 Country: ${v.country} | City: ${v.city}\n📡 ISP: ${v.isp}\n📱 Device/OS: ${v.os}\n🌐 Browser: ${v.browser}\n\n`;
+            report += `${index + 1}. 🗓️ Time: ${v.time}\n` +
+                      `🌐 IP: ${v.ip}\n` +
+                      `🌍 Country: ${v.country} | City: ${v.city}\n` +
+                      `📡 ISP: ${v.isp}\n` +
+                      `🌐 Browser: ${v.browserName} (${v.browserVersion})\n` +
+                      `💻 OS: ${v.osName} (${v.osVersion})\n` +
+                      `📱 Device: ${v.deviceVendor !== "Unknown" ? v.deviceVendor : ""} ${v.deviceModel !== "Unknown" ? v.deviceModel : ""} [${v.deviceType}]\n` +
+                      `⚙️ Engine: ${v.engineName} (${v.engineVersion})\n` +
+                      `🔲 CPU: ${v.cpuArchitecture}\n\n`;
         });
         if (report.length > 4000) {
             report = report.substring(0, 3900) + "\n...[Truncated]";
@@ -326,7 +334,6 @@ const handleAdminText = (ctx, text, session, db, saveDB, bot) => {
     }
 
     if (session.step === 'AWAITING_BAN_USER_INPUT') {
-        let targetId = intval(text); // fallback parsing
         let parsedId = parseInt(text, 10);
         if (isNaN(parsedId)) parsedId = db.usernameMap[text.replace('@', '').trim().toLowerCase()];
         if (!parsedId) {
