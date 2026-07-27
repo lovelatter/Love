@@ -48,7 +48,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery();
         ctx.answerCbQuery();
         if (!db.feedbacks || db.feedbacks.length === 0) {
-            return ctx.editMessageText("ℹ️ বর্তমানে কোনো ফিডব্যাক বা রিপোর্ট জমা হয়নি।", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]])).catch(() => {});
+            return ctx.editMessageText("ℹ️ বর্তমানে কোনো ফিডব্যাক বা রিপোর্ট জমা হয়নি।", Markup.inlineKeyboard([[Markup.button.callback("🔙 ব্যাক", "adm_back_to_dashboard")]] )).catch(() => {});
         }
         ctx.reply("📥 সকল ফিডব্যাক ও রিপোর্ট তালিকা:");
         db.feedbacks.forEach((f, index) => {
@@ -206,13 +206,17 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         }
         let report = `👤 Visitor Details for Link [ ${linkId} ]:\n\n`;
         data.visitors.forEach((v, index) => {
+            const vendor = v.deviceVendor && v.deviceVendor !== "Unknown" ? v.deviceVendor : "";
+            const model = v.deviceModel && v.deviceModel !== "Unknown" ? v.deviceModel : "";
+            const deviceDetails = (vendor || model) ? `${vendor} ${model}`.trim() : "Unknown Device";
+
             report += `${index + 1}. 🗓️ Time: ${v.time}\n` +
                       `🌐 IP: ${v.ip}\n` +
                       `🌍 Country: ${v.country} | City: ${v.city}\n` +
                       `📡 ISP: ${v.isp}\n` +
                       `🌐 Browser: ${v.browserName} (${v.browserVersion})\n` +
                       `💻 OS: ${v.osName} (${v.osVersion})\n` +
-                      `📱 Device: ${v.deviceVendor !== "Unknown" ? v.deviceVendor : ""} ${v.deviceModel !== "Unknown" ? v.deviceModel : ""} [${v.deviceType}]\n` +
+                      `📱 Device: ${deviceDetails} [${v.deviceType}]\n` +
                       `⚙️ Engine: ${v.engineName} (${v.engineVersion})\n` +
                       `🔲 CPU: ${v.cpuArchitecture}\n\n`;
         });
