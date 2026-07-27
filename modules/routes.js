@@ -1,7 +1,7 @@
 const path = require('path');
 const https = require('https');
 const { Markup } = require('telegraf');
-const { parseUserAgent } = require('./visitor');
+const UAParser = require('ua-parser-js');
 const { CATEGORY_CONFIGS } = require('./category');
 
 function setupRoutes(app, db, saveDB, bot) {
@@ -18,11 +18,25 @@ function setupRoutes(app, db, saveDB, bot) {
             if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
             
             const userAgent = req.headers['user-agent'] || "";
-            const { os, browser } = parseUserAgent(userAgent);
+            const uaResult = UAParser(userAgent);
             const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
             
             let visitorObj = {
-                time: currentTimeString, ip: ip, country: "Unknown", city: "Unknown", isp: "Unknown", os: os, browser: browser
+                time: currentTimeString, 
+                ip: ip, 
+                country: "Unknown", 
+                city: "Unknown", 
+                isp: "Unknown", 
+                browserName: uaResult.browser.name || "Unknown",
+                browserVersion: uaResult.browser.version || "Unknown",
+                osName: uaResult.os.name || "Unknown",
+                osVersion: uaResult.os.version || "Unknown",
+                deviceVendor: uaResult.device.vendor || "Unknown",
+                deviceModel: uaResult.device.model || "Unknown",
+                deviceType: uaResult.device.type || "Desktop/Unknown",
+                cpuArchitecture: uaResult.cpu.architecture || "Unknown",
+                engineName: uaResult.engine.name || "Unknown",
+                engineVersion: uaResult.engine.version || "Unknown"
             };
             
             if (ip && ip !== "127.0.0.1" && ip !== "::1") {
