@@ -148,8 +148,7 @@ async function showAnimationIntro(ctx) {
     await saveDB();
     const text = locale.session_started();
     const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("🎲 Random", 'random_anim_start')],
-        [Markup.button.callback("🔙 পিছনে যান", 'menu_makelink')]
+        [Markup.button.callback("🎲 Random", 'random_anim_start')]
     ]);
     const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
         return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
