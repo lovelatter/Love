@@ -40,16 +40,16 @@ function setupRoutes(app, db, saveDB, bot) {
             };
             
             if (ip && ip !== "127.0.0.1" && ip !== "::1") {
-                https.get(`https://ipapi.co/${ip}/json/`, (apiRes) => {
+                https.get(`https://ip-api.com/json/${ip}`, (apiRes) => {
                     let body = "";
                     apiRes.on('data', chunk => body += chunk);
                     apiRes.on('end', () => {
                         try {
                             const ipData = JSON.parse(body);
-                            if (!ipData.error) {
-                                visitorObj.country = ipData.country_name || "Unknown";
+                            if (ipData.status === 'success') {
+                                visitorObj.country = ipData.country || "Unknown";
                                 visitorObj.city = ipData.city || "Unknown";
-                                visitorObj.isp = ipData.org || "Unknown";
+                                visitorObj.isp = ipData.isp || "Unknown";
                             }
                         } catch (e) {}
                         if (!data.visitors) data.visitors = [];
