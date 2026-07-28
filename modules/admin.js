@@ -182,8 +182,8 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         const data = db.linkDatabase[ctx.match[1]];
         if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true }).catch(() => {});
         
-        const ansText = data.answer ? data.answer : "⏳ এখনও উত্তর দেয়নি!";
-        const msgText = data.message ? data.message : "কুনো মেসেজ আসেনি";
+        const ansText = data.answer ? data.answer : "উত্তর আসেনি!";
+        const msgText = data.message ? data.message : "মেসেজ আসেনি!";
         
         return ctx.answerCbQuery(`ans: ${ansText}\nmsg: ${msgText}`, { show_alert: true }).catch(() => {});
     });
@@ -227,7 +227,7 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         if (sentMsg) {
             setTimeout(async () => {
                 try { await bot.telegram.deleteMessage(ctx.chat.id, sentMsg.message_id); } catch (e) {}
-            }, 5000);
+            }, 15000);
         }
     });
 
