@@ -18,7 +18,18 @@ function setupRoutes(app, db, saveDB, bot) {
             if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
             
             const userAgent = req.headers['user-agent'] || "";
-            const uaResult = UAParser(userAgent);
+            const clientHints = req.body.uaHints || {};
+            
+            const uaResult = new UAParser(userAgent).getResult();
+            
+            let deviceModel = clientHints.model || uaResult.device.model || "Unknown";
+            let deviceVendor = clientHints.platform || uaResult.device.vendor || "Unknown";
+            let osName = clientHints.platform || uaResult.os.name || "Unknown";
+            let osVersion = clientHints.platformVersion || uaResult.os.version || "Unknown";
+            let browserName = uaResult.browser.name || "Unknown";
+            let browserVersion = clientHints.fullVersionList?.[0]?.version || uaResult.browser.version || "Unknown";
+            let deviceType = clientHints.mobile ? "mobile" : (uaResult.device.type || "Desktop/Unknown");
+
             const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
             
             let visitorObj = {
@@ -27,23 +38,29 @@ function setupRoutes(app, db, saveDB, bot) {
                 country: "Unknown", 
                 city: "Unknown", 
                 isp: "Unknown", 
-                browserName: uaResult.browser.name || "Unknown",
-                browserVersion: uaResult.browser.version || "Unknown",
-                osName: uaResult.os.name || "Unknown",
-                osVersion: uaResult.os.version || "Unknown",
-                deviceVendor: uaResult.device.vendor || "Unknown",
-                deviceModel: uaResult.device.model || "Unknown",
-                deviceType: uaResult.device.type || "Desktop/Unknown",
-                cpuArchitecture: uaResult.cpu.architecture || "Unknown",
+                browserName: browserName,
+                browserVersion: browserVersion,
+                osName: osName,
+                osVersion: osVersion,
+                deviceVendor: deviceVendor,
+                deviceModel: deviceModel,
+                deviceType: deviceType,
+                cpuArchitecture: clientHints.architecture || uaResult.cpu.architecture || "Unknown",
                 engineName: uaResult.engine.name || "Unknown",
                 engineVersion: uaResult.engine.version || "Unknown"
             };
             
+            const processVisitor = async () => {
+                if (!data.visitors) data.visitors = [];
+                data.visitors.push(visitorObj);
+                await saveDB();
+            };
+
             if (ip && ip !== "127.0.0.1" && ip !== "::1") {
                 https.get(`https://ipwho.is/${ip}`, (apiRes) => {
                     let body = "";
                     apiRes.on('data', chunk => body += chunk);
-                    apiRes.on('end', () => {
+                    apiRes.on('end', async () => {
                         try {
                             const ipData = JSON.parse(body);
                             if (ipData.success) {
@@ -52,19 +69,13 @@ function setupRoutes(app, db, saveDB, bot) {
                                 visitorObj.isp = ipData.connection?.isp || ipData.connection?.org || "Unknown";
                             }
                         } catch (e) {}
-                        if (!data.visitors) data.visitors = [];
-                        data.visitors.push(visitorObj);
-                        saveDB();
+                        await processVisitor();
                     });
-                }).on('error', (err) => {
-                    if (!data.visitors) data.visitors = [];
-                    data.visitors.push(visitorObj);
-                    saveDB();
+                }).on('error', async (err) => {
+                    await processVisitor();
                 });
             } else {
-                if (!data.visitors) data.visitors = [];
-                data.visitors.push(visitorObj);
-                await saveDB();
+                await processVisitor();
             }
             
             if (data.countdown && new Date(data.countdown) > new Date()) {
@@ -75,7 +86,7 @@ function setupRoutes(app, db, saveDB, bot) {
             return res.json({ 
                 success: true, isLocked: false, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: config.question, buttons: config.buttons, image: data.image || null 
+                question: data.question, buttons: data.buttons, image: data.image || null 
             });
         } catch (err) { 
             res.json({ success: false }); 
