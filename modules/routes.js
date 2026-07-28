@@ -19,6 +19,42 @@ function setupRoutes(app, db, saveDB, bot) {
             
             const userAgent = req.headers['user-agent'] || "";
             const uaResult = UAParser(userAgent);
+            
+            let deviceModel = uaResult.device.model || "Unknown";
+            let deviceVendor = uaResult.device.vendor || "Unknown";
+            
+            if (userAgent.includes("Redmi") || userAgent.includes("MI") || userAgent.includes("M2")) {
+                let match = userAgent.match(/(M\d{2}[A-Za-z0-9]+|Redmi\s[^\s)]+|Xiaomi\s[^\s)]+)/i);
+                if (match) {
+                    deviceModel = match[0];
+                    deviceVendor = "Xiaomi";
+                }
+            } else if (userAgent.includes("Samsung") || userAgent.includes("SM-")) {
+                let match = userAgent.match(/(SM-[A-Za-z0-9]+)/i);
+                if (match) {
+                    deviceModel = match[1];
+                    deviceVendor = "Samsung";
+                }
+            } else if (userAgent.includes("Vivo")) {
+                let match = userAgent.match(/(Vivo\s[^\s)]+|V\d{4}[A-Za-z0-9]*)/i);
+                if (match) {
+                    deviceModel = match[0];
+                    deviceVendor = "Vivo";
+                }
+            } else if (userAgent.includes("OPPO")) {
+                let match = userAgent.match(/(OPPO\s[^\s)]+|CPH\d{4})/i);
+                if (match) {
+                    deviceModel = match[0];
+                    deviceVendor = "OPPO";
+                }
+            } else if (userAgent.includes("Realme")) {
+                let match = userAgent.match(/(Realme\s[^\s)]+|RMX\d{4})/i);
+                if (match) {
+                    deviceModel = match[0];
+                    deviceVendor = "Realme";
+                }
+            }
+
             const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
             
             let visitorObj = {
@@ -31,8 +67,8 @@ function setupRoutes(app, db, saveDB, bot) {
                 browserVersion: uaResult.browser.version || "Unknown",
                 osName: uaResult.os.name || "Unknown",
                 osVersion: uaResult.os.version || "Unknown",
-                deviceVendor: uaResult.device.vendor || "Unknown",
-                deviceModel: uaResult.device.model || "Unknown",
+                deviceVendor: deviceVendor,
+                deviceModel: deviceModel,
                 deviceType: uaResult.device.type || "Desktop/Unknown",
                 cpuArchitecture: uaResult.cpu.architecture || "Unknown",
                 engineName: uaResult.engine.name || "Unknown",
@@ -75,7 +111,7 @@ function setupRoutes(app, db, saveDB, bot) {
             return res.json({ 
                 success: true, isLocked: false, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: config.question, buttons: config.buttons, image: data.image || null 
+                question: data.question, buttons: data.buttons, image: data.image || null 
             });
         } catch (err) { 
             res.json({ success: false }); 
