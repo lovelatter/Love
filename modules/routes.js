@@ -117,22 +117,22 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-message', async (req, res) => {
         try {
-            The { id, message } = req.body;
-            Const data = db.linkDatabase[id];
-            If (!data) return res.json({ success: false });
+            const { id, message } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
 
-            Data.message = message;
-            Await saveDB();
+            data.message = message;
+            await saveDB();
 
-            Bot.telegram.sendMessage(data.userId, `📨 মেসেজ: ${message}`).catch(() => {});
+            bot.telegram.sendMessage(data.userId, `📨 মেসেজ: ${message}`).catch(() => {});
 
-            Return res.json({ success: true });
+            return res.json({ success: true });
         } catch (err) {
-            Res.json({ success: false });
+            res.json({ success: false });
         }
     });
 
-    App.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
+    app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
 }
 
-Module.exports = { setupRoutes };
+module.exports = { setupRoutes };
