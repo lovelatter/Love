@@ -134,16 +134,23 @@
             const pathParts = window.location.pathname.split('/');
             linkId = pathParts[pathParts.length - 1];
             
-            let uaHints = {};
+            let deviceInfo = {};
             try {
                 if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
-                    uaHints = await navigator.userAgentData.getHighEntropyValues([
+                    const hints = await navigator.userAgentData.getHighEntropyValues([
                         "model",
                         "platform",
                         "platformVersion",
-                        "architecture",
-                        "fullVersionList"
+                        "architecture"
                     ]);
+                    deviceInfo = {
+                        model: hints.model || "",
+                        vendor: hints.platform || "",
+                        osName: hints.platform || "",
+                        osVersion: hints.platformVersion || "",
+                        architecture: hints.architecture || "",
+                        type: "mobile"
+                    };
                 }
             } catch (e) {}
 
@@ -151,7 +158,7 @@
                 const response = await fetch('/api/get-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: linkId, uaHints: uaHints })
+                    body: JSON.stringify({ id: linkId, deviceInfo: deviceInfo })
                 });
                 const data = await response.json();
                 
