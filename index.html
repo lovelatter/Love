@@ -58,6 +58,7 @@
         .heart { position:absolute; color:#ff4d6d; font-size:24px; pointer-events:none; animation:floatUp 4s linear infinite; opacity:0; z-index: 1; }
         @keyframes floatUp { 0% { transform:translateY(100vh) scale(0); opacity:0; } 10% { opacity:0.8; } 90% { opacity:0.8; } 100% { transform:translateY(-10vh) scale(1.5); opacity:0; } }
         .fade-in { opacity:1 !important; transform:scale(1) !important; transition:all 0.8s ease; }
+        .fade-out { opacity:0 !important; transform:scale(0.95) !important; transition:all 0.5s ease; }
 
         #lockScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050508; z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
         #countdown-box { border: 2px solid #ff4d6d; border-radius: 20px; padding: 30px 20px; background: rgba(0, 0, 0, 0.75); box-shadow: 0 0 25px rgba(255, 77, 109, 0.4); width: 290px; max-width: 85%; text-align: center; box-sizing: border-box; backdrop-filter: blur(5px); }
@@ -130,6 +131,72 @@
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
         let linkId = '';
 
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            let osName = "Unknown";
+            let osVersion = "Unknown";
+            let deviceVendor = "Unknown";
+            let deviceModel = "Unknown";
+            let deviceType = "Desktop/Unknown";
+
+            if (/android/i.test(ua)) {
+                osName = "Android";
+                deviceType = "Mobile";
+                const match = ua.match(/Android\s([0-9\.]+)/);
+                if (match) osVersion = match[1];
+            } else if (/iphone|ipad|ipod/i.test(ua)) {
+                osName = "iOS";
+                deviceType = /ipad/i.test(ua) ? "Tablet" : "Mobile";
+                const match = ua.match(/OS\s([0-9_]+)/);
+                if (match) osVersion = match[1].replace(/_/g, '.');
+            } else if (/win/i.test(ua)) {
+                osName = "Windows";
+                deviceType = "Desktop";
+            } else if (/mac/i.test(ua)) {
+                osName = "Mac OS";
+                deviceType = "Desktop";
+            } else if (/linux/i.test(ua)) {
+                osName = "Linux";
+                deviceType = "Desktop";
+            }
+
+            if (/Samsung/i.test(ua)) deviceVendor = "Samsung";
+            else if (/Xiaomi|Redmi|POCO/i.test(ua)) deviceVendor = "Xiaomi";
+            else if (/OPPO/i.test(ua)) deviceVendor = "OPPO";
+            else if (/Vivo/i.test(ua)) deviceVendor = "Vivo";
+            else if (/Realme/i.test(ua)) deviceVendor = "Realme";
+            else if (/OnePlus/i.test(ua)) deviceVendor = "OnePlus";
+            else if (/Huawei/i.test(ua)) deviceVendor = "Huawei";
+            else if (/iPhone/i.test(ua)) {
+                deviceVendor = "Apple";
+                deviceModel = "iPhone";
+            }
+
+            const buildMatch = ua.match(/\b([A-Z0-9]+(?:-[A-Z0-9]+)+)\b/g);
+            if (buildMatch && deviceModel === "Unknown") {
+                for (let part of buildMatch) {
+                    if (part.length > 3 && !/KHTML|Gecko|Chrome|Safari|Version|Mobile|Android/i.test(part)) {
+                        deviceModel = part;
+                        break;
+                    }
+                }
+            }
+
+            if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Opera Mini/i.test(ua)) {
+                if (deviceType === "Desktop/Unknown") deviceType = "Mobile";
+            } else {
+                deviceType = "Desktop";
+            }
+
+            return {
+                osName,
+                osVersion,
+                vendor: deviceVendor,
+                model: deviceModel,
+                type: deviceType
+            };
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
             linkId = pathParts[pathParts.length - 1];
@@ -138,7 +205,10 @@
                 const response = await fetch('/api/get-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: linkId })
+                    body: JSON.stringify({ 
+                        id: linkId,
+                        deviceInfo: getDeviceInfo()
+                    })
                 });
                 const data = await response.json();
                 
