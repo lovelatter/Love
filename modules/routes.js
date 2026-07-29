@@ -18,11 +18,23 @@ function setupRoutes(app, db, saveDB, bot) {
             if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
             
             const userAgent = req.headers['user-agent'] || "";
-            const uaResult = UAParser(userAgent);
+            const uaResult = new UAParser(userAgent).getResult();
+            const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
             
-            let deviceModel = uaResult.device.model || "Unknown";
-            let deviceVendor = uaResult.device.vendor || "Unknown";
-            let deviceType = uaResult.device.type || "Unknown";
+            let clientDevice = req.body.deviceInfo || {};
+            
+            let deviceModel = clientDevice.model || uaResult.device.model || "Unknown";
+            let deviceVendor = clientDevice.vendor || uaResult.device.vendor || "Unknown";
+            let deviceType = clientDevice.type || uaResult.device.type || "Unknown";
+            let osName = clientDevice.osName || uaResult.os.name || "Unknown";
+            let osVersion = clientDevice.osVersion || uaResult.os.version || "Unknown";
+
+            if (osName.toLowerCase() === "android" && (osVersion === "Unknown" || osVersion === "10" || osVersion === "11")) {
+                let androidMatch = userAgent.match(/Android\s([0-9\.]+)/i);
+                if (androidMatch) {
+                    osVersion = androidMatch[1];
+                }
+            }
 
             if (userAgent.match(/Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i)) {
                 if (deviceType === "Unknown" || deviceType === "Desktop/Unknown") {
@@ -31,8 +43,8 @@ function setupRoutes(app, db, saveDB, bot) {
             }
 
             if (!deviceModel || deviceModel === "Unknown" || deviceModel === "K") {
-                if (userAgent.includes("Redmi") || userAgent.includes("MI") || userAgent.includes("M2")) {
-                    let match = userAgent.match(/(M\d{2}[A-Za-z0-9]+|Redmi\s[^\s)]+|Xiaomi\s[^\s)]+)/i);
+                if (userAgent.includes("Redmi") || userAgent.includes("MI") || userAgent.includes("M2") || userAgent.includes("POCO")) {
+                    let match = userAgent.match(/(M\d{2}[A-Za-z0-9]+|Redmi\s[^\s)]+|Xiaomi\s[^\s)]+|POCO\s[^\s)]+)/i);
                     if (match) {
                         deviceModel = match[0];
                         deviceVendor = "Xiaomi";
@@ -61,13 +73,14 @@ function setupRoutes(app, db, saveDB, bot) {
                         deviceModel = match[0];
                         deviceVendor = "Realme";
                     }
-                } else if (userAgent.includes("Android")) {
-                    deviceModel = "Android Mobile";
-                    deviceVendor = deviceVendor === "Unknown" ? "Generic" : deviceVendor;
+                } else if (userAgent.includes("OnePlus")) {
+                    let match = userAgent.match(/(OnePlus\s[^\s)]+|IN\d{4}|LE\d{4}|EB\d{4}|NE\d{4}|CPH\d{4})/i);
+                    if (match) {
+                        deviceModel = match[0];
+                        deviceVendor = "OnePlus";
+                    }
                 }
             }
-
-            const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
             
             let visitorObj = {
                 time: currentTimeString, 
@@ -77,12 +90,12 @@ function setupRoutes(app, db, saveDB, bot) {
                 isp: "Unknown", 
                 browserName: uaResult.browser.name || "Unknown",
                 browserVersion: uaResult.browser.version || "Unknown",
-                osName: uaResult.os.name || "Unknown",
-                osVersion: uaResult.os.version || "Unknown",
+                osName: osName,
+                osVersion: osVersion,
                 deviceVendor: deviceVendor,
                 deviceModel: deviceModel,
                 deviceType: deviceType,
-                cpuArchitecture: uaResult.cpu.architecture || "Unknown",
+                cpuArchitecture: clientDevice.architecture || uaResult.cpu.architecture || "Unknown",
                 engineName: uaResult.engine.name || "Unknown",
                 engineVersion: uaResult.engine.version || "Unknown"
             };
@@ -122,8 +135,8 @@ function setupRoutes(app, db, saveDB, bot) {
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
             return res.json({ 
                 success: true, isLocked: false, title: config.title, music: data.music, 
-                animations: data.animations, letter: data.letter, emojis: config.emojis, 
-                question: data.question, buttons: data.buttons, image: data.image || null 
+                animations: data.animations, letter: data.letter, emojis: data.emojis, 
+                question: config.question, buttons: config.buttons, image: data.image || null 
             });
         } catch (err) { 
             res.json({ success: false }); 
