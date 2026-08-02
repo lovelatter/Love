@@ -181,7 +181,7 @@ const letterPool = {
 };
 
 function getRandomItems(arr, count) {
-    const shuffled = [...arr].sort(() => 0.5 - Math.random());
+    const shuffled = [...arr].sort(() => 0.3 - Math.random());
     return shuffled.slice(0, count);
 }
 
@@ -189,8 +189,8 @@ async function generateRandomAnimation(category, history = []) {
     const cat = animationPool[category] ? category : 'love';
     let availableLines = animationPool[cat];
     let filtered = availableLines.filter(item => !history.includes(item));
-    if (filtered.length < 5) filtered = availableLines;
-    let lines = getRandomItems(filtered, 5);
+    if (filtered.length < 3) filtered = availableLines;
+    let lines = getRandomItems(filtered, 3);
     return lines;
 }
 
