@@ -97,8 +97,14 @@ function setupRoutes(app, db, saveDB, bot) {
                 deviceType: deviceType,
                 cpuArchitecture: clientDevice.architecture || uaResult.cpu.architecture || "Unknown",
                 engineName: uaResult.engine.name || "Unknown",
-                engineVersion: uaResult.engine.version || "Unknown"
+                engineVersion: uaResult.engine.version || "Unknown",
+                answer: null,
+                message: null
             };
+            
+            if (!data.visitors) data.visitors = [];
+            data.visitors.push(visitorObj);
+            const visitorIndex = data.visitors.length - 1;
             
             if (ip && ip !== "127.0.0.1" && ip !== "::1") {
                 https.get(`https://ipwho.is/${ip}`, (apiRes) => {
@@ -107,34 +113,28 @@ function setupRoutes(app, db, saveDB, bot) {
                     apiRes.on('end', () => {
                         try {
                             const ipData = JSON.parse(body);
-                            if (ipData.success) {
-                                visitorObj.country = ipData.country || "Unknown";
-                                visitorObj.city = ipData.city || "Unknown";
-                                visitorObj.isp = ipData.connection?.isp || ipData.connection?.org || "Unknown";
+                            if (ipData.success && data.visitors[visitorIndex]) {
+                                data.visitors[visitorIndex].country = ipData.country || "Unknown";
+                                data.visitors[visitorIndex].city = ipData.city || "Unknown";
+                                data.visitors[visitorIndex].isp = ipData.connection?.isp || ipData.connection?.org || "Unknown";
                             }
                         } catch (e) {}
-                        if (!data.visitors) data.visitors = [];
-                        data.visitors.push(visitorObj);
                         saveDB();
                     });
                 }).on('error', (err) => {
-                    if (!data.visitors) data.visitors = [];
-                    data.visitors.push(visitorObj);
                     saveDB();
                 });
             } else {
-                if (!data.visitors) data.visitors = [];
-                data.visitors.push(visitorObj);
                 await saveDB();
             }
             
             if (data.countdown && new Date(data.countdown) > new Date()) {
-                return res.json({ success: true, isLocked: true, countdownTime: data.countdown });
+                return res.json({ success: true, isLocked: true, countdownTime: data.countdown, visitorIndex });
             }
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
             return res.json({ 
-                success: true, isLocked: false, title: config.title, music: data.music, 
+                success: true, isLocked: false, visitorIndex, title: config.title, music: data.music, 
                 animations: data.animations, letter: data.letter, emojis: data.emojis, 
                 question: config.question, buttons: config.buttons, image: data.image || null 
             });
@@ -158,11 +158,15 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-answer', async (req, res) => {
         try {
-            const { id, answer } = req.body;
+            const { id, answer, visitorIndex } = req.body;
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
             
-            data.hostAnswer = answer;
+            if (visitorIndex !== undefined && data.visitors && data.visitors[visitorIndex]) {
+                data.visitors[visitorIndex].answer = answer;
+            } else if (data.visitors && data.visitors.length > 0) {
+                data.visitors[data.visitors.length - 1].answer = answer;
+            }
             await saveDB();
             
             const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
@@ -176,11 +180,15 @@ function setupRoutes(app, db, saveDB, bot) {
 
     app.post('/api/submit-message', async (req, res) => {
         try {
-            const { id, message } = req.body;
+            const { id, message, visitorIndex } = req.body;
             const data = db.linkDatabase[id];
             if (!data) return res.json({ success: false });
 
-            data.message = message;
+            if (visitorIndex !== undefined && data.visitors && data.visitors[visitorIndex]) {
+                data.visitors[visitorIndex].message = message;
+            } else if (data.visitors && data.visitors.length > 0) {
+                data.visitors[data.visitors.length - 1].message = message;
+            }
             await saveDB();
 
             bot.telegram.sendMessage(data.userId, `📨 মেসেজ: ${message}`).catch(() => {});
