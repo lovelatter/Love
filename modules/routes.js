@@ -204,7 +204,7 @@ function setupRoutes(app, db, saveDB, bot) {
     });
 
     app.get('/birthday/:id', (req, res) => {
-        res.sendFile(path.join(process.cwd(), 'love.html'));
+        res.sendFile(path.join(process.cwd(), 'birthday.html'));
     });
 
     app.get('/:id', (req, res) => {
