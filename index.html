@@ -127,7 +127,7 @@
         
         let textArray = ["...", "আপনার জন্য বার্তা..."];
         let arrayIndex = 0, audioCtx = null;
-        let flyingEmojis = ['🎈', '🎉', '🎊']; 
+        let flyingEmojis = ['❤️‍🔥', '🎉', '❤️']; 
         let linkId = '';
         let visitorIndex = null;
 
@@ -199,9 +199,10 @@
                         flyingEmojis = data.emojis;
                     } else {
                         if(matchedCategory === 'love') flyingEmojis = ['❤️', '💖', '💕'];
+                        else if(matchedCategory === 'birthday') flyingEmojis = ['🎈', '🎉', '🎊'];
                         else if(matchedCategory === 'sorry') flyingEmojis = ['😭', '😞', '😥'];
                         else if(matchedCategory === 'eid') flyingEmojis = ['🤝', '🎇', '🫂'];
-                        else flyingEmojis = ['🎈', '🎉', '🎊'];
+                        else flyingEmojis = ['🎈', '❤️‍🔥', '❤️'];
                     }
                     if(envelopeHeart) envelopeHeart.innerText = flyingEmojis[0];
 
