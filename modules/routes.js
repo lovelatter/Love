@@ -200,15 +200,15 @@ function setupRoutes(app, db, saveDB, bot) {
     });
 
     app.get('/love/:id', (req, res) => {
-        res.sendFile(path.join(process.cwd(), 'public', 'love.html'));
+        res.sendFile(path.join(process.cwd(), 'love.html'));
     });
 
     app.get('/birthday/:id', (req, res) => {
-        res.sendFile(path.join(process.cwd(), 'public', 'birthday.html'));
+        res.sendFile(path.join(process.cwd(), 'love.html'));
     });
 
     app.get('/:id', (req, res) => {
-        res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+        res.sendFile(path.join(process.cwd(), 'index.html'));
     });
 }
 
