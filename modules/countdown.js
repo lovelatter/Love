@@ -8,4 +8,23 @@ function showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt) {
     ]), { parse_mode: 'Markdown' }).catch(() => {});
 }
 
-module.exports = { showCountdownPrompt };
+function setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt, locale) {
+    bot.action('timer_no', async (ctx) => { 
+        ctx.answerCbQuery(); 
+        if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
+        db.userSessions[ctx.chat.id].pendingMinutes = null; 
+        await saveDB();
+        showMusicUploadPrompt(ctx, db, saveDB, locale); 
+    });
+
+    bot.action(/^set_time_/, async (ctx) => {
+        ctx.answerCbQuery();
+        const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
+        db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
+        await saveDB();
+        showMusicUploadPrompt(ctx, db, saveDB, locale);
+    });
+}
+
+module.exports = { showCountdownPrompt, setupCountdownActions };[span_0](start_span)[span_0](end_span)
