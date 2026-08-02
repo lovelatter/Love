@@ -15,7 +15,14 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     }
     
     const uniqueId = Math.random().toString(36).substring(2, 9);
-    const finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
+    const categoryType = (session.type || "love").toLowerCase();
+    
+    let finalGeneratedUrl = `${SERVER_URL}/${uniqueId}`;
+    if (categoryType === 'love') {
+        finalGeneratedUrl = `${SERVER_URL}/love/${uniqueId}`;
+    } else if (categoryType === 'birthday') {
+        finalGeneratedUrl = `${SERVER_URL}/birthday/${uniqueId}`;
+    }
     
     const dbImageUrl = session.imageUrl || null;
     let finalMusicUrl = session.music || "";
@@ -24,7 +31,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
         userId, 
         name: session.name || "User", 
         username: session.username || "None", 
-        type: session.type || "love",
+        type: categoryType,
         music: finalMusicUrl, 
         countdown: finalCountdownIso, 
         animations: session.animations, 
@@ -43,12 +50,11 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
     parse_mode: 'Markdown'
     }).catch(() => {});
 
-
     let adminNotificationText = `🆕 নতুন লিংক তৈরি করা হয়েছে।
 👤 Name: ${session.name || "User"}
 🆔 ID: ${userId}
 🏷️ Username: ${session.username || "None"}
-📂 Category: ${String(session.type || "love").toUpperCase()}
+📂 Category: ${String(categoryType).toUpperCase()}
 ⏳ Countdown: ${countdownDisplay}
 📸 IMG Included: ${dbImageUrl ? "Yes ✅" : "No ❌"}`;
     
