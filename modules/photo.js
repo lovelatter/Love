@@ -52,7 +52,7 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
                 const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
                 if (response.status !== 200) throw new Error();
 
-                const uploadsDir = path.join(__dirname, '../public/uploads');
+                const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
                 if (!fs.existsSync(uploadsDir)) {
                     fs.mkdirSync(uploadsDir, { recursive: true });
                 }
@@ -94,4 +94,18 @@ function handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro) {
     }
 }
 
-module.exports = { handlePhotoUpload, showImageUploadPrompt };
+function setupPhotoActions(bot, db, saveDB, showAnimationIntro) {
+    bot.action('skip_image_upload', async (ctx) => {
+        ctx.answerCbQuery();
+        const userId = ctx.chat.id;
+        if (db.userSessions[userId]) {
+            db.userSessions[userId].imageUrl = null;
+        }
+        await saveDB();
+        showAnimationIntro(ctx);
+    });
+
+    bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
+}
+
+module.exports = { handlePhotoUpload, showImageUploadPrompt, setupPhotoActions };
