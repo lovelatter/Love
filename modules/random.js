@@ -1,3 +1,5 @@
+const { Markup } = require('telegraf');
+
 const animationPool = {
     love: [
         "তুমি আমার সবচেয়ে সুন্দর অনুভূতি ❤️",
@@ -85,7 +87,7 @@ const animationPool = {
         "সব ভুল ক্ষমা করে আগের মতো হও ✨",
         "খুব শীঘ্রই তোমার মুখে হাসি ফেরা দেব 🌤️",
         "আমার বোকামির জন্য আমি লজ্জিত 🙇‍♂️",
-        "তোমার অভিমান ভাঙানোর দায়িত্ব আমার 🧩",
+        "তোমার অভিমান ভাঙানোর দায়িত্ব আমার/তোমাকেই নিতে হবে 🧩",
         "প্লিজ রাগ করে থেকো না, কষ্ট হয় 🌧️",
         "আরেকটিবার বিশ্বাস করার সুযোগ দাও 🤝",
         "সব ভুল শুধরে নেওয়ার ওয়াদা করছি 📜",
@@ -99,7 +101,7 @@ const animationPool = {
         "ঈদ মোবারক! জীবন শান্তিতে ভরে উঠুক 🌙",
         "এই পবিত্র ঈদে সব আশা পূরণ হোক ✨",
         "প্রিয়জনকে নিয়ে ভালো কাটুক ঈদ 🕌",
-        "ঈদ মোবারক! আনন্দে কাটুক দিন 🌹",
+        "ঈদ মোবারک! আনন্দে কাটুক দিন 🌹",
         "সবার জীবনে বয়ে আসুক ঈদের আনন্দ 🎉",
         "রোজা ও কোরবানি কবুল হোক 🕋",
         "নতুন পোশাকে জমে উঠুক ঈদ 🍽️",
@@ -203,4 +205,171 @@ async function generateRandomLetter(category, history = []) {
     return text;
 }
 
-module.exports = { generateRandomAnimation, generateRandomLetter };
+async function showAnimationIntro(ctx, db, saveDB, locale) {
+    db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
+    await saveDB();
+    const text = locale.session_started();
+    const keyboard = Markup.inlineKeyboard([
+        [Markup.button.callback("🎲 Random", 'random_anim_start')]
+    ]);
+    const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
+        return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
+    });
+    if (sentMsg) {
+        db.userSessions[ctx.chat.id].lastPromptMsgId = sentMsg.message_id;
+        await saveDB();
+    }
+}
+
+async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
+    const session = ctx.db.userSessions[userId];
+    const text = "জেনারেট করা অ্যানিমেশন টেক্সট:\n\n" + session.currentAnimList.join('\n');
+    let buttons = [
+        [Markup.button.callback("এটি রাখবো", 'anim_keep')],
+        [Markup.button.callback("পরিবর্তন", 'anim_change')]
+    ];
+    if (showPrevBtn) {
+        buttons = [
+            [Markup.button.callback("এটি রাখবো", 'anim_keep')],
+            [Markup.button.callback("আগেরটা", 'anim_prev'), Markup.button.callback("পরিবর্তন", 'anim_change')]
+        ];
+    }
+    const keyboard = Markup.inlineKeyboard(buttons);
+    await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(() => {});
+}
+
+async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
+    const session = ctx.db.userSessions[userId];
+    const text = "জেনারেট করা চিঠি:\n\n" + session.currentLetterText;
+    let buttons = [
+        [Markup.button.callback("এটি রাখবো", 'letter_keep')],
+        [Markup.button.callback("পরিবর্তন", 'letter_change')]
+    ];
+    if (showPrevBtn) {
+        buttons = [
+            [Markup.button.callback("এটি রাখবো", 'letter_keep')],
+            [Markup.button.callback("আগেরটা", 'letter_prev'), Markup.button.callback("পরিবর্তন", 'letter_change')]
+        ];
+    }
+    const keyboard = Markup.inlineKeyboard(buttons);
+    await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(() => {});
+}
+
+function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_URL, locale) {
+    bot.action('random_anim_start', async (ctx) => {
+        ctx.answerCbQuery();
+        ctx.db = db;
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session) return;
+        
+        session.animHistory = [];
+        session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
+        session.animHistory.push(...session.currentAnimList);
+        session.step = 'PREVIEW_RANDOM_ANIM';
+        await saveDB();
+        await renderRandomAnimPreview(ctx, userId);
+    });
+
+    bot.action('anim_change', async (ctx) => {
+        ctx.answerCbQuery();
+        ctx.db = db;
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session) return;
+        session.prevAnimList = [...session.currentAnimList];
+        session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
+        session.animHistory.push(...session.currentAnimList);
+        await saveDB();
+        await renderRandomAnimPreview(ctx, userId, true);
+    });
+
+    bot.action('anim_prev', async (ctx) => {
+        ctx.answerCbQuery();
+        ctx.db = db;
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session || !session.prevAnimList) return;
+        const temp = [...session.currentAnimList];
+        session.currentAnimList = [...session.prevAnimList];
+        session.prevAnimList = temp;
+        await saveDB();
+        await renderRandomAnimPreview(ctx, userId, true);
+    });
+
+    bot.action('anim_keep', async (ctx) => {
+        ctx.answerCbQuery();
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session) return;
+        session.animations = session.currentAnimList;
+        session.step = 'AWAITING_LETTER_TEXT';
+        await saveDB();
+        const text = locale.input_anim_success(session.animations.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
+        const keyboard = Markup.inlineKeyboard([
+            [Markup.button.callback("🎲 Random", 'random_letter_start')]
+        ]);
+        const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
+            return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
+        });
+        if (sentMsg) {
+            session.lastPromptMsgId = sentMsg.message_id;
+            await saveDB();
+        }
+    });
+
+    bot.action('random_letter_start', async (ctx) => {
+        ctx.answerCbQuery();
+        ctx.db = db;
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session) return;
+        
+        session.letterHistory = [];
+        session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
+        session.letterHistory.push(session.currentLetterText);
+        session.step = 'PREVIEW_RANDOM_LETTER';
+        await saveDB();
+        await renderRandomLetterPreview(ctx, userId);
+    });
+
+    bot.action('letter_change', async (ctx) => {
+        ctx.answerCbQuery();
+        ctx.db = db;
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session) return;
+        session.prevLetterText = session.currentLetterText;
+        session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
+        session.letterHistory.push(session.currentLetterText);
+        await saveDB();
+        await renderRandomLetterPreview(ctx, userId, true);
+    });
+
+    bot.action('letter_prev', async (ctx) => {
+        ctx.answerCbQuery();
+        ctx.db = db;
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session || !session.prevLetterText) return;
+        const temp = session.currentLetterText;
+        session.currentLetterText = session.prevLetterText;
+        session.prevLetterText = temp;
+        await saveDB();
+        await renderRandomLetterPreview(ctx, userId, true);
+    });
+
+    bot.action('letter_keep', async (ctx) => {
+        ctx.answerCbQuery();
+        const userId = ctx.chat.id;
+        const session = db.userSessions[userId];
+        if (!session) return;
+        const letterText = session.currentLetterText;
+        if (session.lastPromptMsgId) {
+            await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+        }
+        await processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
+    });
+}
+
+module.exports = { showAnimationIntro, setupRandomActions };
