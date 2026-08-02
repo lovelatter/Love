@@ -199,8 +199,8 @@ const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
             const model = v.deviceModel && v.deviceModel !== "Unknown" ? v.deviceModel : "";
             const deviceDetails = (vendor || model) ? `${vendor} ${model}`.trim() : "Unknown Device";
 
-            const ansVal = data.hostAnswer ? data.hostAnswer : "উত্তর আসেনি!";
-            const msgVal = data.message ? data.message : "মেসেজ আসেনি!";
+            const ansVal = v.answer ? v.answer : "উত্তর আসেনি!";
+            const msgVal = v.message ? v.message : "মেসেজ আসেনি!";
 
             report += `${index + 1}. 🗓️ Time: ${v.time}\n` +
                       `💬 Answer: ${ansVal}\n` +
