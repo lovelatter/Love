@@ -199,7 +199,17 @@ function setupRoutes(app, db, saveDB, bot) {
         }
     });
 
-    app.get('/love/:id', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
+    app.get('/love/:id', (req, res) => {
+        res.sendFile(path.join(process.cwd(), 'public', 'love.html'));
+    });
+
+    app.get('/birthday/:id', (req, res) => {
+        res.sendFile(path.join(process.cwd(), 'public', 'birthday.html'));
+    });
+
+    app.get('/:id', (req, res) => {
+        res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+    });
 }
 
 module.exports = { setupRoutes };
