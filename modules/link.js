@@ -64,8 +64,7 @@ async function processFinalLinkCreation(ctx, letterText, db, saveDB, bot, ADMIN_
 🔗 Main Link: ${finalGeneratedUrl}`;
 
     ADMIN_IDS.forEach(id => bot.telegram.sendMessage(id, adminNotificationText, Markup.inlineKeyboard([
-        [Markup.button.callback("👁️‍🗨️ Answer & Msg", `view_ans_msg_${uniqueId}`), Markup.button.callback("👁️‍🗨️ Visitor Info", `view_vi_${uniqueId}`)],
-        [Markup.button.callback("❌ Link off", `adm_off_link_${uniqueId}`), Markup.button.callback("🚫 Ban user", `adm_ban_creator_${uniqueId}`)]
+        [Markup.button.callback("👤 Visitor", `view_vi_${uniqueId}`), Markup.button.callback("🔗 Link off", `adm_off_link_${uniqueId}`), Markup.button.callback("🚫 Ban user", `adm_ban_creator_${uniqueId}`)]
     ])).catch(() => {}));
 }
 
