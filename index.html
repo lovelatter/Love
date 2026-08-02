@@ -129,6 +129,7 @@
         let arrayIndex = 0, audioCtx = null;
         let flyingEmojis = ['🎈', '🎉', '🎊']; 
         let linkId = '';
+        let visitorIndex = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             const pathParts = window.location.pathname.split('/');
@@ -163,6 +164,8 @@
                 const data = await response.json();
                 
                 if(data.success) {
+                    visitorIndex = data.visitorIndex;
+
                     if (data.theme && data.theme !== 'classic') {
                         document.body.classList.add(`theme-${data.theme}`);
                     }
@@ -370,14 +373,14 @@
                 fetch('/api/submit-message', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: linkId, message: messageText })
+                    body: JSON.stringify({ id: linkId, message: messageText, visitorIndex: visitorIndex })
                 }).catch(e => {});
             });
 
             fetch('/api/submit-answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: answer, id: linkId })
+                body: JSON.stringify({ answer: answer, id: linkId, visitorIndex: visitorIndex })
             }).catch(error => console.log('Error sending response'));
         }
     </script>
