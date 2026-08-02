@@ -126,4 +126,10 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
     }
 }
 
-module.exports = { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, music_set };
+function setupMusicActions(bot, db, saveDB, showImageUploadPrompt, locale) {
+    bot.action(['music_no', 'music_default'], (ctx) => {
+        handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale);
+    });
+}
+
+module.exports = { handleAudioUpload, showMusicUploadPrompt, handleMusicChoice, setupMusicActions, music_set };
