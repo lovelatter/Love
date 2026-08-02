@@ -4,7 +4,7 @@ const path = require('path');
 
 const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt, setupCountdownActions } = require('./modules/countdown');
-const { handlePhotoUpload, showImageUploadPrompt } = require('./modules/photo');
+const { showImageUploadPrompt, setupPhotoActions } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, setupMusicActions, music_set } = require('./modules/music');
 const { handleFeedbackStart, handleFeedbackText, setupFeedbackActions } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
@@ -69,6 +69,7 @@ setupAdmin(bot, db, saveDB, isAdmin, __dirname, locale);
 setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale);
 setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt, locale);
 setupMusicActions(bot, db, saveDB, showImageUploadPrompt, locale);
+setupPhotoActions(bot, db, saveDB, showAnimationIntro);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
@@ -112,16 +113,6 @@ bot.action(/^make_/, async (ctx) => {
     };
     await saveDB();
     showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, locale), locale);
-});
-
-bot.action('skip_image_upload', async (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.chat.id;
-    if (db.userSessions[userId]) {
-        db.userSessions[userId].imageUrl = null;
-    }
-    await saveDB();
-    showAnimationIntro(ctx);
 });
 
 async function showAnimationIntro(ctx) {
@@ -313,7 +304,6 @@ bot.action(/^delete_link_(.+)$/, async (ctx) => {
 });
 
 bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
-bot.on('photo', (ctx) => handlePhotoUpload(ctx, bot, db, saveDB, showAnimationIntro));
 
 bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
