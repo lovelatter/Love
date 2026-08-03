@@ -27,6 +27,7 @@ const isAdmin = (userId) => ADMIN_IDS.includes(userId.toString());
 const SERVER_URL = "https://love-bb7p.onrender.com";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
+const help_msg = "❓ বট ব্যবহারের নিয়ম (Help Guide):\n\n*বট স্টার্ট করার পর\n1️⃣ প্রথমে 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন করুন অথবা ছবি ছাড়া।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!";
 
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
@@ -130,7 +131,7 @@ bot.action('menu_feedback', async (ctx) => {
 
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
-    ctx.editMessageText(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
+    ctx.editMessageText(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
 });
 
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
@@ -162,7 +163,7 @@ bot.on('text', async (ctx) => {
     
     if (!session?.step) {
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
-        return ctx.reply(locale.help_text, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+        return ctx.reply(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
