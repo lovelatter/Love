@@ -193,7 +193,7 @@ bot.on('text', async (ctx) => {
             return await processFinalLinkCreation(ctx, text, db, saveDB, bot, ADMIN_IDS, SERVER_URL);
         }
     } catch (error) {
-        ctx.reply(locale.general_error).catch(() => {});
+        ctx.reply(error_msg).catch(() => {});
     }
 });
 
