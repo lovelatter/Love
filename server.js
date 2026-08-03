@@ -92,7 +92,7 @@ bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, 
 
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
-    ctx.editMessageText(locale.choose_cat, Markup.inlineKeyboard([
+    ctx.editMessageText( "✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?" , Markup.inlineKeyboard([
         [Markup.button.callback(locale.cat_love, 'make_love')],
         [Markup.button.callback(locale.cat_birthday, 'make_birthday')],
         [Markup.button.callback(locale.cat_sorry, 'make_sorry')],
