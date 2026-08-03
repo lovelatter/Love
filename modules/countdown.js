@@ -27,4 +27,4 @@ function setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt, locale) {
     });
 }
 
-module.exports = { showCountdownPrompt, setupCountdownActions };[span_0](start_span)[span_0](end_span)
+module.exports = { showCountdownPrompt, setupCountdownActions };
