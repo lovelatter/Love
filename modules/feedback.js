@@ -65,6 +65,46 @@ async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
     }
 }
 
+async function handleFeedbackMessages(ctx, userId, session, text, db, saveDB, bot, ADMIN_IDS, locale, isAdmin) {
+    if (isAdmin(userId) && session?.step === 'AWAITING_ADMIN_REPLY') {
+        const targetUserId = session.targetUserId;
+        delete db.userSessions[userId];
+        await saveDB();
+
+        const userMsg = `আপনার ফিডব্যাক থেকে এডমিন রিপ্লাই করেছেন。\n\nমেসেজ: ${text}\n\nআপনি রিপ্লাই দিতে চাইলে রিপ্লাই বাটনে ক্লিক করুন।`;
+        const userKeyboard = Markup.inlineKeyboard([[Markup.button.callback("💬 রিপ্লাই", 'user_reply_chat')]]);
+
+        await bot.telegram.sendMessage(targetUserId, userMsg, { reply_markup: userKeyboard.reply_markup }).catch(() => {
+            return ctx.reply("❌ মেসেজটি ইউজারের কাছে পাঠানো যায়নি।");
+        });
+        await ctx.reply("✅ ইউজারের কাছে উত্তর সফলভাবে পাঠানো হয়েছে।");
+        return true;
+    }
+
+    if (session?.step === 'AWAITING_USER_CHAT_REPLY') {
+        delete db.userSessions[userId];
+        await saveDB();
+
+        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
+        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
+        const adminMsg = `ইউজার রিপ্লাই করেছে。\nনাম: ${fullName}\nআইডি: <code>${userId}</code>\nইউজারনেম: ${userName}\n\nমেসেজ: ${text}`;
+        const adminKeyboard = Markup.inlineKeyboard([[Markup.button.callback("💬 রিপ্লাই", `admin_reply_${userId}`)]]);
+
+        ADMIN_IDS.forEach(id => {
+            bot.telegram.sendMessage(id, adminMsg, { parse_mode: 'HTML', reply_markup: adminKeyboard.reply_markup }).catch(() => {});
+        });
+
+        await ctx.reply("✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে।");
+        return true;
+    }
+
+    if (session?.step === 'AWAITING_USER_FEEDBACK') {
+        return await handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale);
+    }
+
+    return false;
+}
+
 function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale) {
     bot.action('menu_feedback', (ctx) => {
         handleFeedbackStart(ctx, db, saveDB);
@@ -95,4 +135,4 @@ function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale) {
     });
 }
 
-module.exports = { handleFeedbackStart, handleFeedbackText, setupFeedbackActions, feedmsg };
+module.exports = { handleFeedbackStart, handleFeedbackText, handleFeedbackMessages, setupFeedbackActions, feedmsg };
