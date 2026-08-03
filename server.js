@@ -93,11 +93,11 @@ bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, 
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText( "✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?" , Markup.inlineKeyboard([
-        [Markup.button.callback(locale.cat_love, 'make_love')],
-        [Markup.button.callback(locale.cat_birthday, 'make_birthday')],
-        [Markup.button.callback(locale.cat_sorry, 'make_sorry')],
-        [Markup.button.callback(locale.cat_eid, 'make_eid')],
-        [Markup.button.callback(locale.btn_back, 'go_to_main_menu')]
+        [Markup.button.callback( "প্রেম-LOVE (❤️)" , 'make_love')],
+        [Markup.button.callback( "জন্মদিন-BIRTHDAY (🥳)" , 'make_birthday')],
+        [Markup.button.callback( "দুঃখিত-SORRY (🥺)" , 'make_sorry')],
+        [Markup.button.callback( "ঈদ মোবারক-EID (🫂)" , 'make_eid')],
+        [Markup.button.callback( "🔙 Back" , 'go_to_main_menu')]
     ]));
 });
 
