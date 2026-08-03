@@ -6,7 +6,7 @@ const { db, loadDB, saveDB } = require('./modules/db');
 const { showCountdownPrompt, setupCountdownActions } = require('./modules/countdown');
 const { showImageUploadPrompt, setupPhotoActions } = require('./modules/photo');
 const { handleAudioUpload, showMusicUploadPrompt, setupMusicActions, music_set } = require('./modules/music');
-const { handleFeedbackStart, handleFeedbackText, setupFeedbackActions } = require('./modules/feedback');
+const { handleFeedbackMessages, setupFeedbackActions } = require('./modules/feedback');
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
@@ -92,12 +92,12 @@ bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, 
 
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
-    ctx.editMessageText( "✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?" , Markup.inlineKeyboard([
-        [Markup.button.callback( "প্রেম-LOVE (❤️)" , 'make_love')],
-        [Markup.button.callback( "জন্মদিন-BIRTHDAY (🥳)" , 'make_birthday')],
-        [Markup.button.callback( "দুঃখিত-SORRY (🥺)" , 'make_sorry')],
-        [Markup.button.callback( "ঈদ মোবারক-EID (🫂)" , 'make_eid')],
-        [Markup.button.callback( "🔙 Back" , 'go_to_main_menu')]
+    ctx.editMessageText("✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?", Markup.inlineKeyboard([
+        [Markup.button.callback("প্রেম-LOVE (❤️)", 'make_love')],
+        [Markup.button.callback("জন্মদিন-BIRTHDAY (🥳)", 'make_birthday')],
+        [Markup.button.callback("দুঃখিত-SORRY (🥺)", 'make_sorry')],
+        [Markup.button.callback("ঈদ মোবারক-EID (🫂)", 'make_eid')],
+        [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
     ]));
 });
 
@@ -152,59 +152,8 @@ bot.on('text', async (ctx) => {
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
     
-    if (isAdmin(userId) && session?.step === 'AWAITING_ADMIN_REPLY') {
-        const targetUserId = session.targetUserId;
-        delete db.userSessions[userId];
-        await saveDB();
-
-        const userMsg = `আপনার ফিডব্যাক থেকে এডমিন রিপ্লাই করেছেন。\n\nমেসেজ: ${text}\n\nআপনি রিপ্লাই দিতে চাইলে রিপ্লাই বাটনে ক্লিক করুন।`;
-        const userKeyboard = Markup.inlineKeyboard([[Markup.button.callback("💬 রিপ্লাই", 'user_reply_chat')]]);
-
-        await bot.telegram.sendMessage(targetUserId, userMsg, { reply_markup: userKeyboard.reply_markup }).catch(() => {
-            return ctx.reply("❌ মেসেজটি ইউজারের কাছে পাঠানো যায়নি।");
-        });
-        await ctx.reply("✅ ইউজারের কাছে উত্তর সফলভাবে পাঠানো হয়েছে।");
-        return;
-    }
-
-    if (session?.step === 'AWAITING_USER_CHAT_REPLY') {
-        delete db.userSessions[userId];
-        await saveDB();
-
-        const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "User";
-        const userName = ctx.from?.username ? `@${ctx.from.username}` : "None";
-        const adminMsg = `ইউজার রিপ্লাই করেছে。\nনাম: ${fullName}\nআইডি: <code>${userId}</code>\nইউজারনেম: ${userName}\n\nমেসেজ: ${text}`;
-        const adminKeyboard = Markup.inlineKeyboard([[Markup.button.callback("💬 রিপ্লাই", `admin_reply_${userId}`)]]);
-
-        ADMIN_IDS.forEach(id => {
-            bot.telegram.sendMessage(id, adminMsg, { parse_mode: 'HTML', reply_markup: adminKeyboard.reply_markup }).catch(() => {});
-        });
-
-        await ctx.reply("✅ আপনার মেসেজটি অ্যাডমিনের কাছে সফলভাবে পাঠানো হয়েছে।");
-        return;
-    }
-
-    if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        if (text.length < 5) {
-            await ctx.deleteMessage().catch(() => {});
-            if (session.feedbackWarningMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
-            }
-            const warnMsg = await ctx.reply("⚠️ অনুগ্রহ করে অন্তত ৫ অক্ষরের বেশি মতামত দিন।");
-            db.userSessions[userId].feedbackWarningMsgId = warnMsg.message_id;
-            await saveDB();
-            return;
-        } else {
-            if (session.feedbackWarningMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackWarningMsgId).catch(() => {});
-            }
-            if (session.feedbackPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.feedbackPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            return handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale);
-        }
-    }
+    const feedbackHandled = await handleFeedbackMessages(ctx, userId, session, text, db, saveDB, bot, ADMIN_IDS, locale, isAdmin);
+    if (feedbackHandled) return;
 
     if (isAdmin(userId) && session) {
         const handled = handleAdminText(ctx, text, session, db, saveDB, bot);
