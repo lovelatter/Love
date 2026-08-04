@@ -130,7 +130,7 @@ bot.action('menu_feedback', async (ctx) => {
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
     db.userSessions[userId].feedbackWarningMsgId = null;
     
-    const sentMsg = await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
+    const sentMsg = await ctx.editMessageText("📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
     db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
     await saveDB();
 });
