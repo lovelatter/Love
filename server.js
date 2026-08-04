@@ -71,12 +71,12 @@ bot.use(async (ctx, next) => {
     return next();
 });
 
-setupAdmin(bot, db, saveDB, isAdmin, __dirname, locale);
-setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale);
-setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt, locale);
-setupMusicActions(bot, db, saveDB, showImageUploadPrompt, locale);
-setupPhotoActions(bot, db, saveDB, (c) => showAnimationIntro(c, db, saveDB, locale));
-setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_URL, locale);
+setupAdmin(bot, db, saveDB, isAdmin, __dirname);
+setupFeedbackActions(bot, db, saveDB, ADMIN_IDS);
+setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt);
+setupMusicActions(bot, db, saveDB, showImageUploadPrompt);
+setupPhotoActions(bot, db, saveDB, (c) => showAnimationIntro(c, db, saveDB));
+setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_URL);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
