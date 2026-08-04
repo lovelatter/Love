@@ -80,12 +80,13 @@ setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
+    const welcome = `👋 হ্যালো ${fullName}। বটের পক্ষ থেকে স্বাগতম।`,
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🚀 লিঙ্ক তৈরি করুন", 'menu_makelink')],
         [Markup.button.callback("📝 মতামত", 'menu_feedback'), Markup.button.callback("❓ সাহায্য", 'menu_help')]
     ]);
-    if (isEdit) return ctx.editMessageText(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
-    return ctx.reply(locale.welcome(fullName), { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    if (isEdit) return ctx.editMessageText(welcome, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
+    return ctx.reply(welcome, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
 bot.command('start', async (ctx) => { 
