@@ -208,7 +208,7 @@ async function generateRandomLetter(category, history = []) {
 async function showAnimationIntro(ctx, db, saveDB, locale) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = locale.session_started();
+    const text = "✨ অ্যানিমেশন মেসেজ লিখুন।\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')]
     ]);
@@ -305,7 +305,7 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         session.animations = session.currentAnimList;
         session.step = 'AWAITING_LETTER_TEXT';
         await saveDB();
-        const text = locale.input_anim_success(session.animations.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:";
+        const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান。\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:`;
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback("🎲 Random", 'random_letter_start')]
         ]);
