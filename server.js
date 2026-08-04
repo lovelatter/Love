@@ -28,6 +28,10 @@ const SERVER_URL = "https://love-bb7p.onrender.com";
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
+bot.catch((err, ctx) => {
+    console.error(`Error for ${ctx.updateType}:`, err);
+});
+
 const help_msg = "❓ বট ব্যবহারের নিয়ম (Help Guide)\n\n1️⃣ প্রথমে বট স্টার্ট করার পর 🚀 লিঙ্ক তৈরি করুন বাটনে ক্লিক করুন।\n2️⃣ আপনার পছন্দের ক্যাটাগরি সিলেক্ট করুন।\n3️⃣ কাউন্টডাউন টাইমার সেট করুন।\n4️⃣ মিউজিক আপলোড করুন অথবা ডিফল্ট রাখুন।\n5️⃣ ছবি আপলোড করুন করুন অথবা ছবি ছাড়া।\n6️⃣ অ্যানিমেশন টেক্সট দিন তারপর খামের ভেতরের মূল চিঠিটি লিখে পাঠান।\n7️⃣ সবশেষে বট আপনাকে লিঙ্ক জেনারেট করে দেবে যা আপনি শেয়ার করতে পারবেন!";
 const error_msg = "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন.";
 
@@ -92,21 +96,30 @@ bot.command('start', async (ctx) => {
     sendMainMenu(ctx, false); 
 });
 
-bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, true); });
+bot.action('go_to_main_menu', async (ctx) => { 
+    try {
+        await ctx.answerCbQuery();
+    } catch (e) {}
+    sendMainMenu(ctx, true); 
+});
 
-bot.action('menu_makelink', (ctx) => {
-    ctx.answerCbQuery();
+bot.action('menu_makelink', async (ctx) => {
+    try {
+        await ctx.answerCbQuery();
+    } catch (e) {}
     ctx.editMessageText("✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?", Markup.inlineKeyboard([
         [Markup.button.callback("প্রেম-LOVE (❤️)", 'make_love')],
         [Markup.button.callback("জন্মদিন-BIRTHDAY (🥳)", 'make_birthday')],
         [Markup.button.callback("দুঃখিত-SORRY (🥺)", 'make_sorry')],
         [Markup.button.callback("ঈদ মোবারক-EID (🫂)", 'make_eid')],
         [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
-    ]));
+    ])).catch(() => {});
 });
 
 bot.action(/^make_/, async (ctx) => {
-    ctx.answerCbQuery();
+    try {
+        await ctx.answerCbQuery();
+    } catch (e) {}
     const cat = ctx.match.input.replace('make_', '');
     db.userSessions[ctx.chat.id] = { 
         type: cat, 
@@ -121,31 +134,41 @@ bot.action(/^make_/, async (ctx) => {
 });
 
 bot.action('menu_feedback', async (ctx) => {
-    ctx.answerCbQuery();
+    try {
+        await ctx.answerCbQuery();
+    } catch (e) {}
     const userId = ctx.chat.id;
     if (!db.userSessions[userId]) db.userSessions[userId] = {};
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
     db.userSessions[userId].feedbackWarningMsgId = null;
     
-    const sentMsg = await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
-    db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
+    const sentMsg = await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]])).catch(() => {});
+    if (sentMsg) {
+        db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
+    }
     await saveDB();
 });
 
-bot.action('menu_help', (ctx) => { 
-    ctx.answerCbQuery(); 
-    ctx.editMessageText(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
+bot.action('menu_help', async (ctx) => { 
+    try {
+        await ctx.answerCbQuery(); 
+    } catch (e) {}
+    ctx.editMessageText(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {}); 
 });
 
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
-    if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
-    if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
-    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
+    if (!data) {
+        return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true }).catch(() => {});
+    }
+    if (Number(data.userId) !== Number(ctx.chat.id)) {
+        return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true }).catch(() => {});
+    }
+    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে.", { show_alert: true }).catch(() => {});
     delete db.linkDatabase[linkId];
     await saveDB();
-    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
+    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।").catch(() => {});
     sendMainMenu(ctx, false);
 });
 
@@ -180,8 +203,10 @@ bot.on('text', async (ctx) => {
             await ctx.deleteMessage().catch(() => {});
             const nextPrompt = await ctx.reply(locale.input_anim_success(lines.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
                 [Markup.button.callback("🎲 Random", 'random_letter_start')]
-            ]));
-            db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
+            ])).catch(() => {});
+            if (nextPrompt) {
+                db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
+            }
             await saveDB();
             return;
         }
