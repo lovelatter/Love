@@ -101,21 +101,21 @@ const animationPool = {
         "ঈদ মোবারক! জীবন শান্তিতে ভরে উঠুক 🌙",
         "এই পবিত্র ঈদে সব আশা পূরণ হোক ✨",
         "প্রিয়জনকে নিয়ে ভালো কাটুক ঈদ 🕌",
-        "ঈদ মোবারک! আনন্দে কাটুক দিন 🌹",
+        "ঈদ মোবারক! আনন্দে কাটুক দিন 🌹",
         "সবার জীবনে বয়ে আসুক ঈদের আনন্দ 🎉",
         "রোজা ও কোরবানি কবুল হোক 🕋",
         "নতুন পোশাকে জমে উঠুক ঈদ 🍽️",
         "সব ভেদাভেদ ভুলে কোলাকুলি হোক 🤝",
         "চারপাশটা ঈদের আনন্দে রঙিন থাকুক 🎨",
-        "ঈদ মোবারک! পরিবার নিয়ে আনন্দ করো 🏡",
+        "ঈদ মোবারক! পরিবার নিয়ে আনন্দ করো 🏡",
         "জীবনে সুখ ও শান্তির বন্যা বয়ে যাক 🌊",
         "তোমার খুশিতেই আমার আসল আনন্দ 🥰",
-        "পবিত্র ঈদুল ফিতর/আজহা মোবারک 🌙✨",
+        "পবিত্র ঈদুল ফিতর/আজহা মোবারক 🌙✨",
         "সেমাইয়ের মতো মিষ্টি হোক জীবন 🍜",
         "আনন্দময় কাটুক ঈদের ছুটি 🏕️",
         "ঈদের চাঁদ শান্তি বয়ে আনুক 🌠",
         "খুশির জোয়ারে ভেসে যাক দিন ⛵",
-        "ঈদ মোবারک! অনেক দোয়া ও ভালোবাসা 🤲",
+        "ঈদ মোবারক! অনেক দোয়া ও ভালোবাসা 🤲",
         "হাসিখুশিতে কাটুক প্রতিটি মুহূর্ত 🎊",
         "আল্লাহর রহমতে জীবন সুন্দর হোক 🌟",
         "ঈদের এই পবিত্র দিনে কাটুক সব ক্লান্তি 🌴",
@@ -223,6 +223,22 @@ async function showAnimationIntro(ctx, db, saveDB) {
         db.userSessions[ctx.chat.id].lastPromptMsgId = sentMsg.message_id;
         await saveDB();
     }
+}
+
+async function handleAnimationTextStep(ctx, userId, text, db, saveDB, bot) {
+    const lines = parseAnimationLines(text);
+    if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
+    db.userSessions[userId].animations = lines;
+    db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
+    if (db.userSessions[userId].lastPromptMsgId) {
+        await bot.telegram.deleteMessage(userId, db.userSessions[userId].lastPromptMsgId).catch(() => {});
+    }
+    await ctx.deleteMessage().catch(() => {});
+    const nextPrompt = await ctx.reply("✅ অ্যানিমেশন টেক্সট সফলভাবে যোগ করা হয়েছে।" + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
+        [Markup.button.callback("🎲 Random", 'random_letter_start')]
+    ]));
+    db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
+    await saveDB();
 }
 
 async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
@@ -376,4 +392,4 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
     });
 }
 
-module.exports = { showAnimationIntro, setupRandomActions, parseAnimationLines };
+module.exports = { showAnimationIntro, setupRandomActions, handleAnimationTextStep };
