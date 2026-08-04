@@ -153,7 +153,9 @@ bot.action('menu_help', async (ctx) => {
     try {
         await ctx.answerCbQuery(); 
     } catch (e) {}
-    ctx.editMessageText(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {}); 
+    ctx.editMessageText(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch((err) => {
+        console.error("Help button error:", err);
+    }); 
 });
 
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
