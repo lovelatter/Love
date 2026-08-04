@@ -10,7 +10,7 @@ const { handleFeedbackMessages, setupFeedbackActions } = require('./modules/feed
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
-const { showAnimationIntro, setupRandomActions } = require('./modules/random');
+const { showAnimationIntro, setupRandomActions, parseAnimationLines } = require('./modules/random');
 
 const app = express();
 app.use(express.json());
@@ -31,8 +31,6 @@ const help_msg = "❓ বট ব্যবহারের নিয়ম (Help Guid
 const error_msg = "⚠️ দুঃখিত, একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন.";
 const maint_msg = "🚧 বটের কাজ চলছে (Under Maintenance)! খুব শীঘ্রই আমরা ফিরে আসছি।\n\nঅ্যাডমিনকে কিছু বলার থাকলে নিচে মতামত জানাতে পারেন।";
 const invalid_cmd = (cmd) => `❌ ভুল ইনপুট: \`${cmd}\` কমান্ডটি গ্রহণযোগ্য নয়। সঠিক সাহায্য গাইডটি দেওয়া হলো:`;
-    
-
 
 bot.use(async (ctx, next) => {
     const userId = ctx.chat?.id;
@@ -120,7 +118,7 @@ bot.action(/^make_/, async (ctx) => {
         step: 'AWAITING_COUNTDOWN_SELECTION'
     };
     await saveDB();
-    showCountdownPrompt(ctx, db, saveDB, (c, d, s) => showMusicUploadPrompt(c, d, s, locale), locale);
+    showCountdownPrompt(ctx, db, saveDB, showMusicUploadPrompt);
 });
 
 bot.action('menu_feedback', async (ctx) => {
@@ -152,14 +150,14 @@ bot.action(/^delete_link_(.+)$/, async (ctx) => {
     sendMainMenu(ctx, false);
 });
 
-bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale));
+bot.on('audio', (ctx) => handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt));
 
 bot.on('text', async (ctx) => {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
     
-    const feedbackHandled = await handleFeedbackMessages(ctx, userId, session, text, db, saveDB, bot, ADMIN_IDS, locale, isAdmin);
+    const feedbackHandled = await handleFeedbackMessages(ctx, userId, session, text, db, saveDB, bot, ADMIN_IDS, isAdmin);
     if (feedbackHandled) return;
 
     if (isAdmin(userId) && session) {
@@ -173,7 +171,7 @@ bot.on('text', async (ctx) => {
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const lines = parseAnimationLines(text);
             if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
             db.userSessions[userId].animations = lines;
             db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
@@ -181,7 +179,7 @@ bot.on('text', async (ctx) => {
                 await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
             }
             await ctx.deleteMessage().catch(() => {});
-            const nextPrompt = await ctx.reply(locale.input_anim_success(lines.length) + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
+            const nextPrompt = await ctx.reply("✅ অ্যানিমেশন টেক্সট সফলভাবে যোগ করা হয়েছে।" + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
                 [Markup.button.callback("🎲 Random", 'random_letter_start')]
             ]));
             db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
