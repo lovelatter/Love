@@ -64,9 +64,9 @@ bot.use(async (ctx, next) => {
         const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
         if (ctx.callbackQuery) {
             ctx.answerCbQuery().catch(() => {});
-            return ctx.editMessageText(locale.maint_msg, maintKeyboard).catch(() => {});
+            return ctx.editMessageText(maint_msg, maintKeyboard).catch(() => {});
         }
-        return ctx.reply(locale.maint_msg, maintKeyboard).catch(() => {});
+        return ctx.reply(maint_msg, maintKeyboard).catch(() => {});
     }
     return next();
 });
