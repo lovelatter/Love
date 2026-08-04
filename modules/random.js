@@ -208,11 +208,10 @@ async function generateRandomLetter(category, history = []) {
 async function showAnimationIntro(ctx, db, saveDB, locale) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = locale.session_started();
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')]
     ]);
-    const sentMsg = await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
+    const sentMsg = await ctx.editMessageText("✨ অ্যানিমেশন মেসেজ লিখুন।\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা", { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
         return await ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
     });
     if (sentMsg) {
