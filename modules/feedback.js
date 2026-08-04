@@ -24,7 +24,7 @@ function handleFeedbackStart(ctx, db, saveDB) {
     });
 }
 
-async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
+async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     const text = ctx.message.text.trim();
@@ -59,13 +59,12 @@ async function handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale) {
         
         delete db.userSessions[userId];
         await saveDB();
-        const backBtnText = locale?.btn_back || "🔙 পিছনে যান";
-        await ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback(backBtnText, 'go_to_main_menu')]]));
+        await ctx.reply(feedmsg.success, Markup.inlineKeyboard([[Markup.button.callback("🔙 পিছনে যান", 'go_to_main_menu')]]));
         return true;
     }
 }
 
-async function handleFeedbackMessages(ctx, userId, session, text, db, saveDB, bot, ADMIN_IDS, locale, isAdmin) {
+async function handleFeedbackMessages(ctx, userId, session, text, db, saveDB, bot, ADMIN_IDS, isAdmin) {
     if (isAdmin(userId) && session?.step === 'AWAITING_ADMIN_REPLY') {
         const targetUserId = session.targetUserId;
         delete db.userSessions[userId];
@@ -99,13 +98,13 @@ async function handleFeedbackMessages(ctx, userId, session, text, db, saveDB, bo
     }
 
     if (session?.step === 'AWAITING_USER_FEEDBACK') {
-        return await handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS, locale);
+        return await handleFeedbackText(ctx, db, saveDB, bot, ADMIN_IDS);
     }
 
     return false;
 }
 
-function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS, locale) {
+function setupFeedbackActions(bot, db, saveDB, ADMIN_IDS) {
     bot.action('menu_feedback', (ctx) => {
         handleFeedbackStart(ctx, db, saveDB);
     });
