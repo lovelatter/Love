@@ -169,7 +169,7 @@ bot.on('text', async (ctx) => {
     }
     
     if (!session?.step) {
-        ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
+        ctx.reply(invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
         return ctx.reply(help_msg, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
