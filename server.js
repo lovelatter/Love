@@ -127,14 +127,14 @@ bot.action('menu_feedback', async (ctx) => {
     db.userSessions[userId].step = 'AWAITING_USER_FEEDBACK';
     db.userSessions[userId].feedbackWarningMsgId = null;
     
-    const sentMsg = await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]));
+    const sentMsg = await ctx.editMessageText(locale.feedback_prompt || "📝 মতামত ও রিপোর্ট:\n\nঅ্যাডমিনের কাছে কোনো রিপোর্ট, নতুন আপডেটের আইডিয়া বা অন্য কোনো কিছু বলার থাকলে আপনার মেসেজটি এখানে লিখে পাঠিয়ে দিন:", Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]));
     db.userSessions[userId].feedbackPromptMsgId = sentMsg.message_id;
     await saveDB();
 });
 
 bot.action('menu_help', (ctx) => { 
     ctx.answerCbQuery(); 
-    ctx.editMessageText(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
+    ctx.editMessageText(help_msg, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }); 
 });
 
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
@@ -166,7 +166,7 @@ bot.on('text', async (ctx) => {
     
     if (!session?.step) {
         ctx.reply(locale.invalid_cmd(text), { parse_mode: 'Markdown' }).catch(() => {});
-        return ctx.reply(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+        return ctx.reply(help_msg, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
