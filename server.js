@@ -47,7 +47,7 @@ bot.use(async (ctx, next) => {
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
         if (ctx.callbackQuery?.data === 'menu_feedback') return next();
         
-        const banKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
+        const banKeyboard = Markup.inlineKeyboard([[Markup.button.callback("📝 মতামত", 'menu_feedback')]]);
         const banMsg = "বিশেষ কোন কারণে বট থেকে আপনাকে ব্যান করা হয়েছে। আপনার কিছু বলার থাকলে এডমিনকে মতামত জানাতে পারেন।";
         
         if (ctx.callbackQuery) {
@@ -61,7 +61,7 @@ bot.use(async (ctx, next) => {
         const session = db.userSessions[userId];
         if (session?.step === 'AWAITING_USER_FEEDBACK') return next();
         if (ctx.callbackQuery?.data === 'menu_feedback') return next();
-        const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback(locale.btn_feedback, 'menu_feedback')]]);
+        const maintKeyboard = Markup.inlineKeyboard([[Markup.button.callback("📝 মতামত", 'menu_feedback')]]);
         if (ctx.callbackQuery) {
             ctx.answerCbQuery().catch(() => {});
             return ctx.editMessageText(maint_msg, maintKeyboard).catch(() => {});
