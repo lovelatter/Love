@@ -22,7 +22,7 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
 const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
     bot.command(['admin', 'adm'], (ctx) => {
         if (!isAdmin(ctx.chat.id)) {
-            ctx.reply(locale.invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
+            ctx.reply(invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
             return ctx.reply(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
         }
         showAdminDashboard(ctx, db, false);
