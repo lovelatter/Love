@@ -61,7 +61,7 @@ const animationPool = {
         "আল্লাহ তোমাকে সবসময় নেক হায়াত দান করুন 🤲",
         "জীবনের প্রতিটি পদক্ষেপে পাও যেন সফলতা 🎯",
         "শুভ জন্মদিনের অনেক অনেক শুভেচ্ছা ও ভালোবাসা 💌",
-        "তোমার জীবনের আকাশ সবসময় মেঘমুক্ত থাকুক 🌤️",
+        "তোমার জীবনের আকাশ সবসময় মেঘমুক্ত থাকুক 🌤️",
         "আজকের দিনটি হয়ে উঠুক তোমার জীবনের সেরা দিন 🎇",
         "তোমার মুখের অমলিন হাসি চিরকাল বজায় থাকুক 😁"
     ],
@@ -107,15 +107,15 @@ const animationPool = {
         "নতুন পোশাকে জমে উঠুক ঈদ 🍽️",
         "সব ভেদাভেদ ভুলে কোলাকুলি হোক 🤝",
         "চারপাশটা ঈদের আনন্দে রঙিন থাকুক 🎨",
-        "ঈদ মোবারক! পরিবার নিয়ে আনন্দ করো 🏡",
+        "ঈদ মোবারک! পরিবার নিয়ে আনন্দ করো 🏡",
         "জীবনে সুখ ও শান্তির বন্যা বয়ে যাক 🌊",
         "তোমার খুশিতেই আমার আসল আনন্দ 🥰",
-        "পবিত্র ঈদুল ফিতর/আজহা মোবারক 🌙✨",
+        "পবিত্র ঈদুল ফিতর/আজহা মোবারک 🌙✨",
         "সেমাইয়ের মতো মিষ্টি হোক জীবন 🍜",
         "আনন্দময় কাটুক ঈদের ছুটি 🏕️",
         "ঈদের চাঁদ শান্তি বয়ে আনুক 🌠",
         "খুশির জোয়ারে ভেসে যাক দিন ⛵",
-        "ঈদ মোবারক! অনেক দোয়া ও ভালোবাসা 🤲",
+        "ঈদ মোবারک! অনেক দোয়া ও ভালোবাসা 🤲",
         "হাসিখুশিতে কাটুক প্রতিটি মুহূর্ত 🎊",
         "আল্লাহর রহমতে জীবন সুন্দর হোক 🌟",
         "ঈদের এই পবিত্র দিনে কাটুক সব ক্লান্তি 🌴",
@@ -127,7 +127,7 @@ const animationPool = {
         "খুশির আলোয় ঝলমল করুক তোমার আঙিনা 💡",
         "মিষ্টিমুখ আর কোলাকুলিতে জমজমাট হোক ঈদ 🍧",
         "তোমার জীবনে বয়ে আসুক রহমতের বারিপাত 🌧️",
-        "সবাইকে পবিত্র ঈদের অনেক শুভেচ্ছা 🎊"
+        "সবার সবাইকে পবিত্র ঈদের অনেক শুভেচ্ছা 🎊"
     ]
 };
 
@@ -178,9 +178,13 @@ const letterPool = {
         "বছর ঘুরে আবার আসুক ঈদের আনন্দ। এই পবিত্র দিনে আল্লাহ তোমার সমস্ত দোয়া কবুল করুন এবং তোমার জীবনকে সুখ-শান্তিতে ভরে দিন। ঈদ মোবারক! 🌙",
         "ঈদের এই আনন্দঘন মুহূর্তে ভুলে যাও সব ভেদাভেদ। কোলাকুলি আর হাসিখুশিতে মেতে উঠুক তোমার আজকের দিনটি। অনেক শুভেচ্ছা তোমার জন্য! 🤝",
         "নতুন পোশাকের সুবাস আর মিষ্টির মোমে মুখরিত হোক তোমার ঈদের সকাল। জীবনটা অনেক সুন্দর হোক, এই কামনা করি। ঈদ মোবারক! 🍰",
-        "আল্লাহর অশেষ রহমতে তোমার ও তোমার প্রিয়জনদের জীবন যেন সবসময় শান্তিতে ভরে থাকে। পবিত্র ঈদের অনাবিল শুভেচ্ছা ও ভালোবাসা নিও! 🤲"
+        "আল্লাহর অশেষ রহমতে তোমার ও প্রিয়জনদের জীবন যেন সবসময় শান্তিতে ভরে থাকে। পবিত্র ঈদের অনাবিল শুভেচ্ছা ও ভালোবাসা নিও! 🤲"
     ]
 };
+
+function parseAnimationLines(text) {
+    return text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+}
 
 function getRandomItems(arr, count) {
     const shuffled = [...arr].sort(() => 0.3 - Math.random());
@@ -205,7 +209,7 @@ async function generateRandomLetter(category, history = []) {
     return text;
 }
 
-async function showAnimationIntro(ctx, db, saveDB, locale) {
+async function showAnimationIntro(ctx, db, saveDB) {
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
     const text = "✨ অ্যানিমেশন মেসেজ লিখুন।\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা";
@@ -255,7 +259,7 @@ async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
     await ctx.editMessageText(text, { reply_markup: keyboard.reply_markup }).catch(() => {});
 }
 
-function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_URL, locale) {
+function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_URL) {
     bot.action('random_anim_start', async (ctx) => {
         ctx.answerCbQuery();
         ctx.db = db;
@@ -372,4 +376,4 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
     });
 }
 
-module.exports = { showAnimationIntro, setupRandomActions };
+module.exports = { showAnimationIntro, setupRandomActions, parseAnimationLines };
