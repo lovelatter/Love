@@ -10,7 +10,7 @@ const { handleFeedbackMessages, setupFeedbackActions } = require('./modules/feed
 const { setupAdmin, handleAdminText } = require('./modules/admin');
 const { processFinalLinkCreation } = require('./modules/link');
 const { setupRoutes } = require('./modules/routes');
-const { showAnimationIntro, setupRandomActions, parseAnimationLines } = require('./modules/random');
+const { showAnimationIntro, setupRandomActions, handleAnimationTextStep } = require('./modules/random');
 
 const app = express();
 app.use(express.json());
@@ -171,20 +171,7 @@ bot.on('text', async (ctx) => {
     }
     try {
         if (session.step === 'AWAITING_ANIMATION_TEXT') {
-            const lines = parseAnimationLines(text);
-            if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
-            db.userSessions[userId].animations = lines;
-            db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-            if (session.lastPromptMsgId) {
-                await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
-            }
-            await ctx.deleteMessage().catch(() => {});
-            const nextPrompt = await ctx.reply("✅ অ্যানিমেশন টেক্সট সফলভাবে যোগ করা হয়েছে।" + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
-                [Markup.button.callback("🎲 Random", 'random_letter_start')]
-            ]));
-            db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
-            await saveDB();
-            return;
+            return await handleAnimationTextStep(ctx, userId, text, db, saveDB, bot);
         }
         if (session.step === 'AWAITING_LETTER_TEXT') {
             if (session.lastPromptMsgId) {
