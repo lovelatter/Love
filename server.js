@@ -80,7 +80,7 @@ setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_
 
 const sendMainMenu = async (ctx, isEdit = false) => {
     const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
-    const welcome = `👋 হ্যালো ${fullName}। বটের পক্ষ থেকে স্বাগতম।`,
+    const welcome = `👋 হ্যালো ${fullName}। বটের পক্ষ থেকে স্বাগতম।`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🚀 লিঙ্ক তৈরি করুন", 'menu_makelink')],
         [Markup.button.callback("📝 মতামত", 'menu_feedback'), Markup.button.callback("❓ সাহায্য", 'menu_help')]
