@@ -77,7 +77,7 @@ setupPhotoActions(bot, db, saveDB, (c) => showAnimationIntro(c, db, saveDB));
 setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS, SERVER_URL);
 
 const sendMainMenu = async (ctx, isEdit = false) => {
-    const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "ব্যবহারকারী";
+    const fullName = `${ctx.from?.first_name || ""} ${ctx.from?.last_name || ""}`.trim() || "";
     const welcome = `👋 হ্যালো ${fullName}। বটের পক্ষ থেকে স্বাগতম।`;
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🚀 লিঙ্ক তৈরি করুন", 'menu_makelink')],
@@ -98,11 +98,10 @@ bot.action('go_to_main_menu', (ctx) => { ctx.answerCbQuery(); sendMainMenu(ctx, 
 bot.action('menu_makelink', (ctx) => {
     ctx.answerCbQuery();
     ctx.editMessageText("✨ কোন ক্যাটাগরির লিঙ্ক বানাতে চান?", Markup.inlineKeyboard([
-        [Markup.button.callback("প্রেম-LOVE (❤️)", 'make_love')],
-        [Markup.button.callback("জন্মদিন-BIRTHDAY (🥳)", 'make_birthday')],
-        [Markup.button.callback("দুঃখিত-SORRY (🥺)", 'make_sorry')],
-        [Markup.button.callback("ঈদ মোবারক-EID (🫂)", 'make_eid')],
-        [Markup.button.callback("🔙 Back", 'go_to_main_menu')]
+        [Markup.button.callback("❤️ প্রেম-LOVE", 'make_love')],
+        [Markup.button.callback("🥳 জন্মদিন-BIRTHDAY", 'make_birthday')],
+        [Markup.button.callback("🥺 দুঃখিত-SORRY", 'make_sorry')],
+        [Markup.button.callback("🫂 ঈদ মোবারক-EID", 'make_eid')]
     ]));
 });
 
@@ -141,12 +140,12 @@ bot.action('menu_help', (ctx) => {
 bot.action(/^delete_link_(.+)$/, async (ctx) => {
     const linkId = ctx.match[1];
     const data = db.linkDatabase[linkId];
-    if (!data) return ctx.answerCbQuery("⚠️ এই লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
+    if (!data) return ctx.answerCbQuery("⚠️ লিঙ্কটি ইতিমধ্যে রিমুভ করা হয়েছে!", { show_alert: true });
     if (Number(data.userId) !== Number(ctx.chat.id)) return ctx.answerCbQuery("❌ পারমিশন নেই।", { show_alert: true });
-    ctx.answerCbQuery("✅ লিঙ্কটি সফলভাবে ডিলিট করা হয়েছে।", { show_alert: true });
+    ctx.answerCbQuery("✅ লিঙ্কটি ডিলিট করা হয়েছে।", { show_alert: true });
     delete db.linkDatabase[linkId];
     await saveDB();
-    ctx.editMessageText("❌ আপনার এই লিঙ্কটি চিরতরে বন্ধ এবং রিমুভ করে দেওয়া হয়েছে।");
+    ctx.editMessageText("❌ লিঙ্কটি রিমুভ করা হয়েছে।");
     sendMainMenu(ctx, false);
 });
 
