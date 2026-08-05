@@ -8,13 +8,13 @@ function showCountdownPrompt(ctx, db, saveDB, showImageUploadPrompt) {
     ]), { parse_mode: 'Markdown' }).catch(() => {});
 }
 
-function setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt, locale) {
+function setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt) {
     bot.action('timer_no', async (ctx) => { 
         ctx.answerCbQuery(); 
         if (!db.userSessions[ctx.chat.id]) db.userSessions[ctx.chat.id] = {};
         db.userSessions[ctx.chat.id].pendingMinutes = null; 
         await saveDB();
-        showMusicUploadPrompt(ctx, db, saveDB, locale); 
+        showMusicUploadPrompt(ctx, db, saveDB); 
     });
 
     bot.action(/^set_time_/, async (ctx) => {
@@ -23,7 +23,7 @@ function setupCountdownActions(bot, db, saveDB, showMusicUploadPrompt, locale) {
         if (!db.userSessions[userId]) db.userSessions[userId] = {};
         db.userSessions[userId].pendingMinutes = parseInt(ctx.match.input.replace('set_time_', ''), 10);
         await saveDB();
-        showMusicUploadPrompt(ctx, db, saveDB, locale);
+        showMusicUploadPrompt(ctx, db, saveDB);
     });
 }
 
