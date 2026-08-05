@@ -14,7 +14,6 @@ let db = {
     usernameMap: {}
 };
 
-// JSONBin Load Function
 const loadDB = () => {
     return new Promise((resolve) => {
         if (!BIN_ID || !MASTER_KEY) {
@@ -55,7 +54,6 @@ const loadDB = () => {
     });
 };
 
-// JSONBin Save Function (Promiseified for safety)
 const saveDB = () => {
     return new Promise((resolve) => {
         if (!BIN_ID || !MASTER_KEY) return resolve();
