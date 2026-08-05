@@ -39,7 +39,7 @@ function showMusicUploadPrompt(ctx, db, saveDB, locale) {
     });
 }
 
-function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
+function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     if (!session) return;
@@ -50,17 +50,17 @@ function handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale) {
         saveDB();
         ctx.answerCbQuery("কোনো ব্যাকগ্রাউন্ড মিউজিক রাখা হয়নি।");
         ctx.deleteMessage().catch(() => {});
-        showImageUploadPrompt(ctx, db, saveDB, locale);
+        showImageUploadPrompt(ctx, db, saveDB);
     } else if (action === 'music_default') {
         session.music = music_set[session.type] || "";
         saveDB();
         ctx.answerCbQuery("ডিফল্ট মিউজিক সেট করা হয়েছে।");
         ctx.deleteMessage().catch(() => {});
-        showImageUploadPrompt(ctx, db, saveDB, locale);
+        showImageUploadPrompt(ctx, db, saveDB);
     }
 }
 
-function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) {
+function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt) {
     const userId = ctx.chat.id;
     const session = db.userSessions[userId];
     
@@ -126,9 +126,9 @@ function handleAudioUpload(ctx, bot, db, saveDB, showImageUploadPrompt, locale) 
     }
 }
 
-function setupMusicActions(bot, db, saveDB, showImageUploadPrompt, locale) {
+function setupMusicActions(bot, db, saveDB, showImageUploadPrompt) {
     bot.action(['music_no', 'music_default'], (ctx) => {
-        handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt, locale);
+        handleMusicChoice(ctx, db, saveDB, showImageUploadPrompt);
     });
 }
 
