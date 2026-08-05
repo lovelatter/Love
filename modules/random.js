@@ -1,5 +1,6 @@
 const { Markup } = require('telegraf');
 
+const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান。\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:`;
 const animationPool = {
     love: [
         "তুমি আমার সবচেয়ে সুন্দর অনুভূতি ❤️",
@@ -234,7 +235,7 @@ async function handleAnimationTextStep(ctx, userId, text, db, saveDB, bot) {
         await bot.telegram.deleteMessage(userId, db.userSessions[userId].lastPromptMsgId).catch(() => {});
     }
     await ctx.deleteMessage().catch(() => {});
-    const nextPrompt = await ctx.reply("✅ অ্যানিমেশন টেক্সট সফলভাবে যোগ করা হয়েছে।" + "\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:", Markup.inlineKeyboard([
+    const nextPrompt = await ctx.reply(text, Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')]
     ]));
     db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
@@ -325,7 +326,6 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         session.animations = session.currentAnimList;
         session.step = 'AWAITING_LETTER_TEXT';
         await saveDB();
-        const text = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান。\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:`;
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback("🎲 Random", 'random_letter_start')]
         ]);
