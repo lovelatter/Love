@@ -134,7 +134,7 @@ const animationPool = {
 const letterPool = {
     love: [
         "তুমি আমার জীবনের সবথেকে মূল্যবান পাওয়া। তোমার এই মিষ্টি মুখের হাসি আর ভালোবাসা ছাড়া আমার একটি মুহূর্তও চলে না। সারাজীবন এভাবেই আমার পাশে থেকো, তোমায় অনেক ভালোবাসি। ❤️",
-        "হাজারো মানুষের ভিড়ে কেবল তোমাকেই আমার মনের খুব কাছের/প্রিয় মানুষ মনে হয়। তোমার সাথে কাটানো প্রতিটি মুহূর্ত আমার কাছে রূপকথার মতো। চিরদিন আমার ছায়াসঙ্গী হয়ে থেকো। 🌹",
+        "হাজারো মানুষের ভিড়ে কেবল তোমাকেই আমার মনের খুব কাছের মানুষ মনে হয়। তোমার সাথে কাটানো প্রতিটি মুহূর্ত আমার কাছে রূপকথার মতো। চিরদিন আমার ছায়াসঙ্গী হয়ে থেকো। 🌹",
         "তুমি আমার চোখের পলকের শান্তি আর মনের গভীরের সবটুকু ভালোবাসা। তোমায় নিয়ে দেখা স্বপ্নগুলো একদিন সত্যি করতে চাই। সারাজীবন এভাবেই ভালোবেসে যাবো। 🥰",
         "ঝড়-ঝাপটা যাই আসুক না কেন, তোমার হাতটি আমি কখনো ছাড়ব না। আমার সুখের দিনে এবং দুঃখের দিনে তোমাকেই পাশে চাই। অনেক ভালোবাসি আমার প্রিয় মানুষটিকে। ♾️",
         "আমার জীবনের সবচাইতে সুন্দর অধ্যায়টি শুরু হয়েছিল তোমাকে পাওয়ার পর থেকে। তুমি আমার জীবনে আসার পর সবকিছু অনেক সুন্দর হয়ে গেছে। এভাবেই সবসময় পাশে থেকো। ✨",
@@ -229,12 +229,22 @@ async function handleAnimationTextStep(ctx, userId, text, db, saveDB, bot) {
     const lines = parseAnimationLines(text);
     if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
     db.userSessions[userId].animations = lines;
-    db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
+    
     if (db.userSessions[userId].lastPromptMsgId) {
         await bot.telegram.deleteMessage(userId, db.userSessions[userId].lastPromptMsgId).catch(() => {});
     }
     await ctx.deleteMessage().catch(() => {});
-    const nextPrompt = await ctx.reply(text, Markup.inlineKeyboard([
+    
+    const count = lines.length;
+    const alertMsg = await ctx.reply(`✅ ${count} লাইন টাইপিং অ্যানিমেশন যোগ হয়েছে।`);
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    await bot.telegram.deleteMessage(userId, alertMsg.message_id).catch(() => {});
+    
+    db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
+    const letterPromptText = "💌 মূল চিঠি বা উইশ মেসেজ লিখুন।";
+    const nextPrompt = await ctx.reply(letterPromptText, Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')]
     ]));
     db.userSessions[userId].lastPromptMsgId = nextPrompt.message_id;
@@ -268,7 +278,7 @@ async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
     if (showPrevBtn) {
         buttons = [
             [Markup.button.callback("এটি রাখবো", 'letter_keep')],
-            [Markup.button.callback("আগেরটা", 'letter_prev'), Markup.button.callback("পরিবর্তন", 'letter_change')]
+            [Markup.button.callback("আগেরটা", 'letter_prev'), Markup.button.callback("পরিবর্তন", 'anim_change') ? Markup.button.callback("পরিবর্তন", 'letter_change') : Markup.button.callback("পরিবর্তন", 'letter_change')]
         ];
     }
     const keyboard = Markup.inlineKeyboard(buttons);
@@ -323,16 +333,26 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         const session = db.userSessions[userId];
         if (!session) return;
         session.animations = session.currentAnimList;
+        
+        const count = session.animations.length;
+        const alertMsg = await ctx.reply(`✅ ${count} লাইন টাইপিং অ্যানিমেশন যোগ হয়েছে।`);
+        
+        if (session.lastPromptMsgId) {
+            await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
+        }
+        await ctx.deleteMessage().catch(() => {});
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await bot.telegram.deleteMessage(userId, alertMsg.message_id).catch(() => {});
+        
         session.step = 'AWAITING_LETTER_TEXT';
         await saveDB();
         
-        const nextText = `✅ চমৎকার! আপনি ${session.animations.length} লাইনের অ্যানিমেশন যোগ করেছেন।\n\n💌 এবার খামের ভেতরের মূল চিঠি বা উইশ মেসেজটি লিখে পাঠান。\n\nএবার আপনার চিঠির জন্য টেক্সট দিন অথবা রেন্ডম ব্যবহার করুন:`;
+        const letterPromptText = "💌 মূল চিঠি বা উইশ মেসেজ লিখুন।";
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback("🎲 Random", 'random_letter_start')]
         ]);
-        const sentMsg = await ctx.editMessageText(nextText, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(async () => {
-            return await ctx.reply(nextText, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
-        });
+        const sentMsg = await ctx.reply(letterPromptText, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => null);
         if (sentMsg) {
             session.lastPromptMsgId = sentMsg.message_id;
             await saveDB();
