@@ -19,11 +19,11 @@ const showAdminDashboard = (ctx, db, isEdit = false) => {
     return ctx.reply(text, { reply_markup: keyboard.reply_markup, parse_mode: 'Markdown' }).catch(() => {});
 };
 
-const setupAdmin = (bot, db, saveDB, isAdmin, baseDir, locale) => {
+const setupAdmin = (bot, db, saveDB, isAdmin, baseDir) => {
     bot.command(['admin', 'adm'], (ctx) => {
         if (!isAdmin(ctx.chat.id)) {
             ctx.reply(invalid_cmd(ctx.message.text || ''), { parse_mode: 'Markdown' }).catch(() => {});
-            return ctx.reply(help_msg, Markup.inlineKeyboard([[Markup.button.callback(locale.btn_back, 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
+            return ctx.reply(help_msg, Markup.inlineKeyboard([[Markup.button.callback("🔙 Back", 'go_to_main_menu')]]), { parse_mode: 'Markdown' }).catch(() => {});
         }
         showAdminDashboard(ctx, db, false);
     });
