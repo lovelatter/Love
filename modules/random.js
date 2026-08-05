@@ -348,7 +348,7 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         session.step = 'AWAITING_LETTER_TEXT';
         await saveDB();
         
-        const letterPromptText = "💌 মূল চিঠি বা মেসেজটি লিখুন।"\nযেটি খাম খুলার পর দেখাবে।;
+        const letterPromptText = "💌 মূল চিঠি বা মেসেজটি লিখুন।\nযেটি খাম খুলার পর দেখাবে।";
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback("🎲 Random", 'random_letter_start')]
         ]);
