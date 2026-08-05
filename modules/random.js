@@ -210,9 +210,12 @@ async function generateRandomLetter(category, history = []) {
 }
 
 async function showAnimationIntro(ctx, db, saveDB) {
+    if (!db.userSessions[ctx.chat.id]) {
+        db.userSessions[ctx.chat.id] = {};
+    }
     db.userSessions[ctx.chat.id].step = 'AWAITING_ANIMATION_TEXT';
     await saveDB();
-    const text = "✨ টাইপিং অ্যানিমেশন মেসেজ লিখুন。\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন।";
+    const text = "✨ অ্যানিমেশন মেসেজ লিখুন。\nএকাধিক অ্যানিমেশন এর জন্য Enter দিয়ে নতুন লাইন লিখুন। যেমন:\n•হ্যালো প্রিয়\n•কেমন আছো\n•তোমার জন্য একটি বার্তা";
     const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_anim_start')]
     ]);
@@ -226,6 +229,9 @@ async function showAnimationIntro(ctx, db, saveDB) {
 }
 
 async function handleAnimationTextStep(ctx, userId, text, db, saveDB, bot) {
+    if (!db.userSessions[userId]) {
+        db.userSessions[userId] = {};
+    }
     const lines = parseAnimationLines(text);
     if (!lines.length) return ctx.reply("⚠️ অনুগ্রহ করে অন্তত একটি টেক্সট লিখুন।");
     db.userSessions[userId].animations = lines;
@@ -236,14 +242,14 @@ async function handleAnimationTextStep(ctx, userId, text, db, saveDB, bot) {
     await ctx.deleteMessage().catch(() => {});
     
     const count = lines.length;
-    const alertMsg = await ctx.reply(`✅ ${count} লাইন টাইপিং অ্যানিমেশন মেসেজ যোগ হয়েছে।`);
+    const alertMsg = await ctx.reply(`✅ ${count} লাইন টাইপিং অ্যানিমেশন যোগ হয়েছে।`);
     
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     await bot.telegram.deleteMessage(userId, alertMsg.message_id).catch(() => {});
     
     db.userSessions[userId].step = 'AWAITING_LETTER_TEXT';
-    const letterPromptText = "💌 মূল চিঠি বা উইশ মেসেজ লিখুন\n যেটি খাম খোলার পর দেখাবে।";
+    const letterPromptText = "💌 মূল চিঠি বা উইশ মেসেজ লিখুন।";
     const nextPrompt = await ctx.reply(letterPromptText, Markup.inlineKeyboard([
         [Markup.button.callback("🎲 Random", 'random_letter_start')]
     ]));
@@ -253,6 +259,7 @@ async function handleAnimationTextStep(ctx, userId, text, db, saveDB, bot) {
 
 async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
     const session = ctx.db.userSessions[userId];
+    if (!session.currentAnimList) session.currentAnimList = [];
     const previewText = "জেনারেট করা অ্যানিমেশন টেক্সট:\n\n" + session.currentAnimList.join('\n');
     let buttons = [
         [Markup.button.callback("এটি রাখবো", 'anim_keep')],
@@ -270,6 +277,7 @@ async function renderRandomAnimPreview(ctx, userId, showPrevBtn = false) {
 
 async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
     const session = ctx.db.userSessions[userId];
+    if (!session.currentLetterText) session.currentLetterText = "";
     const previewText = "জেনারেট করা চিঠি:\n\n" + session.currentLetterText;
     let buttons = [
         [Markup.button.callback("এটি রাখবো", 'letter_keep')],
@@ -278,7 +286,7 @@ async function renderRandomLetterPreview(ctx, userId, showPrevBtn = false) {
     if (showPrevBtn) {
         buttons = [
             [Markup.button.callback("এটি রাখবো", 'letter_keep')],
-            [Markup.button.callback("আগেরটা", 'letter_prev'), Markup.button.callback("পরিবর্তন", 'anim_change') ? Markup.button.callback("পরিবর্তন", 'letter_change') : Markup.button.callback("পরিবর্তন", 'letter_change')]
+            [Markup.button.callback("আগেরটা", 'letter_prev'), Markup.button.callback("পরিবর্তন", 'letter_change')]
         ];
     }
     const keyboard = Markup.inlineKeyboard(buttons);
@@ -290,8 +298,8 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         ctx.answerCbQuery();
         ctx.db = db;
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
-        if (!session) return;
         
         session.animHistory = [];
         session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
@@ -305,10 +313,16 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         ctx.answerCbQuery();
         ctx.db = db;
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
-        if (!session) return;
+        
+        if (!session.currentAnimList) {
+            session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory || []);
+        }
+        
         session.prevAnimList = [...session.currentAnimList];
-        session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory);
+        session.currentAnimList = await generateRandomAnimation(session.type, session.animHistory || []);
+        if (!session.animHistory) session.animHistory = [];
         session.animHistory.push(...session.currentAnimList);
         await saveDB();
         await renderRandomAnimPreview(ctx, userId, true);
@@ -318,7 +332,9 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         ctx.answerCbQuery();
         ctx.db = db;
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
+        
         if (!session || !session.prevAnimList) return;
         const temp = [...session.currentAnimList];
         session.currentAnimList = [...session.prevAnimList];
@@ -330,25 +346,26 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
     bot.action('anim_keep', async (ctx) => {
         ctx.answerCbQuery();
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
-        if (!session) return;
-        session.animations = session.currentAnimList;
+        
+        session.animations = session.currentAnimList || [];
         
         const count = session.animations.length;
-        const alertMsg = await ctx.reply(`✅ ${count} লাইন টাইপিং অ্যানিমেশন মেসেজ যোগ হয়েছে।`);
+        const alertMsg = await ctx.reply(`✅ ${count} লাইন টাইপিং অ্যানিমেশন যোগ হয়েছে।`);
         
         if (session.lastPromptMsgId) {
             await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
         }
         await ctx.deleteMessage().catch(() => {});
         
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         await bot.telegram.deleteMessage(userId, alertMsg.message_id).catch(() => {});
         
         session.step = 'AWAITING_LETTER_TEXT';
         await saveDB();
         
-        const letterPromptText = "💌 মূল চিঠি বা মেসেজটি লিখুন।\nযেটি খাম খুলার পর দেখাবে।";
+        const letterPromptText = "💌 মূল চিঠি বা উইশ মেসেজ লিখুন।";
         const keyboard = Markup.inlineKeyboard([
             [Markup.button.callback("🎲 Random", 'random_letter_start')]
         ]);
@@ -363,8 +380,8 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         ctx.answerCbQuery();
         ctx.db = db;
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
-        if (!session) return;
         
         session.letterHistory = [];
         session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
@@ -378,10 +395,16 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         ctx.answerCbQuery();
         ctx.db = db;
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
-        if (!session) return;
+        
+        if (!session.currentLetterText) {
+            session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory || []);
+        }
+        
         session.prevLetterText = session.currentLetterText;
-        session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory);
+        session.currentLetterText = await generateRandomLetter(session.type, session.letterHistory || []);
+        if (!session.letterHistory) session.letterHistory = [];
         session.letterHistory.push(session.currentLetterText);
         await saveDB();
         await renderRandomLetterPreview(ctx, userId, true);
@@ -391,7 +414,9 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
         ctx.answerCbQuery();
         ctx.db = db;
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
+        
         if (!session || !session.prevLetterText) return;
         const temp = session.currentLetterText;
         session.currentLetterText = session.prevLetterText;
@@ -403,9 +428,10 @@ function setupRandomActions(bot, db, saveDB, processFinalLinkCreation, ADMIN_IDS
     bot.action('letter_keep', async (ctx) => {
         ctx.answerCbQuery();
         const userId = ctx.chat.id;
+        if (!db.userSessions[userId]) db.userSessions[userId] = {};
         const session = db.userSessions[userId];
-        if (!session) return;
-        const letterText = session.currentLetterText;
+        
+        const letterText = session.currentLetterText || "";
         if (session.lastPromptMsgId) {
             await bot.telegram.deleteMessage(userId, session.lastPromptMsgId).catch(() => {});
         }
